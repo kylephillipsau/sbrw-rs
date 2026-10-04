@@ -1,0 +1,29 @@
+[package]
+name = "sbrw-core"
+description = "The game server's logic: a 1:1 port of soapbox-race-core's business objects, DAOs and entities"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+argon2.workspace = true
+rusqlite.workspace = true
+sbrw-common.workspace = true
+sbrw-java.workspace = true
+sbrw-xml.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+time = { workspace = true, features = ["parsing"] }
+tracing.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+time = { workspace = true, features = ["macros"] }
+tokio = { workspace = true, features = ["macros", "rt"] }
+
+[lints]
+workspace = true

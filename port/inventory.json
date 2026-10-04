@@ -5973,7 +5973,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /abort"
+     "http": "POST /abort",
+     "produces": "application/xml"
     },
     {
      "id": "api/Event#launched(Long)",
@@ -5986,7 +5987,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /launched"
+     "http": "PUT /launched",
+     "produces": "application/xml"
     },
     {
      "id": "api/Event#arbitration(InputStream,Long)",
@@ -5999,7 +6001,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /arbitration"
+     "http": "POST /arbitration",
+     "produces": "application/xml"
     },
     {
      "id": "api/Event#bust(InputStream,String,Long)",
@@ -6012,7 +6015,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /bust"
+     "http": "POST /bust",
+     "produces": "application/xml"
     }
    ]
   },
@@ -7578,7 +7582,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /GetChatInfo"
+     "http": "GET /GetChatInfo",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8233,7 +8238,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /loadall"
+     "http": "GET /loadall",
+     "produces": "application/xml"
     },
     {
      "id": "api/Achievements#redeemreward(Long)",
@@ -8246,7 +8252,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /redeemreward"
+     "http": "GET /redeemreward",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8274,7 +8281,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8330,7 +8338,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8355,7 +8364,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8384,7 +8394,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /productsInCategory"
+     "http": "GET /productsInCategory",
+     "produces": "application/xml"
     },
     {
      "id": "api/Catalog#categories(String)",
@@ -8397,7 +8408,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /categories"
+     "http": "GET /categories",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8424,7 +8436,8 @@
       "POST",
       "Produces"
      ],
-     "http": "POST"
+     "http": "POST",
+     "produces": "text/html"
     }
    ]
   },
@@ -8452,7 +8465,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /relaycryptoticket/{personaId}"
+     "http": "GET /relaycryptoticket/{personaId}",
+     "produces": "application/xml"
     },
     {
      "id": "api/Crypto#cryptoticket()",
@@ -8464,7 +8478,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /cryptoticket"
+     "http": "GET /cryptoticket",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8496,7 +8511,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /GetExpLevelPointsMap"
+     "http": "GET /GetExpLevelPointsMap",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#getPersonaInfo(Long)",
@@ -8509,7 +8525,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /GetPersonaInfo"
+     "http": "GET /GetPersonaInfo",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#reserveName(String)",
@@ -8522,7 +8539,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /ReserveName"
+     "http": "POST /ReserveName",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#UnreserveName(String)",
@@ -8535,7 +8553,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /UnreserveName"
+     "http": "POST /UnreserveName",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#createPersona(Long,String,String,int,String,String)",
@@ -8548,7 +8567,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /CreatePersona"
+     "http": "POST /CreatePersona",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#deletePersona(Long)",
@@ -8561,7 +8581,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /DeletePersona"
+     "http": "POST /DeletePersona",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#getPersonaBaseFromList(InputStream)",
@@ -8573,7 +8594,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /GetPersonaBaseFromList"
+     "http": "POST /GetPersonaBaseFromList",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#updatePersonaPresence(Long,Long)",
@@ -8586,7 +8608,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /UpdatePersonaPresence"
+     "http": "POST /UpdatePersonaPresence",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#getPersonaPresenceByName(String)",
@@ -8599,7 +8622,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /GetPersonaPresenceByName"
+     "http": "GET /GetPersonaPresenceByName",
+     "produces": "application/xml"
     },
     {
      "id": "api/DriverPersona#updateStatusMessage(InputStream)",
@@ -8612,7 +8636,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /UpdateStatusMessage"
+     "http": "POST /UpdateStatusMessage",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8644,7 +8669,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /availableatlevel"
+     "http": "GET /availableatlevel",
+     "produces": "application/xml"
     },
     {
      "id": "api/Events#getEventDefinitionWithId(EventEntity)",
@@ -8664,7 +8690,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /gettreasurehunteventsession"
+     "http": "GET /gettreasurehunteventsession",
+     "produces": "application/xml"
     },
     {
      "id": "api/Events#notifyCoinCollected(Integer)",
@@ -8677,7 +8704,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /notifycoincollected"
+     "http": "GET /notifycoincollected",
+     "produces": "application/xml"
     },
     {
      "id": "api/Events#accolades()",
@@ -8690,7 +8718,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /accolades"
+     "http": "GET /accolades",
+     "produces": "application/xml"
     },
     {
      "id": "api/Events#instancedAccolades(Long)",
@@ -8703,7 +8732,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /instancedaccolades"
+     "http": "GET /instancedaccolades",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8728,7 +8758,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET {path:.*}"
+     "http": "GET {path:.*}",
+     "produces": "application/xml"
     },
     {
      "id": "api/Generic#genericEmptyPost(String)",
@@ -8740,7 +8771,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST {path:.*}"
+     "http": "POST {path:.*}",
+     "produces": "application/xml"
     },
     {
      "id": "api/Generic#genericEmptyPut(String)",
@@ -8752,7 +8784,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT {path:.*}"
+     "http": "PUT {path:.*}",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8779,7 +8812,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8807,7 +8841,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8833,7 +8868,8 @@
       "GET",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/json"
     }
    ]
   },
@@ -8860,7 +8896,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8887,7 +8924,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8912,7 +8950,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8938,7 +8977,8 @@
       "GET",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/json"
     }
    ]
   },
@@ -8963,7 +9003,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -8988,7 +9029,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9017,7 +9059,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9043,7 +9086,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /GetAndTriggerAvailableLevelGifts"
+     "http": "POST /GetAndTriggerAvailableLevelGifts",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9068,7 +9112,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "POST"
+     "http": "POST",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9094,7 +9139,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /client"
+     "http": "GET /client",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9121,7 +9167,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9154,7 +9201,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /joinqueueracenow"
+     "http": "PUT /joinqueueracenow",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#joinQueueEvent(int)",
@@ -9167,7 +9215,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /joinqueueevent/{eventId}"
+     "http": "PUT /joinqueueevent/{eventId}",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#leaveQueue()",
@@ -9180,7 +9229,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /leavequeue"
+     "http": "PUT /leavequeue",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#leavelobby()",
@@ -9193,7 +9243,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /leavelobby"
+     "http": "PUT /leavelobby",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#launchEvent(int)",
@@ -9206,7 +9257,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /launchevent/{eventId}"
+     "http": "GET /launchevent/{eventId}",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#makePrivateLobby(int)",
@@ -9219,7 +9271,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /makeprivatelobby/{eventId}"
+     "http": "PUT /makeprivatelobby/{eventId}",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#acceptInvite(Long)",
@@ -9232,7 +9285,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /acceptinvite"
+     "http": "PUT /acceptinvite",
+     "produces": "application/xml"
     },
     {
      "id": "api/MatchMaking#declineInvite(Long)",
@@ -9245,7 +9299,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /declineinvite"
+     "http": "PUT /declineinvite",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9272,7 +9327,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET GetModInfo"
+     "http": "GET GetModInfo",
+     "produces": "application/json"
     }
    ]
   },
@@ -9300,7 +9356,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9335,7 +9392,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /{personaId}/commerce"
+     "http": "POST /{personaId}/commerce",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#baskets(InputStream,Long)",
@@ -9348,7 +9406,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /{personaId}/baskets"
+     "http": "POST /{personaId}/baskets",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#carslots(Long)",
@@ -9361,7 +9420,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /{personaId}/carslots"
+     "http": "GET /{personaId}/carslots",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#inventoryObjects(String)",
@@ -9374,7 +9434,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /inventory/objects"
+     "http": "GET /inventory/objects",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#sellInventoryItem(String,String)",
@@ -9387,7 +9448,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /inventory/sell/{entitlementTag}"
+     "http": "GET /inventory/sell/{entitlementTag}",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#carsPost(Long,Long)",
@@ -9400,7 +9462,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /{personaId}/cars"
+     "http": "POST /{personaId}/cars",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#carsGet(Long)",
@@ -9413,7 +9476,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /{personaId}/cars"
+     "http": "GET /{personaId}/cars",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#carsGet(Long,Long)",
@@ -9426,7 +9490,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /{personaId}/cars/{carId}"
+     "http": "GET /{personaId}/cars/{carId}",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#carsPut(Long,InputStream)",
@@ -9439,7 +9504,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /{personaId}/cars"
+     "http": "PUT /{personaId}/cars",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#defaultcarGet(Long)",
@@ -9452,7 +9518,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /{personaId}/defaultcar"
+     "http": "GET /{personaId}/defaultcar",
+     "produces": "application/xml"
     },
     {
      "id": "api/Personas#defaultcar(Long,Long)",
@@ -9465,7 +9532,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT /{personaId}/defaultcar/{carId}"
+     "http": "PUT /{personaId}/defaultcar/{carId}",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9499,7 +9567,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /activated/{powerupHash}"
+     "http": "POST /activated/{powerupHash}",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9526,7 +9595,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /resetPassword"
+     "http": "POST /resetPassword",
+     "produces": "text/html"
     },
     {
      "id": "api/RecoveryPassword#forgotPassword(String)",
@@ -9538,7 +9608,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /forgotPassword"
+     "http": "POST /forgotPassword",
+     "produces": "text/html"
     }
    ]
   },
@@ -9565,7 +9636,8 @@
       "POST",
       "Produces"
      ],
-     "http": "POST"
+     "http": "POST",
+     "produces": "text/html"
     }
    ]
   },
@@ -9592,7 +9664,8 @@
       "POST",
       "Produces"
      ],
-     "http": "POST"
+     "http": "POST",
+     "produces": "text/html"
     }
    ]
   },
@@ -9618,7 +9691,8 @@
       "POST",
       "Produces"
      ],
-     "http": "POST"
+     "http": "POST",
+     "produces": "text/html"
     }
    ]
   },
@@ -9676,7 +9750,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /SendHardwareInfo"
+     "http": "POST /SendHardwareInfo",
+     "produces": "application/xml"
     },
     {
      "id": "api/Reporting#sendUserSettings()",
@@ -9689,7 +9764,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /SendUserSettings"
+     "http": "POST /SendUserSettings",
+     "produces": "application/xml"
     },
     {
      "id": "api/Reporting#sendMultiplayerConnect()",
@@ -9702,7 +9778,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /SendMultiplayerConnect"
+     "http": "GET /SendMultiplayerConnect",
+     "produces": "application/xml"
     },
     {
      "id": "api/Reporting#sendClientPingTime()",
@@ -9715,7 +9792,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /SendClientPingTime"
+     "http": "GET /SendClientPingTime",
+     "produces": "application/xml"
     },
     {
      "id": "api/Reporting#loginAnnouncementClicked()",
@@ -9728,7 +9806,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /LoginAnnouncementClicked"
+     "http": "GET /LoginAnnouncementClicked",
+     "produces": "application/xml"
     },
     {
      "id": "api/Reporting#genericEmptyPut(String)",
@@ -9740,7 +9819,8 @@
       "Path",
       "Produces"
      ],
-     "http": "PUT {path:.*}"
+     "http": "PUT {path:.*}",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9768,7 +9848,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9794,7 +9875,8 @@
       "Path",
       "Produces"
      ],
-     "http": "GET /fraudConfig"
+     "http": "GET /fraudConfig",
+     "produces": "application/xml"
     },
     {
      "id": "api/Security#generateWebToken()",
@@ -9807,7 +9889,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /generateWebToken"
+     "http": "POST /generateWebToken",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9834,7 +9917,8 @@
       "POST",
       "Produces"
      ],
-     "http": "POST"
+     "http": "POST",
+     "produces": "text/html"
     }
    ]
   },
@@ -9864,7 +9948,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST /petition"
+     "http": "POST /petition",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9891,7 +9976,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9919,7 +10005,8 @@
       "Secured",
       "Produces"
      ],
-     "http": "GET"
+     "http": "GET",
+     "produces": "application/xml"
     }
    ]
   },
@@ -9954,7 +10041,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST GetPermanentSession"
+     "http": "POST GetPermanentSession",
+     "produces": "application/xml"
     },
     {
      "id": "api/User#secureLoginPersona(Long)",
@@ -9967,7 +10055,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST SecureLoginPersona"
+     "http": "POST SecureLoginPersona",
+     "produces": "application/xml"
     },
     {
      "id": "api/User#secureLogoutPersona(Long)",
@@ -9980,7 +10069,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST SecureLogoutPersona"
+     "http": "POST SecureLogoutPersona",
+     "produces": "application/xml"
     },
     {
      "id": "api/User#secureLogout()",
@@ -9993,7 +10083,8 @@
       "Path",
       "Produces"
      ],
-     "http": "POST SecureLogout"
+     "http": "POST SecureLogout",
+     "produces": "application/xml"
     },
     {
      "id": "api/User#authenticateUser(String,String)",
@@ -10006,7 +10097,8 @@
       "Produces",
       "LauncherChecks"
      ],
-     "http": "GET authenticateUser"
+     "http": "GET authenticateUser",
+     "produces": "application/xml"
     },
     {
      "id": "api/User#createUser(String,String,String)",
@@ -10019,7 +10111,8 @@
       "Produces",
       "LauncherChecks"
      ],
-     "http": "GET createUser"
+     "http": "GET createUser",
+     "produces": "application/xml"
     }
    ]
   }

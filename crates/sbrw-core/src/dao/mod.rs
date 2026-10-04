@@ -1,0 +1,17 @@
+//! Upstream's JPA entities and DAOs.
+//!
+//! Each module holds an entity (the columns Hibernate maps, nothing more) and
+//! the DAO methods and named queries that read or write it. The JPA rules the
+//! port keeps:
+//! - `insert` (`persist`) writes every mapped column; unmapped columns get their
+//!   database defaults;
+//! - `update` (`merge`) writes every mapped column from the entity as it is,
+//!   so a stale copy overwrites newer values, exactly as upstream does;
+//! - an EAGER relationship is loaded with its owner.
+
+pub mod ban;
+pub mod hardware_info;
+pub mod invite_ticket;
+pub mod online_users;
+pub mod persona;
+pub mod user;

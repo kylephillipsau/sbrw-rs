@@ -30,3 +30,24 @@ fetch GameLauncher_NFSW https://github.com/SoapboxRaceWorld/GameLauncher_NFSW 32
 fetch NFS-World-Offline https://github.com/Lawin0129/NFS-World-Offline 67a4df7933ba0a97dd04258dc175587319ba2fad
 # Schema.sql and Data.sql (the static game data) live in "Files/MySQL scripts".
 fetch setting-up-sbrw https://github.com/berkayylmao/setting-up-sbrw 2089af624f027ecce968a11aa050f3ace93aff43
+
+# Library sources the core's behaviour depends on (Apache-2.0), from Maven Central.
+fetch_sources() {
+    local name=$1 path=$2 sha256=$3 dir=upstream/$1
+    if [ -d "$dir" ]; then
+        echo "$name: up to date"
+        return
+    fi
+    local jar
+    jar=$(mktemp)
+    curl -fsSL "https://repo1.maven.org/maven2/$path" -o "$jar"
+    echo "$sha256  $jar" | shasum -a 256 -c - >/dev/null
+    mkdir -p "$dir"
+    unzip -q "$jar" -d "$dir"
+    rm "$jar"
+    echo "$name: $path"
+}
+
+fetch_sources commons-validator-1.7 \
+    commons-validator/commons-validator/1.7/commons-validator-1.7-sources.jar \
+    f3c5c975db3bfb46ee32151de9c76553a3c92ed45725afa8bdd6fb9ce553b60d

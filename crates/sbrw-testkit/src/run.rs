@@ -103,7 +103,7 @@ pub async fn replay(files: &ScenarioFiles) -> Result<Replay, ReplayError> {
 
     let mut actual = Fixture { boot, steps, ..sbrw_fixture(&expected) };
     let mut mismatches = Vec::new();
-    match server.snapshot() {
+    match server.snapshot().await {
         Ok(db) => actual.db = db,
         Err(err) => mismatches.push(Mismatch { path: "db".into(), detail: format!("snapshot failed: {err:#}") }),
     }

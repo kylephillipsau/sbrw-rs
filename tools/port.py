@@ -58,6 +58,22 @@ ANNOTATION = re.compile(r"^\s+@(\w+)(?:\((.*)\))?\s*$")
 NAMED_QUERY = re.compile(r'@NamedQuery\(\s*name\s*=\s*"([^"]+)"\s*,\s*(?:query\s*=\s*)?((?:"[^"]*"\s*\+?\s*)+)', re.S)
 
 
+MEDIA_TYPES = {
+    "MediaType.APPLICATION_XML": "application/xml",
+    "MediaType.APPLICATION_JSON": "application/json",
+    "MediaType.TEXT_HTML": "text/html",
+    "MediaType.TEXT_PLAIN": "text/plain",
+}
+
+
+def media_type(arg):
+    """The value of a @Produces annotation, e.g. `MediaType.APPLICATION_XML` or `"text/html"`."""
+    if not arg:
+        return None
+    arg = arg.strip().strip("{}").split(",")[0].strip()
+    return MEDIA_TYPES.get(arg, arg.strip('"'))
+
+
 def simple_type(t: str) -> str:
     t = re.sub(r"<.*>", "", t.strip())
     t = re.sub(r"@\w+\s+", "", t)
@@ -160,10 +176,12 @@ def parse_file(path: Path, kind: str) -> dict:
                 annotations = [a for a, _ in pending]
                 http = None
                 ann_map = dict(pending)
+                produces = None
                 for verb in ("GET", "POST", "PUT", "DELETE"):
                     if verb in ann_map:
                         sub = (ann_map.get("Path") or "").strip('"')
                         http = f"{verb} {sub}".strip()
+                        produces = media_type(ann_map.get("Produces"))
                 trivial = kind == "entity" and is_trivial_accessor(name, body)
                 if not trivial:
                     units.append(
@@ -174,6 +192,7 @@ def parse_file(path: Path, kind: str) -> dict:
                             "lines": end - i + 1,
                             "annotations": annotations,
                             **({"http": http} if http else {}),
+                            **({"produces": produces} if produces else {}),
                         }
                     )
                 pending = []
@@ -246,7 +265,8 @@ def load():
     markers = defaultdict(list)
     for rs in (ROOT / "crates").rglob("*.rs"):
         for n, line in enumerate(rs.read_text(encoding="utf-8").splitlines(), 1):
-            for m in re.finditer(r"//\s*port:\s*(\S+)", line):
+            m = re.match(r"\s*//\s*port:\s*(\S+)", line)
+            if m:
                 markers[m.group(1)].append(f"{rs.relative_to(ROOT)}:{n}")
     return inv, decisions, markers
 

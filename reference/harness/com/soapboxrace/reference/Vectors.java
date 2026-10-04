@@ -3,7 +3,19 @@ package com.soapboxrace.reference;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import com.soapboxrace.jaxb.login.LoginStatusVO;
+import com.soapboxrace.jaxb.util.JAXBUtility;
+import org.apache.commons.validator.routines.DomainValidator;
+import org.apache.commons.validator.routines.EmailValidator;
+
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Arrays;
+import java.util.Locale;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +39,103 @@ public final class Vectors {
         Path out = Paths.get(args[0]).resolve("fixtures/vectors");
         Files.createDirectories(out);
         write(out.resolve("java_random.json"), javaRandom());
+        write(out.resolve("jaxb_escaping.json"), jaxbEscaping());
+        write(out.resolve("email_validator.json"), emailValidator());
+        write(out.resolve("ban_expires.json"), banExpires());
+    }
+
+    private static Map<String, Object> about(String what) {
+        Map<String, Object> root = new LinkedHashMap<>();
+        root.put("about", what + " on " + System.getProperty("java.vendor") + " " + System.getProperty("java.version")
+                + ", locale " + Locale.getDefault() + ", charset " + Charset.defaultCharset()
+                + ", zone " + ZoneId.systemDefault());
+        return root;
+    }
+
+    /** How JAXBUtility.marshal escapes text, using LoginStatusVO as the carrier. */
+    private static Map<String, Object> jaxbEscaping() {
+        Map<String, Object> root = about("JAXBUtility.marshal(LoginStatusVO)");
+        String[] inputs = {"", "plain", "a & b < c > d", "quote \" apostrophe '", "cr\rlf\ntab\t",
+                "unicode \u00e9 \u6f22\u5b57 \ud83d\ude00", "control \u0001\u001f\u007f", "]]> end", "&amp; already"};
+        List<Map<String, Object>> cases = new ArrayList<>();
+        for (String input : inputs) {
+            LoginStatusVO vo = new LoginStatusVO(7L, "token", true);
+            vo.setDescription(input);
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("description", input);
+            c.put("xml", JAXBUtility.marshal(vo));
+            cases.add(c);
+        }
+        LoginStatusVO banned = new LoginStatusVO(0L, "", false);
+        banned.setDescription("");
+        banned.setBan(new LoginStatusVO.Ban("Cheating", "Friday, January 2, 2026"));
+        Map<String, Object> c = new LinkedHashMap<>();
+        c.put("description", "");
+        c.put("ban", Arrays.asList("Cheating", "Friday, January 2, 2026"));
+        c.put("xml", JAXBUtility.marshal(banned));
+        cases.add(c);
+        LoginStatusVO nulls = new LoginStatusVO(null, null, false);
+        c = new LinkedHashMap<>();
+        c.put("nulls", true);
+        c.put("xml", JAXBUtility.marshal(nulls));
+        cases.add(c);
+        root.put("cases", cases);
+        return root;
+    }
+
+    /** commons-validator 1.7 EmailValidator.getInstance() and the TLD lists it relies on. */
+    private static Map<String, Object> emailValidator() {
+        Map<String, Object> root = about("commons-validator EmailValidator.getInstance().isValid");
+        String a64 = "a".repeat(64);
+        String label63 = "b".repeat(63);
+        String[] inputs = {
+                "player@example.com", "a@b.co", "a@b.c", "x@x.x", "user@localhost", "user@example",
+                "user@192.168.0.1", "user@[192.168.0.1]", "user@[300.1.1.1]", "user@[::1]", "user@[IPv6:::1]",
+                "user.name+tag@example.co.uk", ".user@example.com", "user.@example.com", "us..er@example.com",
+                "user@-example.com", "user@example-.com", "user@exa_mple.com", "user@xn--d1acufc.xn--p1ai",
+                "user@\u043f\u0440\u0438\u043c\u0435\u0440.\u0440\u0444", "\u00fcser@example.com",
+                "USER@EXAMPLE.COM", " user@example.com", "user@example.com ", "user@@example.com", "@example.com",
+                "user@", "", "user@example.c0m", "\"quoted\"@example.com", "\"quoted user\"@example.com",
+                "\"a\\\"b\"@example.com", "user@sub.example.museum", "user@example.web", "user@example.invalidtld",
+                a64 + "@example.com", a64 + "a@example.com", "user@" + label63 + ".com", "user@" + label63 + "b.com",
+                "user@example..com", "user@.example.com", "user@example.com.", "user!#$%&'*+/=?^_`{|}~@example.com",
+                "user(comment)@example.com", "user@example.com\n", "user name@example.com", "user@exam ple.com",
+                "test@example.local", "test@example.onion", "test@example.photography", "test@123.com",
+                "test@example.123", "test@example.arpa", "test@example.localhost", "test@EXAMPLE.Com",
+                "test@example.co.u", "a@b.cc", "\u00e9@example.com", "test@\u00e9xample.com", "test@example.xn--vermgensberater-ctb"};
+        List<Map<String, Object>> cases = new ArrayList<>();
+        EmailValidator v = EmailValidator.getInstance();
+        for (String input : inputs) {
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("email", input);
+            c.put("valid", v.isValid(input));
+            cases.add(c);
+        }
+        root.put("cases", cases);
+        Map<String, Object> tlds = new LinkedHashMap<>();
+        for (DomainValidator.ArrayType t : new DomainValidator.ArrayType[]{DomainValidator.ArrayType.GENERIC_RO,
+                DomainValidator.ArrayType.COUNTRY_CODE_RO, DomainValidator.ArrayType.INFRASTRUCTURE_RO,
+                DomainValidator.ArrayType.LOCAL_RO}) {
+            tlds.put(t.name(), Arrays.asList(DomainValidator.getTLDEntries(t)));
+        }
+        root.put("tlds", tlds);
+        return root;
+    }
+
+    /** TokenSessionBO.login's ban expiry: ofLocalizedDateTime(FULL) in the system zone. */
+    private static Map<String, Object> banExpires() {
+        Map<String, Object> root = about("DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(ZoneId.systemDefault())");
+        DateTimeFormatter f = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(ZoneId.systemDefault());
+        List<Map<String, Object>> cases = new ArrayList<>();
+        for (String t : new String[]{"2026-01-01T00:00:00", "2026-01-02T12:00:00", "2026-03-09T09:05:07",
+                "2026-12-31T23:59:59", "2027-07-04T13:30:00", "2028-02-29T00:00:01"}) {
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("ends_at", t);
+            c.put("expires", f.format(LocalDateTime.parse(t)));
+            cases.add(c);
+        }
+        root.put("cases", cases);
+        return root;
     }
 
     private static Map<String, Object> javaRandom() {

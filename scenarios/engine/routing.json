@@ -1,0 +1,22 @@
+{
+  "description": "How the original routes requests no handler expects: unknown paths, wrong methods, case, trailing slashes, and secured paths without a session.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    { "note": "Unknown method path under a resource class prefix.", "http": { "method": "GET", "path": "/Engine.svc/User/Foo" } },
+    { "note": "Unknown path, catch-all methods.", "http": { "method": "GET", "path": "/Engine.svc/anything/deeper" } },
+    { "http": { "method": "POST", "path": "/Engine.svc/anything", "body": "<a/>" } },
+    { "note": "Unknown path, a method the catch-all doesn't have.", "http": { "method": "DELETE", "path": "/Engine.svc/anything" } },
+    { "note": "Wrong method on an open endpoint.", "http": { "method": "POST", "path": "/Engine.svc/User/authenticateUser" } },
+    { "note": "Path case.", "http": { "method": "GET", "path": "/Engine.svc/user/authenticateUser", "query": { "email": "a@example.com", "password": "x" } } },
+    { "note": "Trailing slash.", "http": { "method": "GET", "path": "/Engine.svc/User/authenticateUser/", "query": { "email": "a@example.com", "password": "x" } } },
+    { "note": "Secured template path without a session.", "http": { "method": "GET", "path": "/Engine.svc/personas/100/carslots" } },
+    { "note": "Open regex path under Reporting.", "http": { "method": "PUT", "path": "/Engine.svc/Reporting/Anything/At/All", "body": "<a/>" } },
+    { "note": "Secured GET under Reporting without a session.", "http": { "method": "GET", "path": "/Engine.svc/Reporting/SendClientPingTime" } },
+    { "note": "The application root.", "http": { "method": "GET", "path": "/Engine.svc/" } },
+    { "note": "Session headers that aren't numbers.", "http": { "method": "POST", "path": "/Engine.svc/User/SecureLogout", "headers": { "userId": "abc", "securityToken": "x" } } },
+    { "note": "Empty session headers.", "http": { "method": "POST", "path": "/Engine.svc/User/SecureLogout", "headers": { "userId": "", "securityToken": "" } } },
+    { "note": "Missing query parameters on authenticateUser.", "http": { "method": "GET", "path": "/Engine.svc/User/authenticateUser" } },
+    { "note": "Invalid email on createUser.", "http": { "method": "GET", "path": "/Engine.svc/User/createUser", "query": { "email": "not-an-email", "password": "x" } } }
+  ]
+}

@@ -1,0 +1,354 @@
+{
+  "scenario": "engine/routing",
+  "description": "How the original routes requests no handler expects: unknown paths, wrong methods, case, trailing slashes, and secured paths without a session.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Unknown method path under a resource class prefix.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/Foo",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ws.rs.NotFoundException: RESTEASY003210: Could not find resource for full path: /Engine.svc/User/Foo\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:173)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>javax.ws.rs.NotFoundException: RESTEASY003210: Could not find resource for full path: /Engine.svc/User/Foo\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:173)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Unknown path, catch-all methods.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/anything/deeper",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/anything",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": "<a/>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Unknown path, a method the catch-all doesn't have.",
+      "request": {
+        "method": "DELETE",
+        "path": "/Engine.svc/anything",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ws.rs.NotAllowedException: RESTEASY003650: No resource method found for DELETE, return 405 with Allow header\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:489)\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:175)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>javax.ws.rs.NotAllowedException: RESTEASY003650: No resource method found for DELETE, return 405 with Allow header\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:489)\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:175)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Wrong method on an open endpoint.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ws.rs.NotAllowedException: RESTEASY003650: No resource method found for POST, return 405 with Allow header\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:489)\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:175)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>javax.ws.rs.NotAllowedException: RESTEASY003650: No resource method found for POST, return 405 with Allow header\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:489)\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:175)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Path case.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/user/authenticateUser",
+        "query": {
+          "email": "a@example.com",
+          "password": "x"
+        },
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Trailing slash.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser/",
+        "query": {
+          "email": "a@example.com",
+          "password": "x"
+        },
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>LOGIN ERROR</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Secured template path without a session.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Open regex path under Reporting.",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/Reporting/Anything/At/All",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": "<a/>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Secured GET under Reporting without a session.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/SendClientPingTime",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The application root.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ws.rs.NotFoundException: RESTEASY003210: Could not find resource for full path: /Engine.svc/\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:173)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>javax.ws.rs.NotFoundException: RESTEASY003210: Could not find resource for full path: /Engine.svc/\n\tat org.jboss.resteasy.core.registry.SegmentNode.match(SegmentNode.java:173)\n\tat org.jboss.resteasy.core.registry.RootNode.match(RootNode.java:43)\n\tat org.jboss.resteasy.core.registry.RootClassNode.match(RootClassNode.java:47)\n\tat org.jboss.resteasy.core.ResourceMethodRegistry.getResourceInvoker(ResourceMethodRegistry.java:442)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.getInvoker(SynchronousDispatcher.java:300)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:221)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Session headers that aren't numbers.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogout",
+        "query": null,
+        "headers": {
+          "userId": "abc",
+          "securityToken": "x"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>java.lang.NumberFormatException: For input string: \"abc\"\n\tat java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)\n\tat java.base/java.lang.Long.parseLong(Long.java:692)\n\tat java.base/java.lang.Long.valueOf(Long.java:1144)\n\tat com.soapboxrace.core.api.util.AuthenticationFilter.filter(AuthenticationFilter.java:41)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:306)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>java.lang.NumberFormatException: For input string: \"abc\"\n\tat java.base/java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)\n\tat java.base/java.lang.Long.parseLong(Long.java:692)\n\tat java.base/java.lang.Long.valueOf(Long.java:1144)\n\tat com.soapboxrace.core.api.util.AuthenticationFilter.filter(AuthenticationFilter.java:41)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:306)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Empty session headers.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogout",
+        "query": null,
+        "headers": {
+          "userId": "",
+          "securityToken": ""
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Missing query parameters on authenticateUser.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>LOGIN ERROR</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Invalid email on createUser.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "not-an-email",
+          "password": "x"
+        },
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>Registration Error: Invalid Email Format!</Description></LoginStatusVO>"
+      }
+    }
+  ],
+  "db": {
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ]
+  }
+}

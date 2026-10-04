@@ -6,7 +6,8 @@ use axum::Router;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode, header};
 use http_body_util::BodyExt;
-use sbrw_common::{CaptureSink, Config};
+use sbrw_common::{CaptureSink, Config, EffectLog, Env};
+use sbrw_core::{World, WorldHandle, WorldOptions};
 use serde_json::Value;
 use tower::ServiceExt;
 
@@ -20,7 +21,14 @@ fn server_with(edit: impl FnOnce(&mut Config)) -> TestServer {
     let mut config = Config::default();
     config.server.data_dir = data_dir.path().to_path_buf();
     edit(&mut config);
-    let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled());
+    let world = World::boot(WorldOptions {
+        db_path: None,
+        parameters: Default::default(),
+        env: Env::system(),
+        effects: EffectLog::disabled(),
+    })
+    .unwrap();
+    let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), WorldHandle::spawn(world));
     TestServer { router: sbrw_http::router(state), data_dir }
 }
 
@@ -85,13 +93,22 @@ async fn server_information_matches_the_launcher_model() {
 async fn unknown_engine_paths_answer_200_with_empty_xml() {
     let server = server();
     for method in [Method::GET, Method::POST, Method::PUT] {
-        let reply = send(&server, method.clone(), "/Engine.svc/events/instancedaccolades").await;
+        let reply = send(&server, method.clone(), "/Engine.svc/NotAnEndpoint/x").await;
         assert_eq!(reply.status, StatusCode::OK, "{method}");
         assert_eq!(reply.headers[header::CONTENT_TYPE], "application/xml;charset=UTF-8");
         assert!(reply.body.is_empty());
     }
+    // Upstream maps the 405 to its generic error: 503 with code -500.
     let reply = send(&server, Method::DELETE, "/Engine.svc/anything").await;
-    assert_eq!(reply.status, StatusCode::METHOD_NOT_ALLOWED);
+    assert_eq!(reply.status, StatusCode::SERVICE_UNAVAILABLE);
+    assert!(String::from_utf8(reply.body).unwrap().starts_with("<EngineExceptionTrans><ErrorCode>-500</ErrorCode>"));
+}
+
+#[tokio::test]
+async fn secured_endpoints_need_a_session_even_before_they_are_ported() {
+    let reply = get(&server(), "/Engine.svc/events/instancedaccolades").await;
+    assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
+    assert!(reply.headers.get(header::CONTENT_TYPE).is_none());
 }
 
 #[tokio::test]

@@ -95,6 +95,15 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         tracing::info!(dir = %dir.display(), streams = ?config.capture.streams, "capturing protocol traffic");
     }
 
+    let world = sbrw_core::World::boot(sbrw_core::WorldOptions {
+        db_path: Some(config.server.data_dir.join("world.db")),
+        parameters: config.parameters.clone(),
+        env: sbrw_common::Env::system(),
+        effects: sbrw_common::EffectLog::disabled(),
+    })
+    .context("starting the world")?;
+    let world = sbrw_core::WorldHandle::spawn(world);
+
     let config = Arc::new(config);
     let shutdown = CancellationToken::new();
     let mut tasks: JoinSet<std::io::Result<()>> = JoinSet::new();
@@ -106,7 +115,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         launcher_url = %format!("{}/Engine.svc", config.public_http_url()),
         "HTTP listening; add launcher_url as a server in the SBRW launcher"
     );
-    let state = sbrw_http::AppState::new(config.clone(), capture.clone());
+    let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world);
     tasks.spawn(sbrw_http::serve(http, state, shutdown.clone()));
 
     if args.probe_xmpp {

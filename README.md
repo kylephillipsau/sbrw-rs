@@ -8,14 +8,15 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M0 (foundations). The launcher can list the server and install
-ModNet; logging in comes in M1. See [docs/ROADMAP.md](docs/ROADMAP.md) for the
-design and milestones.
+**Status:** M1 in progress. The launcher can list the server, install ModNet,
+register and log in; the game's own session calls are next. See
+[docs/ROADMAP.md](docs/ROADMAP.md) for the design and milestones, and
+[docs/port-status.md](docs/port-status.md) for how much of the original is ported.
 
 | Milestone | Status |
 |---|---|
-| M0 Foundations: launcher sees the server, ModNet, protocol capture, probes | in progress |
-| M1 Register, log in, game boots | |
+| M0 Foundations: launcher sees the server, ModNet, protocol capture, probes | done |
+| M1 Register, log in, game boots | in progress |
 | M2 Create a driver, XMPP, spawn in the world | |
 | M3 Free-roam multiplayer | |
 | M4 Garage and economy | |
@@ -76,10 +77,18 @@ discord_url = "https://discord.gg/..."
 [modding]
 enabled = true                # false makes the launcher skip ModNet
 server_id = "my-server"
+
+# The original server's settings, by its names; defaults are its Data.sql values.
+[parameters]
+SESSION_LENGTH_MINUTES = "1440"
+TICKET_TOKEN = "secret"       # registration then needs an invite ticket
 ```
 
+Accounts and game state live in `<data dir>/world.db` (SQLite).
+
 The same values as environment variables are `SBRW__SERVER__PUBLIC_HOST`,
-`SBRW__LAUNCHER__SERVER_NAME`, and so on.
+`SBRW__LAUNCHER__SERVER_NAME`, and so on; parameters keep their names:
+`SBRW_PARAMETER_TICKET_TOKEN=secret`.
 
 ### Server mods
 
@@ -119,9 +128,11 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 |---|---|
 | `sbrw` | The binary and CLI |
 | `sbrw-common` | Configuration, protocol capture, and the clock, randomness, ids and effect log the game logic uses |
-| `sbrw-java` | Bit-exact versions of JDK behaviour the port relies on (`java.util.Random`) |
+| `sbrw-java` | Bit-exact versions of JDK and Java-library behaviour the port relies on (`java.util.Random`, commons-validator's email check) |
 | `sbrw-testkit` | Replays reference recordings against sbrw-rs and reports the differences |
-| `sbrw-http` | The launcher and game HTTP API |
+| `sbrw-core` | The game logic: upstream's business objects, DAOs and entities, ported 1:1 |
+| `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |
+| `sbrw-xml` | XML exactly as upstream's JAXB writes it |
 | `sbrw-xmpp` | XMPP (probe only so far) |
 | `sbrw-udp` | Free-roam and race UDP (probe only so far) |
 

@@ -8,6 +8,7 @@
 //! Upstream SBRW kept these values in its `parameter` table; the doc comment on
 //! each field names the parameter it replaces.
 
+use std::collections::BTreeMap;
 use std::net::{IpAddr, SocketAddr};
 use std::path::{Path, PathBuf};
 
@@ -23,6 +24,8 @@ pub const CONFIG_PATH_ENV: &str = "SBRW_CONFIG";
 pub const CAPTURE_ENV: &str = "SBRW_CAPTURE";
 /// Prefix for nested environment overrides (`SBRW__SECTION__KEY`).
 pub const ENV_PREFIX: &str = "SBRW__";
+/// Prefix for upstream parameter overrides, which keep their case (`SBRW_PARAMETER_TICKET_TOKEN`).
+pub const PARAMETER_ENV_PREFIX: &str = "SBRW_PARAMETER_";
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
@@ -35,6 +38,10 @@ pub enum ConfigError {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
+    /// Overrides for upstream's `parameter` table (`SESSION_LENGTH_MINUTES`,
+    /// `TICKET_TOKEN`, ...), by upstream's names. Also settable as
+    /// `SBRW_PARAMETER_<NAME>=value`.
+    pub parameters: BTreeMap<String, String>,
     pub server: ServerConfig,
     pub http: HttpConfig,
     pub xmpp: XmppConfig,
@@ -235,6 +242,11 @@ impl Config {
         if let Ok(streams) = std::env::var(CAPTURE_ENV) {
             config.capture.streams = parse_capture_streams(&streams)?;
         }
+        for (key, value) in std::env::vars() {
+            if let Some(name) = key.strip_prefix(PARAMETER_ENV_PREFIX) {
+                config.parameters.insert(name.to_owned(), value);
+            }
+        }
         Ok(config)
     }
 
@@ -321,6 +333,9 @@ mod tests {
             jail.create_file(
                 "sbrw.toml",
                 r#"
+                [parameters]
+                SESSION_LENGTH_MINUTES = "60"
+
                 [server]
                 public_host = "10.0.0.5"
 
@@ -336,6 +351,7 @@ mod tests {
             jail.set_env("SBRW__LAUNCHER__SERVER_NAME", "From env");
             jail.set_env("SBRW__UDP__RACE__BIND", "0.0.0.0:7000");
             jail.set_env("SBRW_CAPTURE", "http, udp-race");
+            jail.set_env("SBRW_PARAMETER_TICKET_TOKEN", "secret");
             let config = load_in_jail()?;
             assert_eq!(config.launcher.server_name, "From env");
             assert_eq!(config.launcher.enabled_scenery, ["SCENERY_GROUP_HALLOWEEN"]);
@@ -344,6 +360,8 @@ mod tests {
             assert_eq!(config.udp.race.bind.port(), 7000);
             assert_eq!(config.udp.freeroam.bind.port(), 9999);
             assert_eq!(config.capture.streams, [CaptureStream::Http, CaptureStream::UdpRace]);
+            assert_eq!(config.parameters["TICKET_TOKEN"], "secret");
+            assert_eq!(config.parameters["SESSION_LENGTH_MINUTES"], "60");
             Ok(())
         });
     }

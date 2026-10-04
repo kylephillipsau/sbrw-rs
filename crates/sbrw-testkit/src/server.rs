@@ -3,7 +3,7 @@
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 
-use anyhow::{Context, bail};
+use anyhow::{Context, anyhow, bail};
 use axum::Router;
 use axum::body::Body;
 use axum::extract::ConnectInfo;
@@ -12,6 +12,7 @@ use axum::http::header::CONTENT_TYPE;
 use http_body_util::BodyExt;
 use indexmap::IndexMap;
 use sbrw_common::{CaptureSink, Config, EffectLog, Effects, Env};
+use sbrw_core::{World, WorldHandle, WorldOptions};
 use serde_json::Value;
 use time::Duration;
 use tower::ServiceExt;
@@ -26,6 +27,7 @@ pub struct SbrwServer {
     router: Router,
     env: Env,
     effects: EffectLog,
+    world: WorldHandle,
     _data_dir: tempfile::TempDir,
 }
 
@@ -33,21 +35,23 @@ impl SbrwServer {
     /// Start a fresh server under the scenario's seed and clock, returning the
     /// effects of booting.
     pub fn boot(scenario: &Scenario) -> anyhow::Result<(Self, Effects)> {
-        if scenario.parameters.as_ref().is_some_and(|p| !p.is_empty()) {
-            bail!("scenario overrides `parameter` rows, which sbrw-rs cannot map to its config yet");
-        }
         let data_dir = tempfile::tempdir().context("creating a data directory")?;
         let mut config = Config::default();
         config.server.data_dir = data_dir.path().to_path_buf();
 
         let env = Env::deterministic(scenario.seed, scenario.clock);
         let effects = EffectLog::recording();
-        let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled())
-            .with_env(env.clone())
-            .with_effects(effects.clone());
+        let world = World::boot(WorldOptions {
+            db_path: None,
+            parameters: scenario.parameters.clone().unwrap_or_default(),
+            env: env.clone(),
+            effects: effects.clone(),
+        })?;
+        let world = WorldHandle::spawn(world);
+        let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), world.clone());
         let router = sbrw_http::router(state);
         let boot = effects.drain();
-        Ok((Self { router, env, effects, _data_dir: data_dir }, boot))
+        Ok((Self { router, env, effects, world, _data_dir: data_dir }, boot))
     }
 
     pub async fn http(&mut self, r: &HttpRequest) -> anyhow::Result<HttpResponse> {
@@ -105,10 +109,12 @@ impl SbrwServer {
         self.effects.drain()
     }
 
-    /// Every table with rows, in the recorder's format.
-    pub fn snapshot(&self) -> anyhow::Result<Db> {
-        // sbrw-rs has no database yet.
-        Ok(Db::new())
+    /// Every runtime table with rows, in the recorder's format.
+    pub async fn snapshot(&self) -> anyhow::Result<Db> {
+        self.world
+            .call(|w| crate::snapshot::sqlite(w.db(), &[]).map_err(|e| anyhow!(e).into()))
+            .await
+            .map_err(|fault| anyhow!("{fault}"))
     }
 }
 

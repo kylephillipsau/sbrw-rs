@@ -4,7 +4,9 @@
 //! - the text of `<StackTrace>` elements in error bodies (Java stack traces);
 //! - JSON numbers compare by value (`1` equals `1.0`), and JSON bodies compare
 //!   as values, since property order is a serializer detail;
-//! - only the `Connection` and `Content-Type` response headers are compared.
+//! - only the `Connection` and `Content-Type` response headers are compared;
+//! - `user.PASSWORD` holds an argon2id hash in sbrw-rs, where upstream stores
+//!   the SHA-1 the launcher sent; the hash must verify against it.
 
 use std::fmt;
 
@@ -153,6 +155,11 @@ fn db(e: &Db, a: &Db, out: &mut Vec<Mismatch>) {
             for column in columns {
                 let (x, y) = (erow.get(column), arow.get(column));
                 let same = match (x, y) {
+                    (Some(Value::String(sha1)), Some(Value::String(hash)))
+                        if table == "user" && column == "PASSWORD" && hash.starts_with("$argon2") =>
+                    {
+                        sbrw_core::password::matches(sha1, hash)
+                    }
                     (Some(x), Some(y)) => values_equal(x, y),
                     _ => false,
                 };
@@ -331,6 +338,19 @@ mod tests {
         a.db.insert("user".into(), vec![row("b@example.com")]);
         let paths: Vec<String> = compare(&e, &a).into_iter().map(|m| m.path).collect();
         assert_eq!(paths, ["steps[0] (GET /Engine.svc/x) effects.xmpp[0]", "db.user[0].EMAIL"]);
+    }
+
+    #[test]
+    fn stored_passwords_are_verified_not_compared() {
+        let sha1 = "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8";
+        let mut e = fixture(response(200, "application/xml", ""));
+        let mut a = e.clone();
+        let row = |pw: &str| -> crate::scenario::Row { [("PASSWORD".to_owned(), json!(pw))].into() };
+        e.db.insert("user".into(), vec![row(sha1)]);
+        a.db.insert("user".into(), vec![row(&sbrw_core::password::hash(sha1))]);
+        assert!(compare(&e, &a).is_empty());
+        a.db.insert("user".into(), vec![row(&sbrw_core::password::hash("something else"))]);
+        assert_eq!(compare(&e, &a).len(), 1);
     }
 
     #[test]

@@ -295,6 +295,7 @@ public final class Container {
         currentEm = em;
         rollbackOnly = false;
         em.getTransaction().begin();
+        pinDatabaseClock(em);
         try {
             Object result;
             try {
@@ -326,6 +327,20 @@ public final class Container {
                 em.close();
             }
         }
+    }
+
+    /**
+     * The source patches can't reach SQL: four named queries compare against
+     * {@code CURRENT_TIMESTAMP} and two columns default to it. Point MySQL's
+     * session clock at the reference clock for every transaction (pooled
+     * connections keep the setting, so it must be refreshed each time).
+     */
+    private static void pinDatabaseClock(EntityManager em) {
+        em.unwrap(org.hibernate.Session.class).doWork(connection -> {
+            try (java.sql.Statement st = connection.createStatement()) {
+                st.execute("SET TIMESTAMP = " + Determinism.millis() / 1000.0);
+            }
+        });
     }
 
     private void finish(EntityManager em, boolean commit) {

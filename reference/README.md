@@ -71,6 +71,11 @@ Known differences are normalised by the replay, never by editing fixtures:
 - **Java stack traces** in error bodies.
 - **Stored passwords:** sbrw-rs stores `argon2id(sha1)` instead of the bare SHA-1. This normalisation lands with the user port.
 
+Smaller differences that no recording exercises yet:
+- **Collation:** email and name lookups ignore case as MySQL's `utf8mb4_unicode_ci` does, but only for ASCII. MySQL also folds accents and ignores trailing spaces.
+
 ## Upstream quirks the rig has to work around
+
+- **Database time:** four named queries compare against MySQL's `CURRENT_TIMESTAMP`, and two columns default to it, which the Java source patches can't reach. The harness sets MySQL's session clock to the reference clock at the start of every transaction. sbrw-rs passes its own clock into those queries.
 
 - **`StartupBO.init`** inserts the online-stats row a second time, in the same second as `OnlineUsersBO`'s own `@PostConstruct`. Real servers survive because a cold start pushes the two into different seconds. The harness skips the duplicate; see `port/decisions.toml`.

@@ -1,0 +1,53 @@
+{
+  "about": "JAXBUtility.marshal(LoginStatusVO) on Eclipse Adoptium 11.0.32.1, locale en_US, charset UTF-8, zone UTC",
+  "cases": [
+    {
+      "description": "",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description></Description></LoginStatusVO>"
+    },
+    {
+      "description": "plain",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>plain</Description></LoginStatusVO>"
+    },
+    {
+      "description": "a & b < c > d",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>a &amp; b &lt; c &gt; d</Description></LoginStatusVO>"
+    },
+    {
+      "description": "quote \" apostrophe '",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>quote \" apostrophe '</Description></LoginStatusVO>"
+    },
+    {
+      "description": "cr\rlf\ntab\t",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>cr&#13;lf\ntab\t</Description></LoginStatusVO>"
+    },
+    {
+      "description": "unicode é 漢字 😀",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>unicode é 漢字 😀</Description></LoginStatusVO>"
+    },
+    {
+      "description": "control \u0001\u001f",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>control \u0001\u001f</Description></LoginStatusVO>"
+    },
+    {
+      "description": "]]> end",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>]]&gt; end</Description></LoginStatusVO>"
+    },
+    {
+      "description": "&amp; already",
+      "xml": "<LoginStatusVO><UserId>7</UserId><LoginToken>token</LoginToken><Description>&amp;amp; already</Description></LoginStatusVO>"
+    },
+    {
+      "description": "",
+      "ban": [
+        "Cheating",
+        "Friday, January 2, 2026"
+      ],
+      "xml": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description></Description><Ban><Reason>Cheating</Reason><Expires>Friday, January 2, 2026</Expires></Ban></LoginStatusVO>"
+    },
+    {
+      "nulls": true,
+      "xml": "<LoginStatusVO/>"
+    }
+  ]
+}

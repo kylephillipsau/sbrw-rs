@@ -208,7 +208,7 @@ pub async fn dispatch(State(state): State<AppState>, request: Request) -> Respon
     if route.secured {
         match authenticate(&state, &call).await {
             Ok(session) => call.session = Some(session),
-            Err(response) => return response,
+            Err(fault) => return fault_response(fault),
         }
     }
     if route.launcher_checks
@@ -248,24 +248,23 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
 }
 
 // port: api/util/AuthenticationFilter#filter(ContainerRequestContext)
-/// `@Secured`: the `userId` and `securityToken` headers must name a live session.
-async fn authenticate(state: &AppState, call: &Call) -> Result<TokenSession, Response> {
+/// `@Secured`: the `userId` and `securityToken` headers must name a live
+/// session. Every failure is a 401, except a `userId` that isn't a number:
+/// upstream parses it outside the filter's try, so that one is a 503.
+async fn authenticate(state: &AppState, call: &Call) -> Result<TokenSession, Fault> {
+    let missing = || Fault::NotAuthorized("Authorization header must be provided".into());
     let (Some(user_id), Some(token)) = (call.header("userId"), call.header("securityToken")) else {
-        return Err(fault_response(Fault::NotAuthorized("Authorization header must be provided".into())));
+        return Err(missing());
     };
     if user_id.is_empty() || token.is_empty() {
-        return Err(fault_response(Fault::NotAuthorized("Authorization header must be provided".into())));
+        return Err(missing());
     }
-    // Long.valueOf runs outside the filter's try, so a bad number is a 503.
-    let user_id: i64 = user_id
-        .parse()
-        .map_err(|_| fault_response(Fault::Internal(anyhow::anyhow!("For input string: \"{user_id}\""))))?;
+    let user_id: i64 = user_id.parse().map_err(|_| anyhow::anyhow!("For input string: \"{user_id}\""))?;
     state
         .world()
         .call(move |w| token_session::validate_token(w, user_id, &token))
         .await
-        // The filter turns any failure here into a bare 401.
-        .map_err(|_| StatusCode::UNAUTHORIZED.into_response())
+        .map_err(|_| Fault::NotAuthorized("Invalid Token".into()))
 }
 
 // port: engine/EngineExceptionHandler#toResponse(Exception)

@@ -1,0 +1,11 @@
+# Units of soapbox-race-core that sbrw-rs deliberately does not port 1:1.
+# Keys are unit ids from port/inventory.json. `status` is "replaced" (the
+# behaviour exists, implemented differently) or "dropped" (not reproduced).
+# Everything else must be ported and carry a `// port: <unit id>` marker.
+
+["bo/StartupBO#init()"]
+status = "dropped"
+reason = """
+Inserts the online-stats row a second time at boot, colliding with OnlineUsersBO's
+own @PostConstruct insert in the same second; real servers only survive by cold-start
+timing. The startup log line is the only other effect. sbrw-rs inserts the row once."""

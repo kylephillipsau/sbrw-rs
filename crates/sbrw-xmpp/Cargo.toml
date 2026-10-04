@@ -1,0 +1,17 @@
+[package]
+name = "sbrw-xmpp"
+description = "XMPP server for NFS World chat and server-to-client pushes"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+sbrw-common.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

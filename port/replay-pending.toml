@@ -1,0 +1,6 @@
+# Scenarios sbrw-rs does not reproduce yet. The replay test expects each of
+# these to differ from its recording, and fails once one replays exactly so
+# that it gets removed from here. This list only ever shrinks.
+pending = [
+    "user/register_and_login",
+]

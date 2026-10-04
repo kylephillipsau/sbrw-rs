@@ -1,0 +1,24 @@
+# Local play: the game (e.g. under CrossOver) connects to 127.0.0.1.
+# For friends, set SBRW_PUBLIC_HOST to your public IP and publish the ports on
+# all interfaces instead of 127.0.0.1.
+services:
+  sbrw:
+    build: .
+    image: sbrw-rs:dev
+    # XMPP and UDP only record traffic until their real servers land.
+    command: ["serve", "--probe-xmpp", "--probe-udp"]
+    environment:
+      SBRW__SERVER__PUBLIC_HOST: ${SBRW_PUBLIC_HOST:-127.0.0.1}
+      SBRW_CAPTURE: ${SBRW_CAPTURE:-}
+      RUST_LOG: ${RUST_LOG:-info}
+    ports:
+      - "127.0.0.1:8680:8680/tcp"
+      - "127.0.0.1:5222:5222/tcp"
+      - "127.0.0.1:9998:9998/udp"
+      - "127.0.0.1:9999:9999/udp"
+    volumes:
+      - sbrw-data:/data
+    restart: unless-stopped
+
+volumes:
+  sbrw-data:

@@ -1,0 +1,56 @@
+{
+  "description": "Launcher registration and login: create an account, log in with the right and wrong password, register the same email twice.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "The launcher sends the SHA-1 hex of the password.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1", "X-UserAgent": "GameLauncherReborn 2.2.0 WinForms (+https://github.com/SoapBoxRaceWorld/GameLauncher_NFSW)" }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Wrong password.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": { "email": "player@example.com", "password": "0000000000000000000000000000000000000000" }
+      }
+    },
+    {
+      "note": "Unknown email.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": { "email": "nobody@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" }
+      }
+    },
+    {
+      "note": "Registering an email that is taken.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" }
+      }
+    },
+    {
+      "note": "No session headers on a secured endpoint.",
+      "http": { "method": "POST", "path": "/Engine.svc/User/GetPermanentSession" }
+    },
+    {
+      "note": "An endpoint nothing implements: the catch-all.",
+      "http": { "method": "PUT", "path": "/Engine.svc/Reporting/SendClientCrash", "body": "<x/>" }
+    }
+  ]
+}

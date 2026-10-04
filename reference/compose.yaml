@@ -1,0 +1,50 @@
+# The reference rig: the original Java core, patched for determinism, recording
+# fixtures against MySQL 8. Development only; nothing here ships. Run it with
+# reference/record.sh, which prepares the build first.
+services:
+  mysql:
+    image: mysql:8.0
+    # The original guide ran MySQL on Windows, where names are case-insensitive
+    # (Schema.sql says `USE soapbox`, Base.sql creates `SOAPBOX`).
+    command: ["--lower-case-table-names=1", "--default-time-zone=+00:00"]
+    environment:
+      MYSQL_ROOT_PASSWORD: reference
+      MYSQL_DATABASE: SOAPBOX
+    volumes:
+      - type: bind
+        source: "../upstream/setting-up-sbrw/Files/MySQL scripts/2. Schema.sql"
+        target: /docker-entrypoint-initdb.d/2-schema.sql
+        read_only: true
+      - type: bind
+        source: "../upstream/setting-up-sbrw/Files/MySQL scripts/3. Data.sql"
+        target: /docker-entrypoint-initdb.d/3-data.sql
+        read_only: true
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      # The entrypoint's temporary server during init only listens on a socket;
+      # require TCP so the check passes once the real server is up.
+      test: ["CMD", "mysql", "-h127.0.0.1", "-uroot", "-preference", "-e", "SELECT COUNT(*) FROM SOAPBOX.product"]
+      interval: 2s
+      timeout: 5s
+      retries: 90
+
+  recorder:
+    image: maven:3.9-eclipse-temurin-11
+    depends_on:
+      mysql:
+        condition: service_healthy
+    working_dir: /repo/reference/build/core
+    environment:
+      TZ: UTC
+      MAVEN_OPTS: -Duser.timezone=UTC
+    volumes:
+      - ..:/repo
+      - m2:/root/.m2
+    entrypoint: ["/repo/reference/run.sh"]
+
+volumes:
+  # Maven cache, kept between runs (record.sh creates it).
+  m2:
+    name: sbrw-m2
+    external: true

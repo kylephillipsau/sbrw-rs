@@ -19,7 +19,7 @@ pub(super) async fn authenticate_user(state: &AppState, call: &Call) -> Result<R
         .call(move |w| token_session::login(w, email.as_deref(), password.as_deref(), &remote_host))
         .await?;
     let code = if status.login_ok { StatusCode::OK } else { StatusCode::INTERNAL_SERVER_ERROR };
-    Ok(entity(call, code, status.to_xml()))
+    Ok(entity(call, code, status.vo.to_xml()))
 }
 
 // port: api/User#createUser(String,String,String)
@@ -38,7 +38,7 @@ pub(super) async fn create_user(state: &AppState, call: &Call) -> Result<Respons
     if status.login_ok {
         // Registration logs the new account in, in a second transaction.
         let status = world.call(move |w| token_session::login(w, email.as_deref(), password.as_deref(), &ip)).await?;
-        return Ok(entity(call, StatusCode::OK, status.to_xml()));
+        return Ok(entity(call, StatusCode::OK, status.vo.to_xml()));
     }
-    Ok(entity(call, StatusCode::INTERNAL_SERVER_ERROR, status.to_xml()))
+    Ok(entity(call, StatusCode::INTERNAL_SERVER_ERROR, status.vo.to_xml()))
 }

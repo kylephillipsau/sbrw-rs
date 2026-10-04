@@ -14,7 +14,13 @@ sbrw-rs needs neither Java nor this rig.
 ./reference/record.sh                                # every scenarios/**/*.json -> fixtures/recorded/
 ./reference/record.sh scenarios/user/register_and_login.json
 ./reference/record.sh vectors                        # JDK vectors -> fixtures/vectors/
+./reference/record.sh dtos                           # XML classes -> fixtures/dto/
 ```
+
+`dtos` writes three files:
+- `schema.json`: JAXB's runtime model of every XML class, including properties in marshalling order, element and attribute names, types, wrappers and `new X()` defaults. `tools/gen.py dtos` generates `crates/sbrw-xml/src/dto/` from it.
+- `golden.json`: what `JAXBUtility.marshal` writes for a fully populated instance and for `new X()` of each class. The generated Rust must write the same bytes.
+- `unmarshal.json`: how `JAXBUtility.unMarshal` reads odd input, such as bad numbers, unknown elements, namespaces and repeats.
 
 It needs Docker and nothing else. The first run downloads MySQL 8 and about
 150 MB of Maven dependencies, which are cached in the `sbrw-m2` volume.
@@ -72,6 +78,7 @@ Known differences are normalised by the replay, never by editing fixtures:
 - **Stored passwords:** sbrw-rs stores `argon2id(sha1)` instead of the bare SHA-1. This normalisation lands with the user port.
 
 Smaller differences that no recording exercises yet:
+- **Number formatting:** `Float.toString`/`Double.toString` match JDK 11 exactly from 10⁻³ up to 10⁷, the range where Java prints plain decimals. Outside it, JDK 11 sometimes prints extra digits (`2.2856919E9` where the shortest form is `2.285692E9`). Both read back as the same number (`fixtures/vectors/java_number_to_string.json`).
 - **Collation:** email and name lookups ignore case as MySQL's `utf8mb4_unicode_ci` does, but only for ASCII. MySQL also folds accents and ignores trailing spaces.
 
 ## Upstream quirks the rig has to work around

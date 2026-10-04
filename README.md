@@ -121,6 +121,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 
 - **[`reference/`](reference/README.md)** runs the original Java core in Docker against MySQL. Randomness, time and tokens are made deterministic. Each scenario in `scenarios/` is recorded into `fixtures/recorded/`: every response, every XMPP push, and the database state at the end. sbrw-rs replays the same scenarios and has to produce the same output.
 - **`sbrw-testkit`** replays every scenario against sbrw-rs under the same seed, clock and token counter, and reports each difference by step and field. Run it with `cargo test -p sbrw-testkit --test replay` (add `-- <scenario>` to pick one, or `SBRW_REPLAY_REPORT=1` to see differences for pending scenarios). Scenarios not reproduced yet are listed in `port/replay-pending.toml`; the test fails when one starts passing, so the list only shrinks.
+- **`tools/gen.py`** generates code from upstream and from JVM recordings: the SQLite schema and static data, the route table, error codes, TLD lists, and the XML classes. CI checks that the generated files match their inputs.
 - **`fixtures/vectors/`** holds JVM outputs for the JDK behaviour the game logic depends on, such as `java.util.Random`.
 - **`tools/port.py`** inventories every method and named query in the original (870 units) and tracks which are ported. Rust code marks the unit it ports with `// port: <unit id>`, and `port/decisions.toml` lists deliberate deviations. Progress is in [docs/port-status.md](docs/port-status.md).
 
@@ -132,7 +133,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 | `sbrw-testkit` | Replays reference recordings against sbrw-rs and reports the differences |
 | `sbrw-core` | The game logic: upstream's business objects, DAOs and entities, ported 1:1 |
 | `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |
-| `sbrw-xml` | XML exactly as upstream's JAXB writes it |
+| `sbrw-xml` | Upstream's 177 XML classes, generated from JAXB's own model; written byte for byte as JAXB writes them and read as leniently as JAXB reads |
 | `sbrw-xmpp` | XMPP (probe only so far) |
 | `sbrw-udp` | Free-roam and race UDP (probe only so far) |
 

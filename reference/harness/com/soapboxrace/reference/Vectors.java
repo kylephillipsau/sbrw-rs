@@ -42,6 +42,45 @@ public final class Vectors {
         write(out.resolve("jaxb_escaping.json"), jaxbEscaping());
         write(out.resolve("email_validator.json"), emailValidator());
         write(out.resolve("ban_expires.json"), banExpires());
+        write(out.resolve("java_number_to_string.json"), numberToString());
+    }
+
+    /** Float.toString and Double.toString, which JAXB uses for xs:float and xs:double. */
+    private static Map<String, Object> numberToString() {
+        Map<String, Object> root = about("Float.toString / Double.toString");
+        float[] floats = {0f, -0f, 1f, -1f, 0.1f, 0.001f, 0.0009999f, 1.0E7f, 9999999f, 1.0E-5f, 123456.78f, 1.2345678E-4f,
+                3.4028235E38f, Float.MIN_VALUE, Float.MIN_NORMAL, 1.17549421E-38f, 650.5f, 2.5E-5f, 100f, 1.0E10f,
+                Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, 0.3f, 2f / 3f, 16777216f, 16777217f, 3.0E-45f};
+        double[] doubles = {0d, -0d, 1d, -1d, 0.1, 0.001, 9.999999E-4, 1.0E7, 9999999.999, 1.0E-5, 1.0 / 3.0, 2.0 / 3.0,
+                Double.MAX_VALUE, Double.MIN_VALUE, Double.MIN_NORMAL, 1.0E23, 2.0E23, 8.41E21, 5.0E-324, 9.0E-324,
+                2.82879384806159E17, 1.18575755E-316, 2.2250738585072014E-308, 350000d, 9.223372036854776E18, 0.3,
+                Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 4.35E-5, 1.0E-3, 123456789012345680d};
+        Random r = new Random(42);
+        List<List<String>> fl = new ArrayList<>();
+        for (float f : floats) fl.add(Arrays.asList(Integer.toHexString(Float.floatToRawIntBits(f)), Float.toString(f)));
+        for (int i = 0; i < 20000; i++) {
+            float f = Float.intBitsToFloat(r.nextInt());
+            if (Float.isNaN(f)) continue;
+            fl.add(Arrays.asList(Integer.toHexString(Float.floatToRawIntBits(f)), Float.toString(f)));
+        }
+        for (int i = 0; i < 2000; i++) {
+            float f = (r.nextInt(2_000_000) - 1_000_000) / (float) Math.pow(10, r.nextInt(7));
+            fl.add(Arrays.asList(Integer.toHexString(Float.floatToRawIntBits(f)), Float.toString(f)));
+        }
+        List<List<String>> dl = new ArrayList<>();
+        for (double d : doubles) dl.add(Arrays.asList(Long.toHexString(Double.doubleToRawLongBits(d)), Double.toString(d)));
+        for (int i = 0; i < 20000; i++) {
+            double d = Double.longBitsToDouble(r.nextLong());
+            if (Double.isNaN(d)) continue;
+            dl.add(Arrays.asList(Long.toHexString(Double.doubleToRawLongBits(d)), Double.toString(d)));
+        }
+        for (int i = 0; i < 2000; i++) {
+            double d = (r.nextInt(2_000_000_000) - 1_000_000_000) / Math.pow(10, r.nextInt(10));
+            dl.add(Arrays.asList(Long.toHexString(Double.doubleToRawLongBits(d)), Double.toString(d)));
+        }
+        root.put("float_bits_and_string", fl);
+        root.put("double_bits_and_string", dl);
+        return root;
     }
 
     private static Map<String, Object> about(String what) {

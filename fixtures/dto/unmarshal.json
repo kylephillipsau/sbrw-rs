@@ -1,0 +1,167 @@
+[
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>12</UserId><LoginToken>t</LoginToken></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>12</UserId><LoginToken>t</LoginToken></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId> 12 </UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>12</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>\n\t12\n</UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>12</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>abc</UserId><LoginToken>t</LoginToken></LoginStatusVO>",
+    "result": "<LoginStatusVO><LoginToken>t</LoginToken></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>12.5</UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO/>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>+12</UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>12</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId></UserId><LoginToken/></LoginStatusVO>",
+    "result": "<LoginStatusVO><LoginToken></LoginToken></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId/></LoginStatusVO>",
+    "result": "<LoginStatusVO/>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>99999999999999999999</UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO/>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>1</UserId><UserId>2</UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>2</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><Foo>1</Foo><UserId>3</UserId><Bar><Baz/></Bar></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>3</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><UserId>3</UserId><LoginToken i:nil=\"true\"/></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>3</UserId><LoginToken></LoginToken></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<a:LoginStatusVO xmlns:a=\"urn:x\"><a:UserId>4</a:UserId></a:LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>4</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<Whatever><UserId>5</UserId></Whatever>",
+    "result": "<LoginStatusVO><UserId>5</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><Description><![CDATA[a<b & c]]></Description><LoginToken>x &amp; y &#169; &#x41;</LoginToken></LoginStatusVO>",
+    "result": "<LoginStatusVO><LoginToken>x &amp; y © A</LoginToken><Description>a&lt;b &amp; c</Description></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><Description>  keep  spaces \r\n </Description></LoginStatusVO>",
+    "result": "<LoginStatusVO><Description>  keep  spaces \n </Description></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><Description>a<b>bold</b>c</Description></LoginStatusVO>",
+    "result": "<LoginStatusVO><Description>c</Description></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<?xml version=\"1.0\" encoding=\"utf-8\"?><LoginStatusVO><UserId>6</UserId></LoginStatusVO>",
+    "result": "<LoginStatusVO><UserId>6</UserId></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "﻿<LoginStatusVO><UserId>7</UserId></LoginStatusVO>",
+    "error": "java.lang.RuntimeException caused by javax.xml.stream.XMLStreamException"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><UserId>8</UserId>",
+    "error": "java.lang.RuntimeException caused by javax.xml.stream.XMLStreamException"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "",
+    "error": "java.lang.RuntimeException caused by javax.xml.stream.XMLStreamException"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.login.LoginStatusVO",
+    "input": "<LoginStatusVO><Ban><Reason>r</Reason></Ban><Ban><Expires>e</Expires></Ban></LoginStatusVO>",
+    "result": "<LoginStatusVO><Ban><Expires>e</Expires></Ban></LoginStatusVO>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.User",
+    "input": "<User><fullGameAccess>true</fullGameAccess><isComplete>1</isComplete><subscribeMsg>TRUE</subscribeMsg></User>",
+    "result": "<User><fullGameAccess>true</fullGameAccess><isComplete>true</isComplete><remoteUserId>0</remoteUserId><subscribeMsg>false</subscribeMsg><userId>0</userId></User>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.User",
+    "input": "<User><fullGameAccess> false </fullGameAccess><isComplete>0</isComplete><subscribeMsg>yes</subscribeMsg></User>",
+    "result": "<User><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><subscribeMsg>false</subscribeMsg><userId>0</userId></User>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.User",
+    "input": "<User><remoteUserId>-5</remoteUserId><userId>abc</userId><fullGameAccess>maybe</fullGameAccess></User>",
+    "result": "<User><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>-5</remoteUserId><subscribeMsg>false</subscribeMsg><userId>0</userId></User>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.ProfileData",
+    "input": "<ProfileData><PercentToLevel>1e3</PercentToLevel><Rating>INF</Rating><Rep>-INF</Rep><Boost>NaN</Boost></ProfileData>",
+    "result": "<ProfileData><Boost>NaN</Boost><Cash>0.0</Cash><IconIndex>0</IconIndex><Level>0</Level><PercentToLevel>1000.0</PercentToLevel><PersonaId>0</PersonaId><Rating>INF</Rating><Rep>-INF</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.ProfileData",
+    "input": "<ProfileData><PercentToLevel> 2.5 </PercentToLevel><Rating>0x1p3</Rating><Rep>1.5f</Rep><Cash>Infinity</Cash></ProfileData>",
+    "result": "<ProfileData><Boost>0.0</Boost><Cash>0.0</Cash><IconIndex>0</IconIndex><Level>0</Level><PercentToLevel>2.5</PercentToLevel><PersonaId>0</PersonaId><Rating>8.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.ProfileData",
+    "input": "<ProfileData><PercentToLevel>abc</PercentToLevel><Level>7</Level></ProfileData>",
+    "result": "<ProfileData><Boost>0.0</Boost><Cash>0.0</Cash><IconIndex>0</IconIndex><Level>7</Level><PercentToLevel>0.0</PercentToLevel><PersonaId>0</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.ProfileData",
+    "input": "<ProfileData><Level>3000000000</Level><IconIndex>-0</IconIndex><Score>1_000</Score></ProfileData>",
+    "result": "<ProfileData><Boost>0.0</Boost><Cash>0.0</Cash><IconIndex>0</IconIndex><Level>-1294967296</Level><PercentToLevel>0.0</PercentToLevel><PersonaId>0</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.BadgeBundle",
+    "input": "<BadgeBundle><Badges><BadgeInput><BadgeDefinitionId>1</BadgeDefinitionId><SlotId>2</SlotId></BadgeInput><BadgeInput><SlotId>3</SlotId></BadgeInput></Badges></BadgeBundle>",
+    "result": "<BadgeBundle><Badges><BadgeInput><BadgeDefinitionId>1</BadgeDefinitionId><SlotId>2</SlotId></BadgeInput><BadgeInput><BadgeDefinitionId>0</BadgeDefinitionId><SlotId>3</SlotId></BadgeInput></Badges></BadgeBundle>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.BadgeBundle",
+    "input": "<BadgeBundle><BadgeInput><SlotId>9</SlotId></BadgeInput></BadgeBundle>",
+    "result": "<BadgeBundle><Badges/></BadgeBundle>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.BadgeBundle",
+    "input": "<BadgeBundle><Badges/></BadgeBundle>",
+    "result": "<BadgeBundle><Badges/></BadgeBundle>"
+  },
+  {
+    "class": "com.soapboxrace.jaxb.http.BadgeBundle",
+    "input": "<BadgeBundle/>",
+    "result": "<BadgeBundle><Badges/></BadgeBundle>"
+  }
+]

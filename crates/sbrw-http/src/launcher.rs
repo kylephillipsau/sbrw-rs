@@ -6,7 +6,7 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use sbrw_core::Fault;
 use sbrw_core::dao::user;
-use sbrw_core::vo::login_status::LoginStatusVO;
+use sbrw_core::vo::LoginStatus;
 use sbrw_xml::ToXml;
 use serde::Serialize;
 
@@ -162,12 +162,12 @@ pub(crate) async fn launch_filter(state: &AppState, call: &Call) -> Result<Optio
     if !lock {
         return Ok(None);
     }
-    let mut status = LoginStatusVO::new(0, "", false);
-    status.description = Some(
+    let mut status = LoginStatus::new(0, "", false);
+    status.vo.description = Some(
         "You're using the wrong launcher, please update to the latest one:\n\n    SBRW Launcher: https://git.io/Download_NFSW\n    Electron Launcher: https://launcher.sparkserver.eu/"
             .into(),
     );
-    Ok(Some(entity(call, StatusCode::UNAUTHORIZED, status.to_xml())))
+    Ok(Some(entity(call, StatusCode::UNAUTHORIZED, status.vo.to_xml())))
 }
 
 // port: api/util/LaunchFilter#compareVersions(String,String)

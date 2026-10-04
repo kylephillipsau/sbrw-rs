@@ -9,8 +9,9 @@ use sbrw_java::time::format_full_utc;
 use crate::bo::{authentication, hardware_info};
 use crate::dao::user::{self, UserEntity};
 use crate::engine::EngineExceptionCode;
-use crate::vo::login_status::{Ban, LoginStatusVO};
+use crate::vo::LoginStatus;
 use crate::{Fault, World, datetime, password};
+use sbrw_xml::dto::login::LoginStatusVOBan;
 
 /// `TokenSessionEntity`. Like upstream it holds a copy of the user (with its
 /// personas) as of when the session was created, not a live view.
@@ -122,35 +123,38 @@ pub fn login(
     email: Option<&str>,
     password: Option<&str>,
     remote_host: &str,
-) -> Result<LoginStatusVO, Fault> {
-    let mut status = LoginStatusVO::new(0, "", false);
+) -> Result<LoginStatus, Fault> {
+    let mut status = LoginStatus::new(0, "", false);
     if let (Some(email), Some(password)) = (email.filter(|e| !e.is_empty()), password.filter(|p| !p.is_empty()))
         && let Some(mut user) = user::find_by_email(w.db(), email)?
         && user.password.as_deref().is_some_and(|stored| password::matches(password, stored))
     {
         if user.is_locked {
-            status.description = Some("Account locked. Contact an administrator.".into());
+            status.vo.description = Some("Account locked. Contact an administrator.".into());
             return Ok(status);
         }
         if let Some(hash) = &user.game_hardware_hash
             && hardware_info::is_hardware_hash_banned(w, hash)?
         {
-            status.ban = Some(Ban { reason: Some("Your computer is banned from this server.".into()), expires: None });
+            status.vo.ban = Some(LoginStatusVOBan {
+                reason: Some("Your computer is banned from this server.".into()),
+                expires: None,
+            });
             return Ok(status);
         }
         if let Some(ban) = authentication::check_user_ban(w, &user)? {
-            status.ban = Some(Ban { reason: ban.reason, expires: ban.ends_at.map(format_full_utc) });
+            status.vo.ban = Some(LoginStatusVOBan { reason: ban.reason, expires: ban.ends_at.map(format_full_utc) });
             return Ok(status);
         }
         user.last_login = Some(datetime::now(&w.env));
         user::update(w.db(), &user)?;
         delete_by_user_id(w, user.id)?;
         let token = create_token(w, &user, remote_host)?;
-        let mut ok = LoginStatusVO::new(user.id, &token, true);
-        ok.description = Some(String::new());
+        let mut ok = LoginStatus::new(user.id, &token, true);
+        ok.vo.description = Some(String::new());
         return Ok(ok);
     }
-    status.description = Some("LOGIN ERROR".into());
+    status.vo.description = Some("LOGIN ERROR".into());
     Ok(status)
 }
 

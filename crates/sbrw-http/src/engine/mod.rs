@@ -26,9 +26,9 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
 use http_body_util::BodyExt;
 use sbrw_core::bo::token_session::{self, TokenSession};
-use sbrw_core::vo::engine_exception::EngineExceptionTrans;
 use sbrw_core::{EngineExceptionCode, Fault};
 use sbrw_xml::ToXml;
+use sbrw_xml::dto::engine::{EngineExceptionTrans, EngineInnerExceptionTrans};
 
 use crate::{AppState, launcher};
 
@@ -279,7 +279,17 @@ pub(crate) fn fault_response(fault: Fault) -> Response {
             (EngineExceptionCode::UnspecifiedError.error_code(), format!("{err:#}"))
         }
     };
-    let body = EngineExceptionTrans { error_code: code, stack_trace: trace }.to_xml();
+    let body = EngineExceptionTrans {
+        error_code: code,
+        stack_trace: Some(trace.clone()),
+        inner_exception: Some(EngineInnerExceptionTrans {
+            error_code: code,
+            stack_trace: Some(trace),
+            ..Default::default()
+        }),
+        ..Default::default()
+    }
+    .to_xml();
     (StatusCode::SERVICE_UNAVAILABLE, [(CONTENT_TYPE, XML)], Body::from(body)).into_response()
 }
 

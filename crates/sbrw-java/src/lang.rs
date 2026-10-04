@@ -45,3 +45,214 @@ mod tests {
         assert_eq!(parse_float("f"), None);
     }
 }
+
+/// `Double.toString(d)`: the fewest digits that read back as `d`, rounded
+/// correctly (ties to even), in Java's layout. This matches JDK 11 for every
+/// value it prints in plain decimal (10^-3 <= |d| < 10^7); outside that range
+/// JDK 11 sometimes prints extra digits (see the tests).
+pub fn double_to_string(d: f64) -> String {
+    let negative = d.is_sign_negative() && !d.is_nan();
+    if d.is_nan() {
+        return "NaN".into();
+    }
+    if d.is_infinite() {
+        return if d > 0.0 { "Infinity" } else { "-Infinity" }.into();
+    }
+    if d == 0.0 {
+        return if d.is_sign_negative() { "-0.0" } else { "0.0" }.into();
+    }
+    let d = d.abs();
+    let sci = (1..=17)
+        .map(|p| format!("{:.*e}", p - 1, d))
+        .find(|s| s.parse::<f64>() == Ok(d))
+        .expect("17 digits round-trip");
+    let (digits, exponent) = digits_and_exponent(&sci);
+    layout(false, &digits, exponent).replacen("", if negative { "-" } else { "" }, 1)
+}
+
+/// `Float.toString(f)`, with the same rule and caveat as [`double_to_string`].
+pub fn float_to_string(f: f32) -> String {
+    let negative = f.is_sign_negative() && !f.is_nan();
+    if f.is_nan() {
+        return "NaN".into();
+    }
+    if f.is_infinite() {
+        return if f > 0.0 { "Infinity" } else { "-Infinity" }.into();
+    }
+    if f == 0.0 {
+        return if f.is_sign_negative() { "-0.0" } else { "0.0" }.into();
+    }
+    let f = f.abs();
+    let sci =
+        (1..=9).map(|p| format!("{:.*e}", p - 1, f)).find(|s| s.parse::<f32>() == Ok(f)).expect("9 digits round-trip");
+    let (digits, exponent) = digits_and_exponent(&sci);
+    layout(false, &digits, exponent).replacen("", if negative { "-" } else { "" }, 1)
+}
+
+/// The digits and decimal exponent of `{:.Ne}` output (`1.2345e-5`), without
+/// trailing zeros.
+fn digits_and_exponent(sci: &str) -> (String, i32) {
+    let (mantissa, exponent) = sci.split_once('e').expect("{:e} output");
+    let digits = mantissa.replace('.', "");
+    let digits = digits.trim_end_matches('0');
+    (if digits.is_empty() { "0".into() } else { digits.into() }, exponent.parse().expect("exponent"))
+}
+
+/// Java's layout: plain decimal for 10^-3 <= |v| < 10^7, otherwise
+/// `d.dddE±n`; always at least one digit after the point.
+fn layout(negative: bool, digits: &str, exponent: i32) -> String {
+    let mut out = String::with_capacity(digits.len() + 8);
+    if negative {
+        out.push('-');
+    }
+    if (-3..7).contains(&exponent) {
+        if exponent >= 0 {
+            let int_len = exponent as usize + 1;
+            if digits.len() <= int_len {
+                out.push_str(digits);
+                out.extend(std::iter::repeat_n('0', int_len - digits.len()));
+                out.push_str(".0");
+            } else {
+                out.push_str(&digits[..int_len]);
+                out.push('.');
+                out.push_str(&digits[int_len..]);
+            }
+        } else {
+            out.push_str("0.");
+            out.extend(std::iter::repeat_n('0', (-exponent - 1) as usize));
+            out.push_str(digits);
+        }
+    } else {
+        out.push_str(&digits[..1]);
+        out.push('.');
+        out.push_str(if digits.len() > 1 { &digits[1..] } else { "0" });
+        out.push('E');
+        out.push_str(&exponent.to_string());
+    }
+    out
+}
+
+#[cfg(test)]
+mod to_string_tests {
+    use super::*;
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct Vectors {
+        float_bits_and_string: Vec<(String, String)>,
+        double_bits_and_string: Vec<(String, String)>,
+    }
+
+    fn vectors() -> Vectors {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/vectors/java_number_to_string.json");
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    /// Exact inside Java's plain-decimal range, where game values live; outside
+    /// it JDK 11 sometimes prints extra digits (`2.2856919E9` for the float
+    /// 2285691904, shortest `2.285692E9`), but both read back as the same value.
+    fn check<T: PartialEq + std::str::FromStr + Copy>(
+        cases: &[(String, String)],
+        from_bits: impl Fn(&str) -> T,
+        to_string: impl Fn(T) -> String,
+        plain: impl Fn(T) -> bool,
+    ) -> usize {
+        let mut outside = 0;
+        for (bits, java) in cases {
+            let v = from_bits(bits);
+            let ours = to_string(v);
+            if ours == *java {
+                continue;
+            }
+            assert!(!plain(v), "{bits}: java {java}, ours {ours}");
+            let same = |s: &str| s.parse::<T>().ok().is_some_and(|p| p == v);
+            assert!(same(java) && same(&ours), "{bits}: java {java} and ours {ours} don't both read back");
+            outside += 1;
+        }
+        outside
+    }
+
+    #[test]
+    fn floats_match_the_jvm() {
+        let v = vectors();
+        let outside = check(
+            &v.float_bits_and_string,
+            |b| f32::from_bits(u32::from_str_radix(b, 16).unwrap()),
+            float_to_string,
+            |f| !f.is_finite() || f == 0.0 || (1e-3..1e7).contains(&f.abs()),
+        );
+        assert!(outside < v.float_bits_and_string.len() / 5, "{outside}");
+    }
+
+    #[test]
+    fn doubles_match_the_jvm() {
+        let v = vectors();
+        let outside = check(
+            &v.double_bits_and_string,
+            |b| f64::from_bits(u64::from_str_radix(b, 16).unwrap()),
+            double_to_string,
+            |d| !d.is_finite() || d == 0.0 || (1e-3..1e7).contains(&d.abs()),
+        );
+        assert!(outside < v.double_bits_and_string.len() / 100, "{outside}");
+    }
+}
+
+/// `Double.parseDouble(s)` for the syntax JAXB lets through: decimal with an
+/// optional exponent, or a hexadecimal float (`0x1.8p3`). `None` where Java
+/// throws. (Callers handle whitespace, `NaN`/`Infinity` and type suffixes.)
+pub fn parse_double(s: &str) -> Option<f64> {
+    let (negative, unsigned) = match s.as_bytes().first()? {
+        b'+' => (false, &s[1..]),
+        b'-' => (true, &s[1..]),
+        _ => (false, s),
+    };
+    let value = if let Some(hex) = unsigned.strip_prefix("0x").or_else(|| unsigned.strip_prefix("0X")) {
+        parse_hex_float(hex)?
+    } else {
+        let decimal = unsigned.bytes().all(|b| b.is_ascii_digit() || matches!(b, b'.' | b'e' | b'E' | b'+' | b'-'))
+            && unsigned.bytes().next().is_some_and(|b| b.is_ascii_digit() || b == b'.');
+        if !decimal {
+            return None;
+        }
+        unsigned.parse::<f64>().ok()?
+    };
+    Some(if negative { -value } else { value })
+}
+
+/// The part of a Java hex float after `0x`: hex digits, optional point, then a
+/// mandatory binary exponent `p±n`.
+fn parse_hex_float(s: &str) -> Option<f64> {
+    let (mantissa, exponent) = s.split_once(['p', 'P'])?;
+    let exponent: i32 = exponent.parse().ok()?;
+    let (int, frac) = mantissa.split_once('.').unwrap_or((mantissa, ""));
+    if int.is_empty() && frac.is_empty() {
+        return None;
+    }
+    let mut value = 0f64;
+    for c in int.chars() {
+        value = value * 16.0 + f64::from(c.to_digit(16)?);
+    }
+    let mut scale = 1.0 / 16.0;
+    for c in frac.chars() {
+        value += f64::from(c.to_digit(16)?) * scale;
+        scale /= 16.0;
+    }
+    Some(value * 2f64.powi(exponent))
+}
+
+#[cfg(test)]
+mod parse_double_tests {
+    use super::*;
+
+    #[test]
+    fn java_double_syntax() {
+        assert_eq!(parse_double("1e3"), Some(1000.0));
+        assert_eq!(parse_double("-2.5"), Some(-2.5));
+        assert_eq!(parse_double(".5"), Some(0.5));
+        assert_eq!(parse_double("0x1p3"), Some(8.0));
+        assert_eq!(parse_double("0x1.8p1"), Some(3.0));
+        assert_eq!(parse_double("inf"), None);
+        assert_eq!(parse_double("1.5f"), None);
+        assert_eq!(parse_double(""), None);
+    }
+}

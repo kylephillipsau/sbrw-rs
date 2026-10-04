@@ -29,6 +29,12 @@ jobs:
       - run: cargo test --workspace --locked
       - name: Port markers name real upstream units
         run: python3 tools/port.py check
+      - name: Generated sources match their recorded inputs
+        run: |
+          python3 tools/gen.py tlds
+          python3 tools/gen.py routes
+          python3 tools/gen.py dtos
+          git diff --exit-code
 
   deny:
     runs-on: ubuntu-latest

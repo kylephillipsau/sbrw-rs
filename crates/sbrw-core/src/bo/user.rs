@@ -4,7 +4,7 @@ use sbrw_java::validator::is_valid_email;
 
 use crate::dao::invite_ticket::{self, InviteTicketEntity};
 use crate::dao::user::{self, UserEntity};
-use crate::vo::login_status::LoginStatusVO;
+use crate::vo::LoginStatus;
 use crate::{Fault, World, datetime, password};
 
 // port: bo/UserBO#createUser(String,String,String)
@@ -27,10 +27,10 @@ pub fn create_user_with_ticket(
     passwd: Option<&str>,
     ip: &str,
     ticket: Option<&str>,
-) -> Result<LoginStatusVO, Fault> {
-    let mut status = LoginStatusVO::new(0, "", false);
+) -> Result<LoginStatus, Fault> {
+    let mut status = LoginStatus::new(0, "", false);
     if !email.is_some_and(is_valid_email) {
-        status.description = Some("Registration Error: Invalid Email Format!".into());
+        status.vo.description = Some("Registration Error: Invalid Email Format!".into());
         return Ok(status);
     }
     let email = email.expect("validated above");
@@ -41,18 +41,18 @@ pub fn create_user_with_ticket(
         match invite_ticket::find_by_ticket(w.db(), ticket)? {
             Some(found) if found.ticket.as_deref().is_some_and(|t| !t.is_empty()) => invite = found,
             _ => {
-                status.description = Some("Registration Error: Invalid Ticket!".into());
+                status.vo.description = Some("Registration Error: Invalid Ticket!".into());
                 return Ok(status);
             }
         }
         if invite.user(w.db())?.is_some() {
-            status.description = Some("Registration Error: Ticket already in use!".into());
+            status.vo.description = Some("Registration Error: Ticket already in use!".into());
             return Ok(status);
         }
     }
 
     if user::find_by_email(w.db(), email)?.is_some() {
-        status.description = Some("Registration Error: Registration limit reached for email!".into());
+        status.vo.description = Some("Registration Error: Registration limit reached for email!".into());
         return Ok(status);
     }
 
@@ -65,5 +65,5 @@ pub fn create_user_with_ticket(
         // on a managed entity, whose new user is flushed at commit.
         invite_ticket::update(w.db(), &invite)?;
     }
-    Ok(LoginStatusVO::new(user.id, "", true))
+    Ok(LoginStatus::new(user.id, "", true))
 }

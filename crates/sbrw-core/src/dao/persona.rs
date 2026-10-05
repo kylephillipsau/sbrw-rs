@@ -1,13 +1,14 @@
 //! `PersonaEntity` (a driver) and the parts of `PersonaDAO` ported so far.
 
-use rusqlite::{Connection, Row};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 use time::PrimitiveDateTime;
 
 use crate::datetime;
 
 /// `PersonaEntity`. `badges` and `numCarSlots` exist in the table but aren't
-/// mapped upstream, so they keep their column defaults.
-#[derive(Debug, Clone, PartialEq)]
+/// mapped upstream, so they keep their column defaults. `Default` is
+/// `new PersonaEntity()`.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct PersonaEntity {
     pub persona_id: i64,
     pub boost: f64,
@@ -57,4 +58,40 @@ impl PersonaEntity {
 pub fn find_by_user_id(db: &Connection, user_id: i64) -> rusqlite::Result<Vec<PersonaEntity>> {
     let mut stmt = db.prepare_cached("SELECT * FROM persona WHERE USERID = ?1 ORDER BY ID")?;
     stmt.query_map([user_id], PersonaEntity::from_row)?.collect()
+}
+
+/// `PersonaDAO.find`.
+pub fn find(db: &Connection, persona_id: i64) -> rusqlite::Result<Option<PersonaEntity>> {
+    db.prepare_cached("SELECT * FROM persona WHERE ID = ?1")?
+        .query_row([persona_id], PersonaEntity::from_row)
+        .optional()
+}
+
+/// `PersonaDAO.update` (`merge`): every mapped column, from this copy.
+pub fn update(db: &Connection, p: &PersonaEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "UPDATE persona SET boost = ?2, cash = ?3, curCarIndex = ?4, iconIndex = ?5, level = ?6, motto = ?7, name = ?8,
+         percentToLevel = ?9, rating = ?10, rep = ?11, repAtCurrentLevel = ?12, score = ?13, USERID = ?14,
+         created = ?15, first_login = ?16, last_login = ?17 WHERE ID = ?1",
+    )?
+    .execute(params![
+        p.persona_id,
+        p.boost,
+        p.cash,
+        p.cur_car_index,
+        p.icon_index,
+        p.level,
+        p.motto,
+        p.name,
+        f64::from(p.percent_to_level),
+        p.rating,
+        p.rep,
+        p.rep_at_current_level,
+        p.score,
+        p.user_id,
+        datetime::opt_to_sql(p.created),
+        datetime::opt_to_sql(p.first_login),
+        datetime::opt_to_sql(p.last_login),
+    ])?;
+    Ok(())
 }

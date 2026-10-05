@@ -7,7 +7,6 @@ import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
-import net.bytebuddy.implementation.bind.annotation.SuperCall;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
@@ -73,7 +72,6 @@ public final class Container {
     private final List<Class<?>> coreClasses;
     private final Map<Class<?>, Class<?>> substitutes;
     private final Map<Class<?>, Object> beans = new HashMap<>();
-    private final Map<Class<?>, Class<?>> proxyClasses = new HashMap<>();
     private final Deque<Callable<Object>> asyncQueue = new ArrayDeque<>();
     private final List<PendingTimer> timers = new ArrayList<>();
     private final EntityManager entityManagerProxy;
@@ -135,13 +133,16 @@ public final class Container {
                 beans.put(type, instance);
                 return (T) instance;
             }
-            instance = isEjb(type) ? newTransactionalProxy(impl) : newInstance(impl);
+            Object target = newInstance(impl);
+            instance = isEjb(type) ? newTransactionalProxy(impl, target) : target;
+            // Other beans get the proxy; the bean's own calls on `this` reach the
+            // target directly, so they skip the container, as on a real server.
+            beans.put(type, instance);
+            inject(target, impl);
+            postConstruct(target, impl);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException("cannot create bean " + type.getName(), e);
         }
-        beans.put(type, instance);
-        inject(instance, impl);
-        postConstruct(instance, impl);
         return (T) instance;
     }
 
@@ -155,19 +156,16 @@ public final class Container {
         return constructor.newInstance();
     }
 
-    private Object newTransactionalProxy(Class<?> impl) throws ReflectiveOperationException {
-        Class<?> proxyClass = proxyClasses.get(impl);
-        if (proxyClass == null) {
-            proxyClass = new ByteBuddy()
-                    .subclass(impl)
-                    .method(isPublic().and(not(isStatic())).and(not(isFinal())).and(not(isDeclaredBy(Object.class))))
-                    .intercept(MethodDelegation.to(new EjbInterceptor(this)))
-                    .make()
-                    .load(impl.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(
-                            MethodHandles.privateLookupIn(impl, MethodHandles.lookup())))
-                    .getLoaded();
-            proxyClasses.put(impl, proxyClass);
-        }
+    /** A proxy that forwards business methods to {@code target} inside the container's rules. */
+    private Object newTransactionalProxy(Class<?> impl, Object target) throws ReflectiveOperationException {
+        Class<?> proxyClass = new ByteBuddy()
+                .subclass(impl)
+                .method(isPublic().and(not(isStatic())).and(not(isFinal())).and(not(isDeclaredBy(Object.class))))
+                .intercept(MethodDelegation.to(new EjbInterceptor(this, target)))
+                .make()
+                .load(impl.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(
+                        MethodHandles.privateLookupIn(impl, MethodHandles.lookup())))
+                .getLoaded();
         return newInstance(proxyClass);
     }
 
@@ -530,21 +528,25 @@ public final class Container {
         }
     }
 
-    /** Wraps EJB business methods in container-managed transactions. */
+    /** Forwards EJB business methods to the bean, inside container-managed transactions. */
     public static final class EjbInterceptor {
         private final Container container;
+        private final Object target;
 
-        EjbInterceptor(Container container) {
+        EjbInterceptor(Container container, Object target) {
             this.container = container;
+            this.target = target;
         }
 
         @RuntimeType
-        public Object intercept(@SuperCall Callable<Object> zuper, @Origin Method method) throws Exception {
+        public Object intercept(@Origin Method method, @AllArguments Object[] args) throws Exception {
+            method.setAccessible(true);
+            Callable<Object> call = () -> invoke(method, target, args);
             if (method.isAnnotationPresent(Asynchronous.class)) {
-                container.enqueueAsync(zuper);
+                container.enqueueAsync(call);
                 return null;
             }
-            return container.inTransaction(zuper);
+            return container.inTransaction(call);
         }
     }
 

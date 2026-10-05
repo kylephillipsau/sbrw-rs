@@ -39,6 +39,18 @@ impl Fault {
         Self::Engine(EngineException::new(code, fatal))
     }
 
+    /// A call into upstream code that isn't ported yet (`unit` is its id):
+    /// fails like a system exception, so the transaction rolls back.
+    pub fn unported(unit: &str) -> Self {
+        Self::Internal(anyhow::anyhow!("not ported yet: {unit}"))
+    }
+
+    /// Where upstream dereferences a null (`what`) and throws a
+    /// `NullPointerException`.
+    pub fn null_pointer(what: &str) -> Self {
+        Self::Internal(anyhow::anyhow!("NullPointerException: {what} is null"))
+    }
+
     /// Whether the transaction commits despite the failure.
     pub fn commits(&self) -> bool {
         matches!(self, Self::Engine(_))

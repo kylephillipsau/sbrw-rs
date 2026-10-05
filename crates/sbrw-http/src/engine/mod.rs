@@ -66,6 +66,26 @@ impl Call {
         self.query.iter().find(|(k, _)| k == name).map(|(_, v)| v.clone())
     }
 
+    /// A `Long` `@QueryParam`: `None` when absent; a value `Long.valueOf`
+    /// rejects fails the request as RESTEasy does (503, -500).
+    pub fn query_long(&self, name: &str) -> Result<Option<i64>, Fault> {
+        self.query(name)
+            .map(|v| {
+                v.parse().map_err(|_| {
+                    Fault::Internal(anyhow::anyhow!(
+                        "Unable to extract parameter from http request: javax.ws.rs.QueryParam(\"{name}\") value is '{v}'"
+                    ))
+                })
+            })
+            .transpose()
+    }
+
+    /// The session `AuthenticationFilter` validated. Only `@Secured` routes reach
+    /// handlers that ask for it.
+    pub fn session(&self) -> &TokenSession {
+        self.session.as_ref().expect("a @Secured route has a session")
+    }
+
     /// `HttpServletRequest.getParameter`: query string first, then form body.
     pub fn parameter(&self, name: &str) -> Option<String> {
         self.query(name).or_else(|| self.form.iter().find(|(k, _)| k == name).map(|(_, v)| v.clone()))
@@ -172,8 +192,15 @@ fn percent_decode(s: &str) -> String {
         .unwrap_or_default()
 }
 
-/// The single entry point for everything under `/Engine.svc`.
+/// The single entry point for everything under `/Engine.svc`. Asynchronous
+/// work the request queued runs once it has its answer.
 pub async fn dispatch(State(state): State<AppState>, request: Request) -> Response {
+    let response = handle(&state, request).await;
+    state.world().run_async_jobs().await;
+    response
+}
+
+async fn handle(state: &AppState, request: Request) -> Response {
     let (parts, body) = request.into_parts();
     let path = parts.uri.path().strip_prefix("/Engine.svc").unwrap_or_default().to_owned();
     let (route, path_params) = match resolve(parts.method.as_str(), &path) {
@@ -206,17 +233,17 @@ pub async fn dispatch(State(state): State<AppState>, request: Request) -> Respon
     };
 
     if route.secured {
-        match authenticate(&state, &call).await {
+        match authenticate(state, &call).await {
             Ok(session) => call.session = Some(session),
             Err(fault) => return fault_response(fault),
         }
     }
     if route.launcher_checks
-        && let Some(abort) = launcher::launch_filter(&state, &call).await.unwrap_or_else(|f| Some(fault_response(f)))
+        && let Some(abort) = launcher::launch_filter(state, &call).await.unwrap_or_else(|f| Some(fault_response(f)))
     {
         return abort;
     }
-    match invoke(&state, &call).await {
+    match invoke(state, &call).await {
         Some(Ok(response)) => response,
         Some(Err(fault)) => fault_response(fault),
         None => {
@@ -243,6 +270,10 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/Modding#getModInfo()" => Ok(launcher::mod_info(state).await),
         "api/User#authenticateUser(String,String)" => user::authenticate_user(state, call).await,
         "api/User#createUser(String,String,String)" => user::create_user(state, call).await,
+        "api/User#getPermanentSession()" => user::get_permanent_session(state, call).await,
+        "api/User#secureLoginPersona(Long)" => user::secure_login_persona(state, call).await,
+        "api/User#secureLogoutPersona(Long)" => user::secure_logout_persona(state, call).await,
+        "api/User#secureLogout()" => user::secure_logout(state, call).await,
         _ => return None,
     })
 }

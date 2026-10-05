@@ -7,6 +7,8 @@
 
 pub mod authentication;
 pub mod hardware_info;
+pub mod matchmaking;
 pub mod online_users;
+pub mod presence;
 pub mod token_session;
 pub mod user;

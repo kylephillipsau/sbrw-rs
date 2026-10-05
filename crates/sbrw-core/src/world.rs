@@ -6,7 +6,7 @@
 //! application exception upstream), and rolls back on anything else, including
 //! a panic.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -20,6 +20,7 @@ use crate::bo::online_users::{self, OnlineUsers};
 use crate::bo::token_session::TokenSessions;
 use crate::openfire::Openfire;
 use crate::params::Parameters;
+use crate::redis::Redis;
 use crate::{Fault, store};
 
 pub struct World {
@@ -30,7 +31,13 @@ pub struct World {
     pub tokens: TokenSessions,
     pub online_users: OnlineUsers,
     pub openfire: Openfire,
+    /// Upstream's Redis, when `ENABLE_REDIS` is true.
+    pub redis: Option<Redis>,
+    async_jobs: VecDeque<AsyncJob>,
 }
+
+/// An `@Asynchronous` invocation waiting to run.
+type AsyncJob = Box<dyn FnOnce(&mut World) -> Result<(), Fault> + Send>;
 
 pub struct WorldOptions {
     /// The database file; in memory when `None`.
@@ -39,6 +46,7 @@ pub struct WorldOptions {
     pub parameters: BTreeMap<String, String>,
     pub env: Env,
     pub effects: EffectLog,
+    pub openfire: Openfire,
 }
 
 impl World {
@@ -46,6 +54,9 @@ impl World {
     pub fn boot(options: WorldOptions) -> anyhow::Result<Self> {
         let db = store::open(options.db_path.as_deref(), &options.parameters)?;
         let params = Parameters::load(&db)?;
+        // port: bo/MatchmakingBO#initialize()
+        // port: bo/PresenceBO#init()
+        let redis = params.get_bool_param("ENABLE_REDIS").then(|| Redis::new(options.effects.clone()));
         let mut world = Self {
             db,
             env: options.env,
@@ -53,7 +64,9 @@ impl World {
             params,
             tokens: TokenSessions::default(),
             online_users: OnlineUsers::default(),
-            openfire: Openfire::default(),
+            openfire: options.openfire,
+            redis,
+            async_jobs: VecDeque::new(),
         };
         // Upstream's @Startup beans, in the order the reference recordings show.
         world.transaction(|w| {
@@ -81,6 +94,41 @@ impl World {
         };
         self.db.execute_batch(if commit { "COMMIT" } else { "ROLLBACK" })?;
         result
+    }
+
+    /// Queue an `@Asynchronous` bean method (or an asynchronous observer of an
+    /// event). It runs in its own transaction once the current request is
+    /// done, whether or not this transaction commits.
+    pub fn queue_async(&mut self, job: impl FnOnce(&mut World) -> Result<(), Fault> + Send + 'static) {
+        self.async_jobs.push_back(Box::new(job));
+    }
+
+    /// Run queued asynchronous work, including work it queues, in order. As
+    /// upstream, a failure reaches no caller: it is only logged.
+    pub fn run_async_jobs(&mut self) {
+        while let Some(job) = self.async_jobs.pop_front() {
+            if let Err(fault) = self.transaction(job) {
+                tracing::warn!("@Asynchronous call failed: {fault:#}");
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+impl World {
+    /// An in-memory world under a fixed clock, recording effects, with these
+    /// parameter overrides; boot effects are already drained.
+    pub(crate) fn test(parameters: &[(&str, &str)]) -> Self {
+        let world = World::boot(WorldOptions {
+            db_path: None,
+            parameters: parameters.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect(),
+            env: Env::deterministic(1, time::macros::datetime!(2026-01-01 12:00 UTC)),
+            effects: EffectLog::recording(),
+            openfire: Openfire::default(),
+        })
+        .expect("booting a test world");
+        world.effects.drain();
+        world
     }
 }
 
@@ -129,6 +177,19 @@ impl WorldHandle {
             .map_err(|_| Fault::Internal(anyhow!("the world thread has stopped")))?;
         result.await.map_err(|_| Fault::Internal(anyhow!("the world thread dropped a call")))?
     }
+
+    /// Run the asynchronous work queued so far; every entry point calls this
+    /// once it has answered (the reference container ran it after each request).
+    pub async fn run_async_jobs(&self) {
+        let (done, finished) = tokio::sync::oneshot::channel();
+        let sent = self.jobs.send(Box::new(move |world| {
+            world.run_async_jobs();
+            let _ = done.send(());
+        }));
+        if sent.is_ok() {
+            let _ = finished.await;
+        }
+    }
 }
 
 #[cfg(test)]
@@ -136,16 +197,9 @@ mod tests {
     use super::*;
     use crate::EngineExceptionCode;
     use crate::dao::user;
-    use time::macros::datetime;
 
     fn world() -> World {
-        World::boot(WorldOptions {
-            db_path: None,
-            parameters: BTreeMap::new(),
-            env: Env::deterministic(1, datetime!(2026-01-01 12:00 UTC)),
-            effects: EffectLog::recording(),
-        })
-        .unwrap()
+        World::test(&[])
     }
 
     fn users(w: &World) -> i64 {
@@ -160,8 +214,16 @@ mod tests {
 
     #[test]
     fn boot_matches_upstreams_startup() {
-        let w = world();
-        let boot = w.effects.drain();
+        let effects = EffectLog::recording();
+        let w = World::boot(WorldOptions {
+            db_path: None,
+            parameters: BTreeMap::new(),
+            env: Env::deterministic(1, time::macros::datetime!(2026-01-01 12:00 UTC)),
+            effects: effects.clone(),
+            openfire: Openfire::default(),
+        })
+        .unwrap();
+        let boot = effects.drain();
         let calls: Vec<&str> = boot.openfire.iter().map(|c| c.call.as_str()).collect();
         assert_eq!(calls, ["init", "getTotalOnlineUsers"]);
         let row: (i64, i64, i64) = w

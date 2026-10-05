@@ -12,6 +12,7 @@ use axum::http::header::CONTENT_TYPE;
 use http_body_util::BodyExt;
 use indexmap::IndexMap;
 use sbrw_common::{CaptureSink, Config, EffectLog, Effects, Env};
+use sbrw_core::openfire::Openfire;
 use sbrw_core::{World, WorldHandle, WorldOptions};
 use serde_json::Value;
 use time::Duration;
@@ -41,11 +42,14 @@ impl SbrwServer {
 
         let env = Env::deterministic(scenario.seed, scenario.clock);
         let effects = EffectLog::recording();
+        let mut openfire = Openfire::default();
+        openfire.online_users = scenario.openfire.as_ref().map_or(0, |o| o.online_users);
         let world = World::boot(WorldOptions {
             db_path: None,
             parameters: scenario.parameters.clone().unwrap_or_default(),
             env: env.clone(),
             effects: effects.clone(),
+            openfire,
         })?;
         let world = WorldHandle::spawn(world);
         let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), world.clone());

@@ -26,6 +26,7 @@ fn server_with(edit: impl FnOnce(&mut Config)) -> TestServer {
         parameters: Default::default(),
         env: Env::system(),
         effects: EffectLog::disabled(),
+        openfire: Default::default(),
     })
     .unwrap();
     let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), WorldHandle::spawn(world));

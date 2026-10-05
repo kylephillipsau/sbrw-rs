@@ -9,3 +9,36 @@ reason = """
 Inserts the online-stats row a second time at boot, colliding with OnlineUsersBO's
 own @PostConstruct insert in the same second; real servers only survive by cold-start
 timing. The startup log line is the only other effect. sbrw-rs inserts the row once."""
+
+["bo/RedisBO#init()"]
+status = "replaced"
+reason = """
+Connects to a Redis server when ENABLE_REDIS is true. One process needs no server:
+sbrw_core::redis keeps the same keys and commands in memory, created at boot under
+the same switch."""
+
+["bo/RedisBO#getConnection()"]
+status = "replaced"
+reason = "Hands the shared connection to MatchmakingBO and PresenceBO; they use World.redis instead."
+
+["bo/RedisBO#createPubSub()"]
+status = "replaced"
+reason = """
+A publish connection for PresenceBO's game_presence_updates channel, which nothing in
+the stack subscribes to. sbrw_core::redis::Redis::publish only records the publish."""
+
+["bo/RedisBO#getRedisClient()"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["bo/MatchmakingBO#shutdown()"]
+status = "dropped"
+reason = """
+@PreDestroy clearing the queue from an external Redis that outlives the server. The
+in-memory queue dies with the process."""
+
+["bo/PresenceBO#shutdown()"]
+status = "dropped"
+reason = """
+@PreDestroy clearing presence keys from an external Redis that outlives the server and
+closing the pub/sub connection. In-memory presence dies with the process."""

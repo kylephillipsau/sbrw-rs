@@ -17,6 +17,7 @@ pub mod engine;
 pub mod openfire;
 pub mod params;
 pub mod password;
+pub mod redis;
 pub mod store;
 pub mod vo;
 pub mod world;

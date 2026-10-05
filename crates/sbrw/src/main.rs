@@ -100,6 +100,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         parameters: config.parameters.clone(),
         env: sbrw_common::Env::system(),
         effects: sbrw_common::EffectLog::disabled(),
+        openfire: Default::default(),
     })
     .context("starting the world")?;
     let world = sbrw_core::WorldHandle::spawn(world);

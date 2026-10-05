@@ -15,6 +15,9 @@ use serde_json::json;
 pub struct Openfire {
     /// XMPP username -> password.
     accounts: HashMap<String, String>,
+    /// Players connected to XMPP: a test scenario's simulated count until
+    /// sbrw-xmpp serves clients and reports its own.
+    pub online_users: i32,
 }
 
 impl Openfire {
@@ -28,8 +31,7 @@ impl Openfire {
     // port: xmpp/OpenFireRestApiCli#getTotalOnlineUsers()
     pub fn get_total_online_users(&self, effects: &EffectLog) -> i32 {
         effects.openfire("getTotalOnlineUsers", Vec::new());
-        // Nobody can be connected until sbrw-xmpp serves clients.
-        0
+        self.online_users
     }
 
     // port: xmpp/OpenFireRestApiCli#createUpdatePersona(Long,String)

@@ -1,0 +1,42 @@
+{
+  "description": "MAX_ONLINE_PLAYERS: the game is turned away while the last recorded count of online players is at the cap, before its launcher token is swapped.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": { "MAX_ONLINE_PLAYERS": "2" },
+  "openfire": { "online_users": 2 },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Two players online at boot, cap of two: full.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "The launcher token was not swapped, so it still authenticates and is turned away again.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Logging out still works.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogout",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    }
+  ]
+}

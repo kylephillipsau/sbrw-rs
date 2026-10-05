@@ -10,6 +10,7 @@ publish.workspace = true
 [dependencies]
 anyhow.workspace = true
 argon2.workspace = true
+indexmap.workspace = true
 rusqlite.workspace = true
 sbrw-common.workspace = true
 sbrw-java.workspace = true

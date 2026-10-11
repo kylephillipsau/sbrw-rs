@@ -8,18 +8,19 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M1 in progress. Every call the launcher and the game make up to
+**Status:** M2 in progress. Every call the launcher and the game make up to
 the driver screen is ported and replays recordings of the original exactly,
-including creating and selecting a driver. What's left for M1 is a check with
-the real game, which also shows when it first connects to XMPP. See
+including creating and selecting a driver. Milestones are verified against
+recordings of the original and the other reference implementations, not with
+the real game, so nothing here has been run against the game itself yet. See
 [docs/ROADMAP.md](docs/ROADMAP.md) for the design and milestones, and
 [docs/port-status.md](docs/port-status.md) for how much of the original is ported.
 
 | Milestone | Status |
 |---|---|
 | M0 Foundations: launcher sees the server, ModNet, protocol capture, probes | done |
-| M1 Register, log in, game boots | in progress |
-| M2 Create a driver, XMPP, spawn in the world | |
+| M1 Register, log in, game boots | done |
+| M2 Create a driver, XMPP, spawn in the world | in progress |
 | M3 Free-roam multiplayer | |
 | M4 Garage and economy | |
 | M5 Single-player events, rewards, achievements | |

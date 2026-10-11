@@ -7,7 +7,7 @@ A Need for Speed World private server (Soapbox Race World, SBRW) is four separat
 - A free-roam UDP server written in Go.
 - A race-sync UDP relay: decompiled Java with no license.
 
-They need MySQL and JDK 10 (end of life), and they're installed with Windows `.bat` files ([berkayylmao/setting-up-sbrw](https://github.com/berkayylmao/setting-up-sbrw)). The goal is a from-scratch Rust server that replaces all of it: one binary in one Docker container, for the owner and a few dozen friends. It's tested with the real game client under CrossOver on an Apple Silicon Mac.
+They need MySQL and JDK 10 (end of life), and they're installed with Windows `.bat` files ([berkayylmao/setting-up-sbrw](https://github.com/berkayylmao/setting-up-sbrw)). The goal is a from-scratch Rust server that replaces all of it: one binary in one Docker container, for the owner and a few dozen friends. It was meant to be tested with the real game client under CrossOver on an Apple Silicon Mac. No client is available, so it is verified against reference implementations instead (see Verification approach).
 
 **Fixed decisions**
 - **Database:** embedded SQLite in a single `/data` volume.
@@ -135,7 +135,7 @@ one process `sbrw serve`
   - The everyday dev loop is native `cargo run -- serve`, because Docker Desktop's UDP proxy rewrites source ports. Docker is for packaging and the VPS, where Linux DNAT keeps the real source addresses.
 
 ## Milestones
-Each milestone is checked with the real client under CrossOver and has automated tests. Endpoints are built in the order they appear in real-client captures; the catch-all covers the rest.
+Each milestone has automated tests and is verified against a reference implementation (see Verification approach). The real-client checks below are not being run: there is no client to run them with (decided 2026-10-11), so they stay as the eventual checklist. Without captures, endpoints are built in the order NFS-World-Offline's routes and data show the client calling them; the catch-all covers the rest.
 
 | # | Scope | Real-client check | Automated tests |
 |---|---|---|---|
@@ -154,7 +154,12 @@ Milestone status is tracked in the README.
 
 ## Verification approach
 - **Fast loop:** `cargo test --workspace`, i.e. unit tests, golden XML, vectors, the script corpus and testkit scenarios.
-- **Real client:** `cargo run -- serve` natively with `SBRW_CAPTURE=…`, then the SBRW launcher under CrossOver pointed at `http://127.0.0.1:8680/Engine.svc`. Captures from each session are redacted and committed as regression fixtures.
+- **Reference per layer (the real client isn't available, so these are the oracles):**
+  - HTTP and game logic: recordings of the original core from the `reference/` rig, replayed by `sbrw-testkit`.
+  - Script semantics: Nashorn results recorded by the rig as `fixtures/vectors/`.
+  - XMPP: NFS-World-Offline's XMPP server (built against the real client) and the Openfire fork for push shapes, plus an OpenSSL client pinned to TLS 1.0. Whether the real client completes the TLS handshake stays unverified until a client is available (top risk 1).
+  - UDP free-roam: a differential test against the Go `freeroamd` in a container.
+- **Real client (not run; kept for when one is available):** `cargo run -- serve` natively with `SBRW_CAPTURE=…`, then the SBRW launcher under CrossOver pointed at `http://127.0.0.1:8680/Engine.svc`. Captures from each session are redacted and committed as regression fixtures.
 - **Packaging:** `docker compose up` on the Mac, then the same checklist. The final check is on a Linux VPS with a second player.
 - **Only one real client:** testkit fakes replay *captured real traffic* (ghost driver, FakeRacer) until a friend joins at M8. One attempt at a second CrossOver bottle in M3.
 

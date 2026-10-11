@@ -6,7 +6,13 @@
 //!   as values, since property order is a serializer detail;
 //! - only the `Connection` and `Content-Type` response headers are compared;
 //! - `user.PASSWORD` holds an argon2id hash in sbrw-rs, where upstream stores
-//!   the SHA-1 the launcher sent; the hash must verify against it.
+//!   the SHA-1 the launcher sent; the hash must verify against it;
+//! - a car's paints, performance parts, skill mods, vinyls and visual parts
+//!   compare as unordered, in bodies and in their tables (whose row ids are
+//!   then compared as a set). Upstream holds them in `HashSet`s of entities
+//!   with identity hash codes, so their order, and the order they are
+//!   inserted in, depends on the JVM's hash codes; no response shows a
+//!   part's id.
 
 use std::fmt;
 
@@ -139,10 +145,39 @@ fn effects(path: &str, e: &Effects, a: &Effects, out: &mut Vec<Mismatch>) {
     }
 }
 
+/// The tables behind a car's `Set`s of parts, and their id column.
+const UNORDERED_TABLES: [&str; 5] = ["paint", "performancepart", "skillmodpart", "vinyl", "visualpart"];
+
+/// An unordered table's rows without their ids, sorted, and its ids, sorted.
+fn unordered(rows: &[crate::scenario::Row]) -> (Vec<crate::scenario::Row>, Vec<String>) {
+    let mut ids: Vec<String> = rows.iter().map(|r| r.get("id").map_or_else(String::new, Value::to_string)).collect();
+    ids.sort();
+    let mut rows: Vec<crate::scenario::Row> = rows
+        .iter()
+        .map(|r| r.iter().filter(|(k, _)| *k != "id").map(|(k, v)| (k.clone(), v.clone())).collect())
+        .collect();
+    rows.sort_by_cached_key(|r| serde_json::to_string(r).expect("rows serialize"));
+    (rows, ids)
+}
+
 fn db(e: &Db, a: &Db, out: &mut Vec<Mismatch>) {
     let tables: std::collections::BTreeSet<&String> = e.keys().chain(a.keys()).collect();
     for table in tables {
         let (er, ar) = (e.get(table).map_or(&[][..], Vec::as_slice), a.get(table).map_or(&[][..], Vec::as_slice));
+        let sorted;
+        let (er, ar) = if UNORDERED_TABLES.contains(&table.as_str()) {
+            let ((er, eids), (ar, aids)) = (unordered(er), unordered(ar));
+            if eids != aids {
+                out.push(Mismatch {
+                    path: format!("db.{table}.id"),
+                    detail: format!("expected ids {eids:?}, got {aids:?}"),
+                });
+            }
+            sorted = (er, ar);
+            (sorted.0.as_slice(), sorted.1.as_slice())
+        } else {
+            (er, ar)
+        };
         if er.len() != ar.len() {
             out.push(Mismatch {
                 path: format!("db.{table}"),
@@ -174,7 +209,8 @@ fn db(e: &Db, a: &Db, out: &mut Vec<Mismatch>) {
     }
 }
 
-/// Replace the text of every `<StackTrace>` element: Java stack traces can't be reproduced.
+/// Replace the text of every `<StackTrace>` element (Java stack traces can't
+/// be reproduced), and sort the children of a car's unordered part lists.
 pub fn normalize_body(body: &str) -> String {
     const OPEN: &str = "<StackTrace>";
     const CLOSE: &str = "</StackTrace>";
@@ -186,6 +222,41 @@ pub fn normalize_body(body: &str) -> String {
         out.push_str(&rest[..after]);
         out.push('…');
         rest = &rest[after + len..];
+    }
+    out.push_str(rest);
+    ["Paints", "PerformanceParts", "SkillModParts", "Vinyls", "VisualParts"]
+        .into_iter()
+        .fold(out, |body, list| sort_children(&body, list))
+}
+
+/// Sort the child elements of every `<list>` element. The children are flat
+/// records, so each ends at its first closing tag.
+fn sort_children(body: &str, list: &str) -> String {
+    let (open, close) = (format!("<{list}>"), format!("</{list}>"));
+    let mut out = String::with_capacity(body.len());
+    let mut rest = body;
+    while let Some(start) = rest.find(&open) {
+        let inner_start = start + open.len();
+        let Some(len) = rest[inner_start..].find(&close) else { break };
+        let mut inner = &rest[inner_start..inner_start + len];
+        let mut children = Vec::new();
+        while let Some(name) = inner.strip_prefix('<').and_then(|s| s.split(['>', '/', ' ']).next()) {
+            let end_tag = format!("</{name}>");
+            let end = match inner.find('>') {
+                Some(gt) if inner[..gt].ends_with('/') => gt + 1,
+                _ => match inner.find(&end_tag) {
+                    Some(at) => at + end_tag.len(),
+                    None => break,
+                },
+            };
+            children.push(&inner[..end]);
+            inner = &inner[end..];
+        }
+        children.sort_unstable();
+        out.push_str(&rest[..inner_start]);
+        children.into_iter().for_each(|c| out.push_str(c));
+        out.push_str(inner);
+        rest = &rest[inner_start + len..];
     }
     out.push_str(rest);
     out
@@ -351,6 +422,36 @@ mod tests {
         assert!(compare(&e, &a).is_empty());
         a.db.insert("user".into(), vec![row(&sbrw_core::password::hash("something else"))]);
         assert_eq!(compare(&e, &a).len(), 1);
+    }
+
+    #[test]
+    fn car_part_lists_compare_unordered() {
+        let car = |paints: &str| {
+            format!(
+                "<OwnedCarTrans><CustomCar><Paints>{paints}</Paints><Vinyls/></CustomCar><Id>1</Id></OwnedCarTrans>"
+            )
+        };
+        let (p1, p2) = (
+            "<CustomPaintTrans><Slot>1</Slot></CustomPaintTrans>",
+            "<CustomPaintTrans><Slot>2</Slot></CustomPaintTrans>",
+        );
+        let e = fixture(response(200, "application/xml", &car(&format!("{p1}{p2}"))));
+        assert!(compare(&e, &fixture(response(200, "application/xml", &car(&format!("{p2}{p1}"))))).is_empty());
+        assert_eq!(compare(&e, &fixture(response(200, "application/xml", &car(&format!("{p1}{p1}"))))).len(), 1);
+
+        let (mut e, mut a) = (e.clone(), e);
+        let row = |id: i64, slot: i64| -> crate::scenario::Row {
+            [("id".to_owned(), json!(id)), ("slot".to_owned(), json!(slot)), ("carId".to_owned(), json!(1))].into()
+        };
+        e.db.insert("paint".into(), vec![row(1, 5), row(2, 0)]);
+        a.db.insert("paint".into(), vec![row(1, 0), row(2, 5)]);
+        assert!(compare(&e, &a).is_empty(), "ids are a set, rows a multiset");
+        a.db.insert("paint".into(), vec![row(1, 0), row(3, 5)]);
+        let paths: Vec<String> = compare(&e, &a).into_iter().map(|m| m.path).collect();
+        assert_eq!(paths, ["db.paint.id"]);
+        a.db.insert("car".into(), vec![row(1, 0), row(2, 5)]);
+        e.db.insert("car".into(), vec![row(1, 5), row(2, 0)]);
+        assert_eq!(compare(&e, &a).len(), 3, "other tables stay ordered");
     }
 
     #[test]

@@ -50,3 +50,37 @@ Upstream reads its branch, commit and build time from a git.properties resource 
 into the war, reporting "unknown" when it is missing (as in the reference rig).
 sbrw_core::BuildInfo takes the same values from SBRW_GIT_* variables at compile time,
 and the replay harness uses BuildInfo::unknown() to match the recordings."""
+
+["bo/RequestSessionInfo#getTokenSessionEntity()"]
+status = "replaced"
+reason = """
+The request-scoped holder of the session AuthenticationFilter validated. sbrw-http's
+Call::session() is that session; handlers read its fields directly."""
+
+["bo/RequestSessionInfo#setTokenSessionEntity(TokenSessionEntity)"]
+status = "replaced"
+reason = "Set by AuthenticationFilter; sbrw-http's dispatch stores the session in the Call."
+
+["bo/RequestSessionInfo#getUser()"]
+status = "replaced"
+reason = "Call::session().user, the session's copy of the user."
+
+["bo/RequestSessionInfo#isAdmin()"]
+status = "replaced"
+reason = "Call::session().user.is_admin."
+
+["bo/RequestSessionInfo#getEventSessionId()"]
+status = "replaced"
+reason = "Call::session().event_session_id."
+
+["bo/RequestSessionInfo#getActiveLobbyId()"]
+status = "replaced"
+reason = "Call::session().active_lobby_id."
+
+["bo/RequestSessionInfo#getActivePersonaId()"]
+status = "replaced"
+reason = "Call::session().active_persona_id."
+
+["bo/RequestSessionInfo#getRelayCryptoTicket()"]
+status = "replaced"
+reason = "Call::session().relay_crypto_ticket."

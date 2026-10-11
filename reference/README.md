@@ -76,6 +76,7 @@ SBRW_REPLAY_REPORT=1 cargo test -p sbrw-testkit --test replay -- user/     # wit
 Known differences are normalised by the replay, never by editing fixtures:
 - **Java stack traces** in error bodies.
 - **Stored passwords:** sbrw-rs stores `argon2id(sha1)` instead of the bare SHA-1. This normalisation lands with the user port.
+- **A car's parts** (paints, performance parts, skill mods, vinyls, visual parts) compare as unordered lists, in bodies and in their tables, where the row ids compare as a set. Upstream keeps each list in a `HashSet` of entities hashed by identity. The order depends on the JVM's hash codes, which only repeat between runs because the rig is deterministic. That covers the XML and the order the rows are inserted in, so ids don't line up with slots either. No response shows a part's id.
 
 Smaller differences that no recording exercises yet:
 - **Number formatting:** `Float.toString`/`Double.toString` match JDK 11 exactly from 10⁻³ up to 10⁷, the range where Java prints plain decimals. Outside it, JDK 11 sometimes prints extra digits (`2.2856919E9` where the shortest form is `2.285692E9`). Both read back as the same number (`fixtures/vectors/java_number_to_string.json`).

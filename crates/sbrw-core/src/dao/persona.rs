@@ -108,6 +108,14 @@ pub fn insert(db: &Connection, p: &mut PersonaEntity) -> rusqlite::Result<()> {
     Ok(())
 }
 
+// port: dao/util/BaseDAO#delete(TE)
+/// `PersonaDAO.delete` (`remove(merge(entity))`). The persona maps no
+/// cascades; the database's foreign keys delete its cars, inventory and the rest.
+pub fn delete(db: &Connection, p: &PersonaEntity) -> rusqlite::Result<()> {
+    db.prepare_cached("DELETE FROM persona WHERE ID = ?1")?.execute([p.persona_id])?;
+    Ok(())
+}
+
 /// `PersonaDAO.update` (`merge`): every mapped column, from this copy.
 pub fn update(db: &Connection, p: &PersonaEntity) -> rusqlite::Result<()> {
     db.prepare_cached(

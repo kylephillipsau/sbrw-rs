@@ -1,9 +1,12 @@
-//! `DriverPersonaBO`: drivers (personas). Ported so far: creating them, name
-//! checks, and the profile and level tables the game reads.
+//! `DriverPersonaBO`: drivers (personas): creating and deleting them, name
+//! checks, their profiles and presence, and the level table the game reads.
 
-use sbrw_xml::dto::http::{ArrayOfBadgePacket, ArrayOfInt, ArrayOfString, BadgePacket, ProfileData};
+use sbrw_xml::dto::http::{
+    ArrayOfBadgePacket, ArrayOfInt, ArrayOfPersonaBase, ArrayOfString, BadgePacket, PersonaBase, PersonaPresence,
+    ProfileData,
+};
 
-use crate::bo::inventory;
+use crate::bo::{inventory, presence};
 use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::treasure_hunt::{self, TreasureHuntEntity};
 use crate::dao::{level_rep, persona_achievement_rank, persona_badge, user};
@@ -105,6 +108,66 @@ pub fn get_badges(w: &World, persona_id: i64) -> Result<ArrayOfBadgePacket, Faul
         });
     }
     Ok(array)
+}
+
+// port: bo/DriverPersonaBO#getPersonaBaseFromList(List)
+/// Public profiles of the drivers, in order, up to the first that doesn't exist.
+pub fn get_persona_base_from_list(w: &World, persona_id_list: &[i64]) -> Result<ArrayOfPersonaBase, Fault> {
+    let mut array = ArrayOfPersonaBase::default();
+    for &persona_id in persona_id_list {
+        let Some(persona_entity) = persona::find(w.db(), persona_id)? else { return Ok(array) };
+        array.persona_base.push(get_persona_base(w, &persona_entity)?);
+    }
+    Ok(array)
+}
+
+// port: bo/DriverPersonaBO#getPersonaBase(PersonaEntity)
+pub fn get_persona_base(w: &World, persona_entity: &PersonaEntity) -> Result<PersonaBase, Fault> {
+    Ok(PersonaBase {
+        badges: Some(get_badges(w, persona_entity.persona_id)?),
+        icon_index: persona_entity.icon_index,
+        level: persona_entity.level,
+        motto: persona_entity.motto.clone(),
+        name: persona_entity.name.clone(),
+        presence: Some(presence::get_presence(w, persona_entity.persona_id)?),
+        persona_id: persona_entity.persona_id,
+        score: persona_entity.score,
+        user_id: persona_entity.user_id.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?,
+    })
+}
+
+// port: bo/DriverPersonaBO#deletePersona(Long)
+/// Delete the driver, and everything of its that the database cascades to;
+/// the account's selected index drops by one.
+pub fn delete_persona(w: &mut World, persona_id: i64) -> Result<(), Fault> {
+    let persona_entity = persona::find(w.db(), persona_id)?.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    let user_id = persona_entity.user_id.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?;
+    let mut user = user::find(w.db(), user_id)?.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?;
+    persona::delete(w.db(), &persona_entity)?;
+    let selected = user.selected_persona_index.ok_or_else(|| Fault::null_pointer("UserEntity.selectedPersonaIndex"))?;
+    user.selected_persona_index = Some(0.max(selected.wrapping_sub(1)));
+    user::update(w.db(), &user)?;
+    Ok(())
+}
+
+// port: bo/DriverPersonaBO#getPersonaPresenceByName(String)
+pub fn get_persona_presence_by_name(w: &World, name: Option<&str>) -> Result<PersonaPresence, Fault> {
+    let Some(persona_entity) = persona::find_by_name(w.db(), name)? else {
+        return Err(Fault::engine(EngineExceptionCode::PersonaNotFound, false));
+    };
+    Ok(PersonaPresence {
+        persona_id: persona_entity.persona_id,
+        presence: Some(presence::get_presence(w, persona_entity.persona_id)?),
+        user_id: persona_entity.user_id.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?,
+    })
+}
+
+// port: bo/DriverPersonaBO#updateStatusMessage(String,Long)
+pub fn update_status_message(w: &mut World, message: Option<String>, persona_id: i64) -> Result<(), Fault> {
+    let mut persona_entity = persona::find(w.db(), persona_id)?.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    persona_entity.motto = message;
+    persona::update(w.db(), &persona_entity)?;
+    Ok(())
 }
 
 // port: bo/DriverPersonaBO#reserveName(String)

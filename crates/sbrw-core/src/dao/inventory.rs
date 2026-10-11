@@ -3,9 +3,9 @@
 
 // port: dao/InventoryDAO#<init>()
 
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 
-use crate::dao::inventory_item::InventoryItemEntity;
+use crate::dao::inventory_item::{self, InventoryItemEntity};
 
 /// `InventoryEntity`. `Default` is `new InventoryEntity()`.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -20,6 +20,37 @@ pub struct InventoryEntity {
     pub skill_mod_parts_used_slot_count: i32,
     pub visual_parts_capacity: i32,
     pub visual_parts_used_slot_count: i32,
+}
+
+impl InventoryEntity {
+    fn from_row(row: &Row<'_>) -> rusqlite::Result<Self> {
+        Ok(Self {
+            id: row.get("id")?,
+            persona_id: row.get("personaId")?,
+            inventory_items: Vec::new(),
+            performance_parts_capacity: row.get("performancePartsCapacity")?,
+            performance_parts_used_slot_count: row.get("performancePartsUsedSlotCount")?,
+            skill_mod_parts_capacity: row.get("skillModPartsCapacity")?,
+            skill_mod_parts_used_slot_count: row.get("skillModPartsUsedSlotCount")?,
+            visual_parts_capacity: row.get("visualPartsCapacity")?,
+            visual_parts_used_slot_count: row.get("visualPartsUsedSlotCount")?,
+        })
+    }
+}
+
+// port: dao/InventoryDAO#findByPersonaId(Long)
+// port: jpa/InventoryEntity@InventoryEntity.findByPersonaId
+/// The persona's inventory, with its items (EAGER).
+pub fn find_by_persona_id(db: &Connection, persona_id: i64) -> rusqlite::Result<Option<InventoryEntity>> {
+    let Some(mut inventory) = db
+        .prepare_cached("SELECT * FROM inventory WHERE personaId = ?1 ORDER BY id LIMIT 1")?
+        .query_row([persona_id], InventoryEntity::from_row)
+        .optional()?
+    else {
+        return Ok(None);
+    };
+    inventory.inventory_items = inventory_item::find_by_inventory_id(db, inventory.id)?;
+    Ok(Some(inventory))
 }
 
 /// `InventoryDAO.insert` (`persist`); sets the generated id.

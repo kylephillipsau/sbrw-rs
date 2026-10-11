@@ -1,0 +1,208 @@
+{
+  "description": "Buying starter cars through the game's basket call, and the garage calls that read them back: car slots, the default car, the car list, and the inventory.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002, with no drivers yet.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Driver 100: level 60 with 350000 cash, the starting powerups and the insurance amplifier.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "5" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "No cars yet: an empty garage, the slot count and the garage-slot product.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "With no cars, an empty OwnedCarTrans.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "And an empty list.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Another driver's garage: not this session's persona.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The cheapest starter car (75000): the first car, the COMMERCE achievements for buying it, and the cash taken.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "The garage with one car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A second starter car (175000), which becomes the default.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR8</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "A third (150000) is more than the 100000 left.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR3</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "The client's \"no product\" id.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>-1</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Garage slots can't be bought.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-GARAGESLOT</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Two cars, the second selected.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The selected car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Both cars.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "One car by id.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/1",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Selecting the first car again.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/1",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Now the first car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "An id that isn't in the garage selects past the last slot.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/999",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Which falls back to the last car, and saves that index.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The inventory: starting powerups, the insurance amplifier and the slot counts.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The profile after spending.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    }
+  ]
+}

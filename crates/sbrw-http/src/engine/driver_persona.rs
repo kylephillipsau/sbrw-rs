@@ -1,12 +1,13 @@
-//! `api/DriverPersona`: creating drivers and reading their profiles. As
-//! upstream, each call into a BO is its own world call.
+//! `api/DriverPersona`: creating and deleting drivers, their profiles,
+//! presence and motto. As upstream, each call into a BO is its own world call.
 
 use axum::http::StatusCode;
 use axum::response::Response;
-use sbrw_core::bo::{driver_persona, user};
+use sbrw_core::bo::{driver_persona, presence, token_session, user};
 use sbrw_core::dao::persona::PersonaEntity;
 use sbrw_core::{EngineExceptionCode, Fault};
 use sbrw_xml::ToXml;
+use sbrw_xml::dto::http::{PersonaIdArray, PersonaMotto};
 
 use super::{Call, entity};
 use crate::AppState;
@@ -99,6 +100,80 @@ pub(super) async fn create_persona(state: &AppState, call: &Call) -> Result<Resp
         })
         .await?;
     Ok(entity(call, StatusCode::OK, persona.to_xml()))
+}
+
+/// `verifyPersonaOwnership` with a `Long` that may be null: no session owns null.
+fn verify_persona_ownership(call: &Call, persona_id: Option<i64>) -> Result<i64, Fault> {
+    match persona_id {
+        Some(persona_id) => token_session::verify_persona_ownership(call.session(), persona_id).map(|()| persona_id),
+        None => Err(Fault::engine(EngineExceptionCode::RemotePersonaDoesNotBelongToUser, true)),
+    }
+}
+
+// port: api/DriverPersona#deletePersona(Long)
+/// Delete one of the session's drivers; it may no longer be selected.
+pub(super) async fn delete_persona(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id = verify_persona_ownership(call, call.query_long("personaId")?)?;
+    let world = state.world();
+    world.call(move |w| driver_persona::delete_persona(w, persona_id)).await?;
+    let token = call.session().security_token.clone();
+    world
+        .call(move |w| {
+            if let Some(session) = w.tokens.get_mut(&token) {
+                session.allowed_persona_ids.retain(|id| *id != persona_id);
+            }
+            Ok(())
+        })
+        .await?;
+    Ok(entity(call, StatusCode::OK, "<long>0</long>".into()))
+}
+
+// port: api/DriverPersona#getPersonaBaseFromList(InputStream)
+/// Public profiles; no session needed.
+pub(super) async fn get_persona_base_from_list(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id_array: PersonaIdArray = call.unmarshal()?;
+    let persona_ids = persona_id_array.persona_ids.ok_or_else(|| Fault::null_pointer("PersonaIdArray.personaIds"))?;
+    let array = state.world().call(move |w| driver_persona::get_persona_base_from_list(w, &persona_ids._long)).await?;
+    Ok(entity(call, StatusCode::OK, array.to_xml()))
+}
+
+// port: api/DriverPersona#updatePersonaPresence(Long,Long)
+/// The driver's presence; `PresenceBO.updatePresence` is asynchronous, so it
+/// runs after the answer.
+pub(super) async fn update_persona_presence(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id = call.query_long("personaId")?;
+    let new_presence = call.query_long("presence")?;
+    let persona_id = verify_persona_ownership(call, persona_id)?;
+    state
+        .world()
+        .call(move |w| {
+            w.queue_async(move |w| match new_presence {
+                Some(p) => presence::update_presence(w, persona_id, p),
+                None if w.redis.is_none() => Ok(()),
+                None => Err(Fault::null_pointer("presence")),
+            });
+            Ok(())
+        })
+        .await?;
+    Ok(entity(call, StatusCode::OK, String::new()))
+}
+
+// port: api/DriverPersona#getPersonaPresenceByName(String)
+pub(super) async fn get_persona_presence_by_name(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let display_name = call.query("displayName");
+    let presence =
+        state.world().call(move |w| driver_persona::get_persona_presence_by_name(w, display_name.as_deref())).await?;
+    Ok(entity(call, StatusCode::OK, presence.to_xml()))
+}
+
+// port: api/DriverPersona#updateStatusMessage(InputStream)
+/// Set a driver's motto; the answer echoes the request.
+pub(super) async fn update_status_message(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_motto: PersonaMotto = call.unmarshal()?;
+    let persona_id = verify_persona_ownership(call, Some(persona_motto.persona_id))?;
+    let message = persona_motto.message.clone();
+    state.world().call(move |w| driver_persona::update_status_message(w, message, persona_id)).await?;
+    Ok(entity(call, StatusCode::OK, persona_motto.to_xml()))
 }
 
 #[cfg(test)]

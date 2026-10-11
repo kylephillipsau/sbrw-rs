@@ -1,0 +1,333 @@
+{
+  "description": "The garage and driver calls the game makes once a driver has cars: car slots, the default car and switching it, the car list, the inventory, public profiles, presence, the motto, and deleting drivers.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002, with no drivers yet.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "5" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER2", "iconIndex": "7" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Selecting driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 100's two starter cars as the original builds them (persona/starter_car), the second with a performance part, two skill mods (one fixed) and a license plate; a damaged rental that expires tomorrow; and the second car selected.",
+      "sql": [
+        "INSERT INTO car (id, durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset, level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version) VALUES (1, 100, NULL, 1.0, 'CustomizedCar', 100, 1008844988, 872416321, 1, 0, 'challenger71', -1550817422, 175, 37500.0, 0.0, 5, 0)",
+        "INSERT INTO car (id, durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset, level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version) VALUES (2, 100, NULL, 1.0, 'CustomizedCar', 100, 55094, 872416321, 1, 0, 'r32', -1809072351, 243, 87500.0, 0.0, 5, 0)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (1, 47885063, 496032526, 207, 0, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (2, 47885063, 496032526, 207, 5, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (3, 47885063, 496032526, 255, 7, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (4, 47885063, 496032526, 207, 3, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (5, 47885063, 496032526, 207, 6, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (6, 47885063, 496032526, 207, 4, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (7, 47885063, 496032431, 255, 6, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (8, 47885063, 496032431, 255, 7, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (9, 47885063, 496032431, 255, 4, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (10, 47885063, 496032431, 255, 5, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (11, 47885063, 496032431, 255, 0, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (12, 47885063, 496032431, 255, 3, 200, 2)",
+        "INSERT INTO vinyl (id, hash, hue1, hue2, hue3, hue4, layer, mir, rot, sat1, sat2, sat3, sat4, scalex, scaley, shear, tranx, trany, var1, var2, var3, var4, carId) VALUES (1, 871751947, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)",
+        "INSERT INTO performancepart (id, performancePartAttribHash, carId) VALUES (1, 783812074, 2)",
+        "INSERT INTO skillmodpart (id, isFixed, skillModPartAttribHash, carId) VALUES (1, 0, -1046174792, 2)",
+        "INSERT INTO skillmodpart (id, isFixed, skillModPartAttribHash, carId) VALUES (2, 1, -1046174792, 2)",
+        "INSERT INTO visualpart (id, partHash, slotHash, carId) VALUES (1, -920871356, 1515028479, 2)",
+        "INSERT INTO car (id, durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset, level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version) VALUES (3, 87, '2026-01-02 12:34:56', 1.5, 'RentalCar', 100, 1008844988, 872416321, 1, 0, 'challenger71', -1550817422, 175, 0.0, 0.25, 5, 2)",
+        "UPDATE persona SET curCarIndex = 1 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "All three cars, the slot count and the garage-slot product.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The selected (second) car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "All three cars.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "One car by id.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/2",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The rental, with its expiry.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/3",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The car list isn't checked against the session's drivers.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/cars",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Nor is a car by id, whoever owns it.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/cars/1",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A car that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/999",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Saving a car from the shops answers the default car and saves nothing.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/cars",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<OwnedCarTrans><Id>2</Id></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "Selecting the first car.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/1",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Now the first car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "An id that isn't in the garage selects past the last slot.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/999",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Which falls back to the last car, the rental, and saves that index.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The garage shows the saved index.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 101 has no cars, so any id selects slot 0.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/101/defaultcar/1",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 101 has no cars: an empty car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/defaultcar",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The selected driver's inventory: starting powerups, the insurance amplifier and the slot counts.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Two drivers' public profiles, without a session.",
+      "http": { "method": "POST", "path": "/Engine.svc/DriverPersona/GetPersonaBaseFromList", "body": "<PersonaIdArray xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><PersonaIds><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">100</array:long><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">101</array:long></PersonaIds></PersonaIdArray>" }
+    },
+    {
+      "note": "The list stops at the first driver that doesn't exist.",
+      "http": { "method": "POST", "path": "/Engine.svc/DriverPersona/GetPersonaBaseFromList", "body": "<PersonaIdArray xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><PersonaIds><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">101</array:long><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">999</array:long><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">100</array:long></PersonaIds></PersonaIdArray>" }
+    },
+    {
+      "note": "A driver's presence by name, case-insensitively.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaPresenceByName",
+        "query": { "displayName": "driver2" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A name nobody has.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaPresenceByName",
+        "query": { "displayName": "NOBODY" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Going online in the world.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": { "personaId": "100", "presence": "1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Now online.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaPresenceByName",
+        "query": { "displayName": "DRIVER1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Another account's driver.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": { "personaId": "555", "presence": "1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Setting a motto; the reply echoes it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdateStatusMessage",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<PersonaMotto xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><message>hello world</message><personaId>100</personaId></PersonaMotto>"
+      }
+    },
+    {
+      "note": "Another account's driver.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdateStatusMessage",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<PersonaMotto xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><message>x</message><personaId>555</personaId></PersonaMotto>"
+      }
+    },
+    {
+      "note": "The motto and presence in the public profile.",
+      "http": { "method": "POST", "path": "/Engine.svc/DriverPersona/GetPersonaBaseFromList", "body": "<PersonaIdArray xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><PersonaIds><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">100</array:long></PersonaIds></PersonaIdArray>" }
+    },
+    {
+      "note": "Selecting driver 101: the account's selected index becomes 1.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "101" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Deleting driver 101: the selected index drops to 0.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": { "personaId": "101" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Deleting it again: no longer this session's.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": { "personaId": "101" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Deleting driver 100 takes its cars, parts, inventory and the rest with it; the index stays at 0.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Its garage afterwards: no longer this session's driver.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    }
+  ]
+}

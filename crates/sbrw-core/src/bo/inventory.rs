@@ -1,8 +1,10 @@
 //! `InventoryBO`: the items a persona owns and the slots they take. Ported so
-//! far: creating a new persona's inventory with its starting items.
+//! far: creating a new persona's inventory with its starting items, and the
+//! inventory the game reads.
 
 use anyhow::anyhow;
 use sbrw_java::lang::{round_float, split, trim};
+use sbrw_xml::dto::http::{ArrayOfInventoryItemTrans, InventoryItemTrans, InventoryTrans};
 use time::{Duration, PrimitiveDateTime};
 
 use crate::dao::inventory::{self, InventoryEntity};
@@ -11,6 +13,59 @@ use crate::dao::persona::PersonaEntity;
 use crate::dao::product::{self, ProductEntity};
 use crate::engine::{EngineException, EngineExceptionCode};
 use crate::{Fault, World, datetime};
+
+// port: bo/InventoryBO#getInventory(PersonaEntity)
+/// The persona's inventory, created if it has none.
+pub fn get_inventory(w: &mut World, persona: &PersonaEntity) -> Result<InventoryEntity, Fault> {
+    match inventory::find_by_persona_id(w.db(), persona.persona_id)? {
+        Some(inventory) => Ok(inventory),
+        None => create_inventory(w, persona),
+    }
+}
+
+// port: bo/InventoryBO#getClientInventory(InventoryEntity)
+pub fn get_client_inventory(w: &World, inventory: &InventoryEntity) -> Result<InventoryTrans, Fault> {
+    let mut items = ArrayOfInventoryItemTrans::default();
+    for item in &inventory.inventory_items {
+        items.inventory_item_trans.push(convert_item_to_item_trans(w, inventory, item)?);
+    }
+    Ok(InventoryTrans {
+        performance_parts_capacity: inventory.performance_parts_capacity.into(),
+        performance_parts_used_slot_count: inventory.performance_parts_used_slot_count.into(),
+        visual_parts_capacity: inventory.visual_parts_capacity.into(),
+        visual_parts_used_slot_count: inventory.visual_parts_used_slot_count.into(),
+        skill_mod_parts_capacity: inventory.skill_mod_parts_capacity.into(),
+        skill_mod_parts_used_slot_count: inventory.skill_mod_parts_used_slot_count.into(),
+        inventory_items: Some(items),
+    })
+}
+
+// port: bo/InventoryBO#convertItemToItemTrans(InventoryItemEntity)
+/// An item as the game sees it. `InventoryId` is the inventory's id, not the item's.
+pub fn convert_item_to_item_trans(
+    w: &World,
+    inventory: &InventoryEntity,
+    item: &InventoryItemEntity,
+) -> Result<InventoryItemTrans, Fault> {
+    // The item's EAGER product, joined on its product id.
+    let product = product::find_by_product_id(w.db(), &item.product_id)?;
+    let hash = product.hash.ok_or_else(|| Fault::null_pointer("ProductEntity.hash"))?;
+    Ok(InventoryItemTrans {
+        entitlement_tag: product.entitlement_tag.clone(),
+        expiration_date: item.expiration_date.map(|t| {
+            t.format(time::macros::format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]"))
+                .expect("a datetime formats")
+        }),
+        hash,
+        inventory_id: inventory.id,
+        product_id: Some(product.product_id.clone()),
+        remaining_use_count: item.remaining_use_count.into(),
+        resell_price: f64::from(item.resell_price),
+        status: item.status.clone(),
+        string_hash: Some(format!("0x{hash:08X}")),
+        virtual_item_type: Some(product.product_type.to_lowercase()),
+    })
+}
 
 // port: bo/InventoryBO#canInventoryHold(InventoryEntity,ProductEntity)
 /// Whether one more item of the product's type fits; a capacity of 0 means

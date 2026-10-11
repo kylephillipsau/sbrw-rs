@@ -1,0 +1,69 @@
+//! `PersonaBO`: a persona's cars, as the garage and shops use them. Ported
+//! so far: the default car and choosing it, and looking cars up.
+
+use sbrw_xml::dto::http::OwnedCarTrans;
+
+use crate::bo::car_slot;
+use crate::bo::util::owned_car_converter;
+use crate::dao::car::{self, CarEntity};
+use crate::dao::persona::{self, PersonaEntity};
+use crate::{Fault, World};
+
+// port: bo/PersonaBO#changeDefaultCar(Long,Long)
+pub fn change_default_car(w: &mut World, persona_id: i64, default_car_id: i64) -> Result<(), Fault> {
+    let mut persona_entity = persona::find(w.db(), persona_id)?.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    change_default_car_of(w, &mut persona_entity, default_car_id)?;
+    persona::update(w.db(), &persona_entity)?;
+    Ok(())
+}
+
+// port: bo/PersonaBO#changeDefaultCar(PersonaEntity,Long)
+/// Select the car with this id: its index in the garage, or one past the
+/// last car when the garage has no such car.
+pub fn change_default_car_of(w: &World, persona_entity: &mut PersonaEntity, default_car_id: i64) -> Result<(), Fault> {
+    let car_slot_list = car::find_by_persona_id(w.db(), persona_entity.persona_id)?;
+    let i = car_slot_list.iter().position(|c| c.id == default_car_id).unwrap_or(car_slot_list.len());
+    persona_entity.cur_car_index = i as i32;
+    Ok(())
+}
+
+// port: bo/PersonaBO#getPersonaById(Long)
+pub fn get_persona_by_id(w: &World, persona_id: i64) -> Result<Option<PersonaEntity>, Fault> {
+    Ok(persona::find(w.db(), persona_id)?)
+}
+
+// port: bo/PersonaBO#getDefaultCarEntity(Long)
+/// The selected car, with its parts. An index past the last car selects, and
+/// saves, the last car. `None` without cars.
+pub fn get_default_car_entity(w: &mut World, persona_id: i64) -> Result<Option<CarEntity>, Fault> {
+    let car_slot_count = car_slot::count_personas_car(w, persona_id)?;
+    if car_slot_count <= 0 {
+        return Ok(None);
+    }
+    let mut persona_entity = persona::find(w.db(), persona_id)?.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    let mut cur_car_index = persona_entity.cur_car_index;
+    if cur_car_index >= car_slot_count {
+        cur_car_index = car_slot_count - 1;
+        persona_entity.cur_car_index = cur_car_index;
+        persona::update(w.db(), &persona_entity)?;
+    }
+    if cur_car_index < 0 {
+        // `setFirstResult` refuses a negative position.
+        return Err(Fault::Internal(anyhow::anyhow!("first-result value cannot be negative : {cur_car_index}")));
+    }
+    Ok(Some(car::find_by_persona_id_eager_at(w.db(), persona_id, cur_car_index)?))
+}
+
+// port: bo/PersonaBO#getDefaultCar(Long)
+/// The selected car as the game sees it; an empty car without cars.
+pub fn get_default_car(w: &mut World, persona_id: i64) -> Result<OwnedCarTrans, Fault> {
+    Ok(match get_default_car_entity(w, persona_id)? {
+        Some(car_entity) => owned_car_converter::entity2_trans(&car_entity),
+        None => OwnedCarTrans::default(),
+    })
+}
+
+// port: bo/PersonaBO#getCarByOwnedCarId(Long)
+pub fn get_car_by_owned_car_id(w: &World, owned_car_id: i64) -> Result<CarEntity, Fault> {
+    car::find(w.db(), owned_car_id)?.ok_or_else(|| Fault::null_pointer("CarEntity"))
+}

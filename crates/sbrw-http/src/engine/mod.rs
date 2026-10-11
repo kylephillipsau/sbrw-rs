@@ -16,6 +16,7 @@
 
 mod boot;
 mod driver_persona;
+mod personas;
 mod reporting;
 mod routes;
 mod user;
@@ -344,6 +345,26 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/DriverPersona#createPersona(Long,String,String,int,String,String)" => {
             driver_persona::create_persona(state, call).await
         }
+        "api/DriverPersona#deletePersona(Long)" => driver_persona::delete_persona(state, call).await,
+        "api/DriverPersona#getPersonaBaseFromList(InputStream)" => {
+            driver_persona::get_persona_base_from_list(state, call).await
+        }
+        "api/DriverPersona#updatePersonaPresence(Long,Long)" => {
+            driver_persona::update_persona_presence(state, call).await
+        }
+        "api/DriverPersona#getPersonaPresenceByName(String)" => {
+            driver_persona::get_persona_presence_by_name(state, call).await
+        }
+        "api/DriverPersona#updateStatusMessage(InputStream)" => {
+            driver_persona::update_status_message(state, call).await
+        }
+        "api/Personas#carslots(Long)" => personas::carslots(state, call).await,
+        "api/Personas#inventoryObjects(String)" => personas::inventory_objects(state, call).await,
+        "api/Personas#carsGet(Long)" => personas::cars_get(state, call).await,
+        "api/Personas#carsGet(Long,Long)" => personas::car_get(state, call).await,
+        "api/Personas#carsPut(Long,InputStream)" => personas::cars_put(state, call).await,
+        "api/Personas#defaultcarGet(Long)" => personas::defaultcar_get(state, call).await,
+        "api/Personas#defaultcar(Long,Long)" => personas::defaultcar_put(state, call).await,
         "api/User#authenticateUser(String,String)" => user::authenticate_user(state, call).await,
         "api/User#createUser(String,String,String)" => user::create_user(state, call).await,
         "api/User#getPermanentSession()" => user::get_permanent_session(state, call).await,

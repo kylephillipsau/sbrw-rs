@@ -1,0 +1,1074 @@
+{
+  "scenario": "persona/garage",
+  "description": "The garage and driver calls the game makes once a driver has cars: car slots, the default car and switching it, the car list, the inventory, public profiles, presence, the motto, and deleting drivers.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002, with no drivers yet.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>7</IconIndex><Level>60</Level><Name>DRIVER2</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>101</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              101,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting driver 100.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 100's two starter cars as the original builds them (persona/starter_car), the second with a performance part, two skill mods (one fixed) and a license plate; a damaged rental that expires tomorrow; and the second car selected.",
+      "sql": [
+        "INSERT INTO car (id, durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset, level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version) VALUES (1, 100, NULL, 1.0, 'CustomizedCar', 100, 1008844988, 872416321, 1, 0, 'challenger71', -1550817422, 175, 37500.0, 0.0, 5, 0)",
+        "INSERT INTO car (id, durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset, level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version) VALUES (2, 100, NULL, 1.0, 'CustomizedCar', 100, 55094, 872416321, 1, 0, 'r32', -1809072351, 243, 87500.0, 0.0, 5, 0)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (1, 47885063, 496032526, 207, 0, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (2, 47885063, 496032526, 207, 5, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (3, 47885063, 496032526, 255, 7, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (4, 47885063, 496032526, 207, 3, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (5, 47885063, 496032526, 207, 6, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (6, 47885063, 496032526, 207, 4, 255, 1)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (7, 47885063, 496032431, 255, 6, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (8, 47885063, 496032431, 255, 7, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (9, 47885063, 496032431, 255, 4, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (10, 47885063, 496032431, 255, 5, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (11, 47885063, 496032431, 255, 0, 200, 2)",
+        "INSERT INTO paint (id, paintGroup, hue, sat, slot, paintVar, carId) VALUES (12, 47885063, 496032431, 255, 3, 200, 2)",
+        "INSERT INTO vinyl (id, hash, hue1, hue2, hue3, hue4, layer, mir, rot, sat1, sat2, sat3, sat4, scalex, scaley, shear, tranx, trany, var1, var2, var3, var4, carId) VALUES (1, 871751947, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1)",
+        "INSERT INTO performancepart (id, performancePartAttribHash, carId) VALUES (1, 783812074, 2)",
+        "INSERT INTO skillmodpart (id, isFixed, skillModPartAttribHash, carId) VALUES (1, 0, -1046174792, 2)",
+        "INSERT INTO skillmodpart (id, isFixed, skillModPartAttribHash, carId) VALUES (2, 1, -1046174792, 2)",
+        "INSERT INTO visualpart (id, partHash, slotHash, carId) VALUES (1, -920871356, 1515028479, 2)",
+        "INSERT INTO car (id, durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset, level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version) VALUES (3, 87, '2026-01-02 12:34:56', 1.5, 'RentalCar', 100, 1008844988, 872416321, 1, 0, 'challenger71', -1550817422, 175, 0.0, 0.25, 5, 2)",
+        "UPDATE persona SET curCarIndex = 1 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "All three cars, the slot count and the garage-slot product.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CarSlotInfoTrans><CarsOwnedByPersona><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>55094</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>r32</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>6</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>5</Slot><Var>200</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1809072351</PhysicsProfileHash><Rating>243</Rating><ResalePrice>87500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>true</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts><VisualPartTrans><PartHash>-920871356</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints/><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>0.0</ResalePrice><RideHeightDrop>0.25</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>2</Version><Vinyls/><VisualParts/></CustomCar><Durability>87</Durability><ExpirationDate>2026-01-02T12:34:56.000Z</ExpirationDate><Heat>1.5</Heat><Id>3</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans></CarsOwnedByPersona><DefaultOwnedCarIndex>1</DefaultOwnedCarIndex><ObtainableSlots><ProductTrans><BundleItems/><CategoryId></CategoryId><Currency>_NS</Currency><Description>New car slot !!</Description><DurationMinute>0</DurationMinute><Hash>-1143680669</Hash><Icon>128_cash</Icon><Level>70</Level><LongDescription>New car slot !</LongDescription><Price>100.0</Price><Priority>0</Priority><ProductId>SRV-GARAGESLOT</ProductId><SecondaryIcon></SecondaryIcon><UseCount>1</UseCount><VisualStyle></VisualStyle><WebIcon></WebIcon><WebLocation></WebLocation></ProductTrans></ObtainableSlots><OwnedCarSlotsCount>251</OwnedCarSlotsCount></CarSlotInfoTrans>"
+      }
+    },
+    {
+      "note": "The selected (second) car.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>55094</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>r32</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>6</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>5</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>200</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1809072351</PhysicsProfileHash><Rating>243</Rating><ResalePrice>87500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>true</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts><VisualPartTrans><PartHash>-920871356</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "All three cars.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfOwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>55094</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>r32</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>6</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>5</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>200</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1809072351</PhysicsProfileHash><Rating>243</Rating><ResalePrice>87500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>true</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts><VisualPartTrans><PartHash>-920871356</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints/><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>0.0</ResalePrice><RideHeightDrop>0.25</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>2</Version><Vinyls/><VisualParts/></CustomCar><Durability>87</Durability><ExpirationDate>2026-01-02T12:34:56.000Z</ExpirationDate><Heat>1.5</Heat><Id>3</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans></ArrayOfOwnedCarTrans>"
+      }
+    },
+    {
+      "note": "One car by id.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/2",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>55094</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>r32</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>5</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>6</Slot><Var>200</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1809072351</PhysicsProfileHash><Rating>243</Rating><ResalePrice>87500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>true</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts><VisualPartTrans><PartHash>-920871356</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "The rental, with its expiry.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/3",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints/><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>0.0</ResalePrice><RideHeightDrop>0.25</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>2</Version><Vinyls/><VisualParts/></CustomCar><Durability>87</Durability><ExpirationDate>2026-01-02T12:34:56.000Z</ExpirationDate><Heat>1.5</Heat><Id>3</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "The car list isn't checked against the session's drivers.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/cars",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfOwnedCarTrans/>"
+      }
+    },
+    {
+      "note": "Nor is a car by id, whoever owns it.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/cars/1",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "A car that doesn't exist.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/cars/999",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ejb.EJBException: java.lang.NullPointerException\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.PersonaBO$ByteBuddy$Z7kG4BNg.getCarByOwnedCarId(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.carsGet(Personas.java:233)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.NullPointerException\n\tat com.soapboxrace.core.bo.PersonaBO.getCarByOwnedCarId(PersonaBO.java:146)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\t... 24 more\n</StackTrace></InnerException><StackTrace>javax.ejb.EJBException: java.lang.NullPointerException\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.PersonaBO$ByteBuddy$Z7kG4BNg.getCarByOwnedCarId(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.carsGet(Personas.java:233)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.NullPointerException\n\tat com.soapboxrace.core.bo.PersonaBO.getCarByOwnedCarId(PersonaBO.java:146)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\t... 24 more\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Saving a car from the shops answers the default car and saves nothing.",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<OwnedCarTrans><Id>2</Id></OwnedCarTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>55094</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>r32</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>5</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>6</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>200</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1809072351</PhysicsProfileHash><Rating>243</Rating><ResalePrice>87500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>true</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts><VisualPartTrans><PartHash>-920871356</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "Selecting the first car.",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/1",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Now the first car.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "An id that isn't in the garage selects past the last slot.",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/999",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Which falls back to the last car, the rental, and saves that index.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints/><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>0.0</ResalePrice><RideHeightDrop>0.25</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>2</Version><Vinyls/><VisualParts/></CustomCar><Durability>87</Durability><ExpirationDate>2026-01-02T12:34:56.000Z</ExpirationDate><Heat>1.5</Heat><Id>3</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "The garage shows the saved index.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CarSlotInfoTrans><CarsOwnedByPersona><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>55094</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>r32</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>5</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>6</Slot><Var>200</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>200</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1809072351</PhysicsProfileHash><Rating>243</Rating><ResalePrice>87500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>true</IsFixed><SkillModPartAttribHash>-1046174792</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts><VisualPartTrans><PartHash>-920871356</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints/><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>0.0</ResalePrice><RideHeightDrop>0.25</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>2</Version><Vinyls/><VisualParts/></CustomCar><Durability>87</Durability><ExpirationDate>2026-01-02T12:34:56.000Z</ExpirationDate><Heat>1.5</Heat><Id>3</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans></CarsOwnedByPersona><DefaultOwnedCarIndex>2</DefaultOwnedCarIndex><ObtainableSlots><ProductTrans><BundleItems/><CategoryId></CategoryId><Currency>_NS</Currency><Description>New car slot !!</Description><DurationMinute>0</DurationMinute><Hash>-1143680669</Hash><Icon>128_cash</Icon><Level>70</Level><LongDescription>New car slot !</LongDescription><Price>100.0</Price><Priority>0</Priority><ProductId>SRV-GARAGESLOT</ProductId><SecondaryIcon></SecondaryIcon><UseCount>1</UseCount><VisualStyle></VisualStyle><WebIcon></WebIcon><WebLocation></WebLocation></ProductTrans></ObtainableSlots><OwnedCarSlotsCount>251</OwnedCarSlotsCount></CarSlotInfoTrans>"
+      }
+    },
+    {
+      "note": "Driver 101 has no cars, so any id selects slot 0.",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/101/defaultcar/1",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Driver 101 has no cars: an empty car.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/101/defaultcar",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><Durability>0</Durability><Heat>0.0</Heat><Id>0</Id></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "The selected driver's inventory: starting powerups, the insurance amplifier and the slot counts.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<InventoryTrans><InventoryItems><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_emergencyevade</EntitlementTag><Hash>-1564932069</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP8</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA2B9081B</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>onemorelap</EntitlementTag><Hash>1627606782</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP10</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x61034EFE</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>INSURANCE_AMPLIFIER</EntitlementTag><ExpirationDate>2026-01-08T12:00:00</ExpirationDate><Hash>8483711</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-INSURANCE</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0081737F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans></InventoryItems><PerformancePartsCapacity>100</PerformancePartsCapacity><PerformancePartsUsedSlotCount>0</PerformancePartsUsedSlotCount><SkillModPartsCapacity>150</SkillModPartsCapacity><SkillModPartsUsedSlotCount>0</SkillModPartsUsedSlotCount><VisualPartsCapacity>200</VisualPartsCapacity><VisualPartsUsedSlotCount>0</VisualPartsUsedSlotCount></InventoryTrans>"
+      }
+    },
+    {
+      "note": "Two drivers' public profiles, without a session.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/GetPersonaBaseFromList",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": "<PersonaIdArray xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><PersonaIds><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">100</array:long><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">101</array:long></PersonaIds></PersonaIdArray>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfPersonaBase><PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PersonaId>100</PersonaId><Presence>0</Presence><Score>0</Score><UserId>1</UserId></PersonaBase><PersonaBase><Badges/><IconIndex>7</IconIndex><Level>60</Level><Name>DRIVER2</Name><PersonaId>101</PersonaId><Presence>0</Presence><Score>0</Score><UserId>1</UserId></PersonaBase></ArrayOfPersonaBase>"
+      }
+    },
+    {
+      "note": "The list stops at the first driver that doesn't exist.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/GetPersonaBaseFromList",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": "<PersonaIdArray xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><PersonaIds><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">101</array:long><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">999</array:long><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">100</array:long></PersonaIds></PersonaIdArray>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfPersonaBase><PersonaBase><Badges/><IconIndex>7</IconIndex><Level>60</Level><Name>DRIVER2</Name><PersonaId>101</PersonaId><Presence>0</Presence><Score>0</Score><UserId>1</UserId></PersonaBase></ArrayOfPersonaBase>"
+      }
+    },
+    {
+      "note": "A driver's presence by name, case-insensitively.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaPresenceByName",
+        "query": {
+          "displayName": "driver2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaPresence><personaId>101</personaId><presence>0</presence><userId>1</userId></PersonaPresence>"
+      }
+    },
+    {
+      "note": "A name nobody has.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaPresenceByName",
+        "query": {
+          "displayName": "NOBODY"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-771</ErrorCode><InnerException><ErrorCode>-771</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.DriverPersonaBO.getPersonaPresenceByName(DriverPersonaBO.java:202)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.DriverPersonaBO$ByteBuddy$H13O6baJ.getPersonaPresenceByName(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.getPersonaPresenceByName(DriverPersona.java:147)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.DriverPersonaBO.getPersonaPresenceByName(DriverPersonaBO.java:202)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.DriverPersonaBO$ByteBuddy$H13O6baJ.getPersonaPresenceByName(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.getPersonaPresenceByName(DriverPersona.java:147)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Going online in the world.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "100",
+          "presence": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "SET",
+            "args": [
+              "game_presence.100",
+              "1"
+            ]
+          },
+          {
+            "command": "PUBLISH",
+            "args": [
+              "game_presence_updates",
+              "100|1"
+            ]
+          },
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Now online.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaPresenceByName",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaPresence><personaId>100</personaId><presence>1</presence><userId>1</userId></PersonaPresence>"
+      }
+    },
+    {
+      "note": "Another account's driver.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "555",
+          "presence": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-773</ErrorCode><InnerException><ErrorCode>-773</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.updatePersonaPresence(DriverPersona.java:136)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.updatePersonaPresence(DriverPersona.java:136)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Setting a motto; the reply echoes it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdateStatusMessage",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<PersonaMotto xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><message>hello world</message><personaId>100</personaId></PersonaMotto>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaMotto><message>hello world</message><personaId>100</personaId></PersonaMotto>"
+      }
+    },
+    {
+      "note": "Another account's driver.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdateStatusMessage",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<PersonaMotto xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><message>x</message><personaId>555</personaId></PersonaMotto>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-773</ErrorCode><InnerException><ErrorCode>-773</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.updateStatusMessage(DriverPersona.java:156)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.updateStatusMessage(DriverPersona.java:156)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "The motto and presence in the public profile.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/GetPersonaBaseFromList",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": "<PersonaIdArray xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><PersonaIds><array:long xmlns:array=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\">100</array:long></PersonaIds></PersonaIdArray>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfPersonaBase><PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Motto>hello world</Motto><Name>DRIVER1</Name><PersonaId>100</PersonaId><Presence>1</Presence><Score>0</Score><UserId>1</UserId></PersonaBase></ArrayOfPersonaBase>"
+      }
+    },
+    {
+      "note": "Selecting driver 101: the account's selected index becomes 1.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 101,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>101</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "101"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Deleting driver 101: the selected index drops to 0.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<long>0</long>"
+      }
+    },
+    {
+      "note": "Deleting it again: no longer this session's.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-773</ErrorCode><InnerException><ErrorCode>-773</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.deletePersona(DriverPersona.java:115)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.DriverPersona.deletePersona(DriverPersona.java:115)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Deleting driver 100 takes its cars, parts, inventory and the rest with it; the index stays at 0.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<long>0</long>"
+      }
+    },
+    {
+      "note": "Its garage afterwards: no longer this session's driver.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-773</ErrorCode><InnerException><ErrorCode>-773</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.carslots(Personas.java:140)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$gOYOr9pF.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.carslots(Personas.java:140)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

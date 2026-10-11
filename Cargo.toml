@@ -14,6 +14,7 @@ sbrw-common = { path = "crates/sbrw-common" }
 sbrw-core = { path = "crates/sbrw-core" }
 sbrw-http = { path = "crates/sbrw-http" }
 sbrw-java = { path = "crates/sbrw-java" }
+sbrw-script = { path = "crates/sbrw-script" }
 sbrw-testkit = { path = "crates/sbrw-testkit" }
 sbrw-udp = { path = "crates/sbrw-udp" }
 sbrw-xml = { path = "crates/sbrw-xml" }
@@ -33,6 +34,7 @@ indexmap = { version = "2.14.2", features = ["serde"] }
 libtest-mimic = "0.8.2"
 quick-xml = "0.42.0"
 regex = "1.13.1"
+rquickjs = "0.14.0"
 rusqlite = { version = "0.40.2", features = ["bundled", "backup"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"

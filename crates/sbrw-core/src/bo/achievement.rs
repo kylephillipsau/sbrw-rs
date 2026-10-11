@@ -2,15 +2,13 @@
 //! reports it.
 //!
 //! Progress comes from scripts in the static data (`update_trigger`,
-//! `update_value`), which ScriptingBO runs. That isn't ported yet, so only a
-//! category none of whose achievements has a trigger can be committed; LOGIN,
-//! the one ported callers use, has no achievements at all in upstream's data.
+//! `update_value`), which ScriptingBO runs.
 
 use std::collections::HashMap;
 
 use anyhow::anyhow;
 use rusqlite::Connection;
-use sbrw_java::lang::trim;
+use sbrw_java::lang::{round_double, round_float, trim};
 use sbrw_xml::dto::http::BadgePacket;
 use sbrw_xml::dto::xmpp::{
     AchievementAwarded, AchievementProgress, AchievementsAwarded, XMPP_ResponseTypeAchievementsAwarded,
@@ -21,12 +19,16 @@ use crate::bo::achievement_transaction::{AchievementTransaction, Binding, Bindin
 use crate::bo::driver_persona;
 use crate::bo::scripting::{self, ScriptValue};
 use crate::bo::util::achievement_progression_context::AchievementProgressionContext;
-use crate::bo::util::achievement_update_info::AchievementUpdateInfo;
-use crate::dao::achievement::{self, AchievementEntity};
+use crate::bo::util::achievement_update_info::{
+    AchievementUpdateInfo, CompletedAchievementRank, ProgressedAchievement,
+};
+use crate::dao::achievement::{self, AchievementEntity, AchievementRankEntity};
 use crate::dao::badge_definition::{self, BadgeDefinitionEntity};
 use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::persona_achievement::{self, PersonaAchievementEntity};
-use crate::{Fault, World};
+use crate::dao::persona_achievement_rank::{self, PersonaAchievementRankEntity};
+use crate::engine::EngineExceptionCode;
+use crate::{Fault, World, datetime};
 
 /// The singleton's state: the static achievements and badges, as loaded.
 #[derive(Debug, Default)]
@@ -261,15 +263,170 @@ fn update_achievements(
     Ok(achievement_update_info_list)
 }
 
-/// `updateAchievement(AchievementEntity,Map,PersonaAchievementEntity)`: not
-/// ported yet. It evaluates `update_value` with ScriptingBO, so it lands with it.
+// port: bo/AchievementBO#updateAchievement(AchievementEntity,Map,PersonaAchievementEntity)
+/// Add the achievement's `update_value` (or set it, if it overwrites) to the
+/// persona's progress, up to the highest rank's threshold, and move the ranks
+/// it reaches to RewardWaiting. The persona's rank rows are created, Locked,
+/// as the walk reaches them; changes to them are written as Hibernate would
+/// flush them.
 fn update_achievement(
-    _w: &mut World,
-    _achievement_entity: &AchievementEntity,
-    _bindings: &Bindings,
-    _persona_achievement: &mut PersonaAchievementEntity,
+    w: &mut World,
+    achievement_entity: &AchievementEntity,
+    bindings: &Bindings,
+    persona_achievement_entity: &mut PersonaAchievementEntity,
 ) -> Result<AchievementUpdateInfo, Fault> {
-    Err(Fault::unported("bo/AchievementBO#updateAchievement(AchievementEntity,Map,PersonaAchievementEntity)"))
+    if !persona_achievement_entity.can_progress {
+        return Ok(AchievementUpdateInfo::new(achievement_entity.clone()));
+    }
+    let null = |what| move || Fault::null_pointer(what);
+    let mut points_added: i32 = 0;
+
+    let update_value = match achievement_entity.update_value.as_deref() {
+        Some(v) if !trim(v).is_empty() => v,
+        _ => return Ok(AchievementUpdateInfo::new(achievement_entity.clone())),
+    };
+    let mut achievement_update_info = AchievementUpdateInfo::new(achievement_entity.clone());
+    let raw_val = scripting::eval(update_value, bindings)?
+        .map_err(|_| Fault::engine(EngineExceptionCode::UnspecifiedError, true))?;
+    let clean_val: i64 = match raw_val {
+        ScriptValue::Integer(i) => i64::from(i),
+        ScriptValue::Long(l) => l,
+        ScriptValue::Float(f) if f.is_nan() => {
+            return Err(anyhow!("Float return value is NaN! Script: {update_value}").into());
+        }
+        ScriptValue::Float(f) => i64::from(round_float(f)),
+        ScriptValue::Double(d) if d.is_nan() => {
+            return Err(anyhow!("Double return value is NaN! Script: {update_value}").into());
+        }
+        ScriptValue::Double(d) => round_double(d),
+        _ => 0,
+    };
+
+    let thresholds = achievement_entity
+        .ranks
+        .iter()
+        .map(|r| r.threshold_value.ok_or_else(null("AchievementRankEntity.thresholdValue")))
+        .collect::<Result<Vec<i32>, Fault>>()?;
+    if let Some(&max_val) = thresholds.iter().max() {
+        // The value it had when the walk began; it changes after.
+        let current_value = persona_achievement_entity.current_value;
+        let current = || current_value.ok_or_else(null("PersonaAchievementEntity.currentValue"));
+        let should_overwrite = achievement_entity
+            .should_overwrite_progress
+            .ok_or_else(null("AchievementEntity.shouldOverwriteProgress"))?;
+        let progress = if should_overwrite { clean_val } else { current()?.wrapping_add(clean_val) };
+        let new_val = 0.max(i64::from(max_val).min(progress));
+        if new_val == 0 {
+            achievement_update_info.progressed_achievement = Some(ProgressedAchievement {
+                achievement_definition_id: Some(achievement_entity.id),
+                value: Some(new_val),
+            });
+        } else {
+            let ranks = &achievement_entity.ranks;
+            for (i, current_rank_def) in ranks.iter().enumerate() {
+                let mut previous = None;
+                let mut previous_rank = None;
+                let current_rank = find_persona_achievement_rank(persona_achievement_entity, current_rank_def)?;
+
+                if i > 0 {
+                    let previous_def = &ranks[i - 1];
+                    previous = Some(previous_def);
+                    previous_rank =
+                        Some(match find_persona_achievement_rank(persona_achievement_entity, previous_def)? {
+                            Some(index) => index,
+                            None => create_persona_achievement_rank(w, persona_achievement_entity, previous_def)?,
+                        });
+                }
+
+                let current_rank = match current_rank {
+                    Some(index) => index,
+                    None => create_persona_achievement_rank(w, persona_achievement_entity, current_rank_def)?,
+                };
+
+                let threshold = i64::from(current_rank_def.threshold_value.ok_or_else(null("thresholdValue"))?);
+                let state = |index: usize, pa: &PersonaAchievementEntity| {
+                    pa.ranks[index].state.clone().ok_or_else(null("PersonaAchievementRankEntity.state"))
+                };
+
+                let current_state = state(current_rank, persona_achievement_entity)?;
+                if current_state == "Completed" || current_state == "RewardWaiting" {
+                    continue;
+                }
+
+                if new_val >= threshold && new_val != current()? {
+                    let rank = &mut persona_achievement_entity.ranks[current_rank];
+                    rank.state = Some("RewardWaiting".into());
+                    rank.achieved_on = Some(datetime::now(&w.env));
+                    persona_achievement_rank::update(w.db(), rank)?;
+                    points_added = points_added
+                        .wrapping_add(current_rank_def.points.ok_or_else(null("AchievementRankEntity.points"))?);
+                    achievement_update_info.completed_achievement_ranks.push(CompletedAchievementRank {
+                        achievement_entity: achievement_entity.clone(),
+                        achievement_rank_entity: current_rank_def.clone(),
+                        achieved_on: rank.achieved_on,
+                    });
+                } else if let (Some(_), Some(previous_rank)) = (previous, previous_rank)
+                    && state(previous_rank, persona_achievement_entity)? == "InProgress"
+                {
+                    let rank = &mut persona_achievement_entity.ranks[current_rank];
+                    rank.state = Some("Locked".into());
+                    persona_achievement_rank::update(w.db(), rank)?;
+                    break;
+                } else if new_val > 0 && new_val != current()? && new_val < threshold {
+                    let rank = &mut persona_achievement_entity.ranks[current_rank];
+                    rank.state = Some("InProgress".into());
+                    persona_achievement_rank::update(w.db(), rank)?;
+                    achievement_update_info.progressed_achievement = Some(ProgressedAchievement {
+                        achievement_definition_id: Some(achievement_entity.id),
+                        value: Some(new_val),
+                    });
+                    break;
+                }
+            }
+        }
+
+        persona_achievement_entity.current_value = Some(new_val);
+        persona_achievement_entity.can_progress = new_val < i64::from(max_val);
+        persona_achievement::update(w.db(), persona_achievement_entity)?;
+    }
+
+    achievement_update_info.points_given = points_added;
+    Ok(achievement_update_info)
+}
+
+// port: bo/AchievementBO#findPersonaAchievementRank(PersonaAchievementEntity,AchievementRankEntity)
+/// The persona's row for the rank: by the rank's number, as a position in the
+/// rows created so far.
+fn find_persona_achievement_rank(
+    persona_achievement_entity: &PersonaAchievementEntity,
+    achievement_rank_entity: &AchievementRankEntity,
+) -> Result<Option<usize>, Fault> {
+    let rank_num = achievement_rank_entity.rank.ok_or_else(|| Fault::null_pointer("AchievementRankEntity.rank"))?;
+    let len = persona_achievement_entity.ranks.len();
+    if len as i64 >= i64::from(rank_num) {
+        return usize::try_from(rank_num - 1)
+            .map(Some)
+            .map_err(|_| anyhow!("Index {} out of bounds for length {len}", rank_num - 1).into());
+    }
+    Ok(None)
+}
+
+// port: bo/AchievementBO#createPersonaAchievementRank(PersonaAchievementEntity,AchievementRankEntity)
+/// A Locked row for the rank, saved and added to the persona's rows; its position.
+fn create_persona_achievement_rank(
+    w: &World,
+    persona_achievement_entity: &mut PersonaAchievementEntity,
+    achievement_rank_entity: &AchievementRankEntity,
+) -> Result<usize, Fault> {
+    let mut rank_entity = PersonaAchievementRankEntity {
+        state: Some("Locked".into()),
+        persona_achievement_id: persona_achievement_entity.id,
+        achievement_rank_id: achievement_rank_entity.id,
+        ..Default::default()
+    };
+    persona_achievement_rank::insert(w.db(), &mut rank_entity)?;
+    persona_achievement_entity.ranks.push(rank_entity);
+    Ok(persona_achievement_entity.ranks.len() - 1)
 }
 
 #[cfg(test)]
@@ -325,13 +482,17 @@ mod tests {
     }
 
     #[test]
-    fn a_category_with_scripted_achievements_needs_the_script_engine() {
+    fn triggers_that_throw_are_skipped() {
+        // PROGRESSION's triggers read `progression`, which this transaction
+        // doesn't bind: each throws, which upstream logs and moves past.
         let (mut w, mut p) = world_with_persona();
         let mut transaction = create_transaction(p.persona_id);
         transaction.add("PROGRESSION", persona_binding(&p)).unwrap();
-        let err = commit_transaction(&mut w, &mut p, &mut transaction).unwrap_err();
-        assert!(err.to_string().contains("bo/ScriptingBO#eval"), "{err}");
-        assert!(!err.commits());
+        w.transaction(|w| commit_transaction(w, &mut p, &mut transaction)).unwrap();
+        assert!(persona_achievement::find_all_by_persona_id(w.db(), p.persona_id).unwrap().is_empty());
+        let pushes = w.effects.drain().xmpp;
+        assert_eq!(pushes.len(), 1);
+        assert!(pushes[0].body.contains("<Progressed/>"), "{}", pushes[0].body);
     }
 
     #[test]

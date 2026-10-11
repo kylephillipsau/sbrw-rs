@@ -32,6 +32,38 @@ impl PersonaAchievementRankEntity {
     }
 }
 
+/// `PersonaAchievementRankDAO.insert` (`persist`); sets the generated id.
+pub fn insert(db: &Connection, rank: &mut PersonaAchievementRankEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "INSERT INTO persona_achievement_rank (achieved_on, state, achievement_rank_id, persona_achievement_id)
+         VALUES (?1, ?2, ?3, ?4)",
+    )?
+    .execute(rusqlite::params![
+        datetime::opt_to_sql(rank.achieved_on),
+        rank.state,
+        rank.achievement_rank_id,
+        rank.persona_achievement_id,
+    ])?;
+    rank.id = db.last_insert_rowid();
+    Ok(())
+}
+
+/// What Hibernate flushes for a changed managed rank: every mapped column.
+pub fn update(db: &Connection, rank: &PersonaAchievementRankEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "UPDATE persona_achievement_rank SET achieved_on = ?2, state = ?3, achievement_rank_id = ?4,
+         persona_achievement_id = ?5 WHERE ID = ?1",
+    )?
+    .execute(rusqlite::params![
+        rank.id,
+        datetime::opt_to_sql(rank.achieved_on),
+        rank.state,
+        rank.achievement_rank_id,
+        rank.persona_achievement_id,
+    ])?;
+    Ok(())
+}
+
 /// `PersonaAchievementEntity.ranks`, in the order they were created.
 pub(crate) fn find_by_persona_achievement(
     db: &Connection,

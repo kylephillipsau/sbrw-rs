@@ -288,9 +288,53 @@ pub fn round_float(a: f32) -> i32 {
     (f64::from(a) + 0.5).floor() as i32
 }
 
+/// `Math.round(double)`: the closest `long`, ties up, worked out on the bits as
+/// JDK 11 does (so 0.49999999999999994 rounds to 0); NaN is 0 and values
+/// past the range saturate.
+pub fn round_double(a: f64) -> i64 {
+    const SIGNIFICAND_WIDTH: i64 = 53;
+    const EXP_BIAS: i64 = 1023;
+    const EXP_BIT_MASK: i64 = 0x7FF0_0000_0000_0000;
+    const SIGNIF_BIT_MASK: i64 = 0x000F_FFFF_FFFF_FFFF;
+    let long_bits = a.to_bits() as i64;
+    let biased_exp = (long_bits & EXP_BIT_MASK) >> (SIGNIFICAND_WIDTH - 1);
+    let shift = (SIGNIFICAND_WIDTH - 2 + EXP_BIAS) - biased_exp;
+    if shift & -64 == 0 {
+        let mut r = (long_bits & SIGNIF_BIT_MASK) | (SIGNIF_BIT_MASK + 1);
+        if long_bits < 0 {
+            r = -r;
+        }
+        ((r >> shift) + 1) >> 1
+    } else {
+        // `(long) a`, which `as` matches: saturating, and NaN to 0.
+        a as i64
+    }
+}
+
 #[cfg(test)]
 mod string_and_math_tests {
     use super::*;
+
+    #[test]
+    fn doubles_round_as_math_round_does() {
+        for (a, rounded) in [
+            (0.0, 0),
+            (0.49999999999999994, 0),
+            (0.5, 1),
+            (2.5, 3),
+            (-2.5, -2),
+            (-0.5, 0),
+            (-0.6, -1),
+            (8046.7, 8047),
+            (20116.75, 20117),
+            (4503599627370497.0, 4503599627370497),
+            (f64::NAN, 0),
+            (1e20, i64::MAX),
+            (-1e20, i64::MIN),
+        ] {
+            assert_eq!(round_double(a), rounded, "{a}");
+        }
+    }
 
     #[test]
     fn hash_codes_match_the_jvm() {

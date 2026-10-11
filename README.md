@@ -141,6 +141,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 | `sbrw` | The binary and CLI |
 | `sbrw-common` | Configuration, protocol capture, and the clock, randomness, ids and effect log the game logic uses |
 | `sbrw-java` | Bit-exact versions of JDK and Java-library behaviour the port relies on (`java.util.Random`, commons-validator's email check) |
+| `sbrw-script` | Runs the JavaScript in the game data (achievement and reward scripts) on QuickJS, with the bindings shown to scripts as Nashorn showed them Java objects |
 | `sbrw-testkit` | Replays reference recordings against sbrw-rs and reports the differences |
 | `sbrw-core` | The game logic: upstream's business objects, DAOs and entities, ported 1:1 |
 | `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |

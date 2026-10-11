@@ -1,0 +1,959 @@
+{
+  "about": "ScriptingBO.eval (Nashorn, 11.0.32.1): each script against a named set of bindings (see NashornVectors.java). class and value of the result, or the exception thrown.",
+  "cases": [
+    {
+      "bindings": "probe",
+      "script": "1",
+      "class": "java.lang.Integer",
+      "value": "1"
+    },
+    {
+      "bindings": "probe",
+      "script": "0",
+      "class": "java.lang.Integer",
+      "value": "0"
+    },
+    {
+      "bindings": "probe",
+      "script": "-1",
+      "class": "java.lang.Integer",
+      "value": "-1"
+    },
+    {
+      "bindings": "probe",
+      "script": "2147483647",
+      "class": "java.lang.Integer",
+      "value": "2147483647"
+    },
+    {
+      "bindings": "probe",
+      "script": "2147483648",
+      "class": "java.lang.Double",
+      "value": "2.147483648E9"
+    },
+    {
+      "bindings": "probe",
+      "script": "1.5",
+      "class": "java.lang.Double",
+      "value": "1.5"
+    },
+    {
+      "bindings": "probe",
+      "script": "true",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "null"
+    },
+    {
+      "bindings": "probe",
+      "script": "undefined"
+    },
+    {
+      "bindings": "probe",
+      "script": "'x'",
+      "class": "java.lang.String",
+      "value": "x"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5",
+      "class": "java.lang.Long",
+      "value": "5"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5",
+      "class": "java.lang.Integer",
+      "value": "5"
+    },
+    {
+      "bindings": "probe",
+      "script": "d25",
+      "class": "java.lang.Double",
+      "value": "2.5"
+    },
+    {
+      "bindings": "probe",
+      "script": "f15",
+      "class": "java.lang.Float",
+      "value": "1.5"
+    },
+    {
+      "bindings": "probe",
+      "script": "s",
+      "class": "java.lang.String",
+      "value": "DODGE"
+    },
+    {
+      "bindings": "probe",
+      "script": "n"
+    },
+    {
+      "bindings": "probe",
+      "script": "t",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "big",
+      "class": "java.lang.Long",
+      "value": "9007199254740993"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof l5",
+      "class": "java.lang.String",
+      "value": "object"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof i5",
+      "class": "java.lang.String",
+      "value": "number"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof d25",
+      "class": "java.lang.String",
+      "value": "number"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof f15",
+      "class": "java.lang.String",
+      "value": "number"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof s",
+      "class": "java.lang.String",
+      "value": "string"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof n",
+      "class": "java.lang.String",
+      "value": "object"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof t",
+      "class": "java.lang.String",
+      "value": "boolean"
+    },
+    {
+      "bindings": "probe",
+      "script": "typeof persona",
+      "class": "java.lang.String",
+      "value": "object"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 == 5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 === 5",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 == i5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 === i5",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 != i5",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 == l5b",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 === l5b",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l0 == 0",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l0 == false",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 > 0",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 < i5",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 >= 5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 == 5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 === 5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "d25 == 2.5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "f15 == 1.5",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 + 1",
+      "class": "java.lang.Double",
+      "value": "6.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 + i5",
+      "class": "java.lang.Double",
+      "value": "10.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 * 2",
+      "class": "java.lang.Double",
+      "value": "10.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 / 2",
+      "class": "java.lang.Double",
+      "value": "2.5"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 - 7",
+      "class": "java.lang.Double",
+      "value": "-2.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 + 1",
+      "class": "java.lang.Double",
+      "value": "6.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 * 2",
+      "class": "java.lang.Double",
+      "value": "10.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 / 2",
+      "class": "java.lang.Double",
+      "value": "2.5"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 * d25",
+      "class": "java.lang.Double",
+      "value": "12.5"
+    },
+    {
+      "bindings": "probe",
+      "script": "d25 * 2",
+      "class": "java.lang.Double",
+      "value": "5.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "l5 * 1609.34",
+      "class": "java.lang.Double",
+      "value": "8046.7"
+    },
+    {
+      "bindings": "probe",
+      "script": "(l5 * d25) * 1609.34",
+      "class": "java.lang.Double",
+      "value": "20116.75"
+    },
+    {
+      "bindings": "probe",
+      "script": "f15 * 2",
+      "class": "java.lang.Double",
+      "value": "3.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "-l5",
+      "class": "java.lang.Double",
+      "value": "-5.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "+l5",
+      "class": "java.lang.Integer",
+      "value": "5"
+    },
+    {
+      "bindings": "probe",
+      "script": "+t",
+      "class": "java.lang.Double",
+      "value": "1.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "+f",
+      "class": "java.lang.Double",
+      "value": "0.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "+(i5 == 5)",
+      "class": "java.lang.Integer",
+      "value": "1"
+    },
+    {
+      "bindings": "probe",
+      "script": "+(i5 == 4)",
+      "class": "java.lang.Integer",
+      "value": "0"
+    },
+    {
+      "bindings": "probe",
+      "script": "(l5 + 1) * +(t)",
+      "class": "java.lang.Double",
+      "value": "6.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "(l5 + 1) * +(f)",
+      "class": "java.lang.Double",
+      "value": "0.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "(l0 + 1) * +(i5 == 5)",
+      "class": "java.lang.Double",
+      "value": "1.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "i5 * +(f)",
+      "class": "java.lang.Double",
+      "value": "0.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "1 / 0",
+      "class": "java.lang.Double",
+      "value": "Infinity"
+    },
+    {
+      "bindings": "probe",
+      "script": "0 / 0",
+      "class": "java.lang.Double",
+      "value": "NaN"
+    },
+    {
+      "bindings": "probe",
+      "script": "-1 / 0",
+      "class": "java.lang.Double",
+      "value": "-Infinity"
+    },
+    {
+      "bindings": "probe",
+      "script": "big + 0",
+      "class": "java.lang.Double",
+      "value": "9.007199254740992E15"
+    },
+    {
+      "bindings": "probe",
+      "script": "big == 9007199254740992",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "big == 9007199254740993",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "n == null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "n === null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "n == undefined",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "!!n",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "!n",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "!!persona",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "!persona",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "s == 'DODGE'",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "s === 'DODGE'",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "s == \"dodge\"",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "s + 1",
+      "class": "java.lang.String",
+      "value": "DODGE1"
+    },
+    {
+      "bindings": "probe",
+      "script": "s.length",
+      "class": "java.lang.Integer",
+      "value": "5"
+    },
+    {
+      "bindings": "probe",
+      "script": "t && f",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "t || f",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "!t",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "t == true",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "t === true",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "n.foo",
+      "error": "javax.script.ScriptException"
+    },
+    {
+      "bindings": "probe",
+      "script": "nothing",
+      "error": "javax.script.ScriptException"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.nothing"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.getNothing()",
+      "error": "javax.script.ScriptException"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.level",
+      "class": "java.lang.Integer",
+      "value": "60"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.getLevel()",
+      "class": "java.lang.Integer",
+      "value": "60"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.personaId",
+      "class": "java.lang.Long",
+      "value": "100"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.cash",
+      "class": "java.lang.Double",
+      "value": "350000.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.name",
+      "class": "java.lang.String",
+      "value": "DRIVER1"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.level == 60",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.personaId == 100",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "persona.cash > 0",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.expirationDate"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.getExpirationDate()"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.expirationDate == null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "rental.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "!!rental.expirationDate",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.isPreset",
+      "class": "jdk.dynalink.beans.SimpleDynamicMethod",
+      "value": "[jdk.dynalink.beans.SimpleDynamicMethod boolean com.soapboxrace.core.jpa.CarEntity.isPreset()]"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.preset",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "ownedCar.isPreset()",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.commerceTypeVal",
+      "class": "java.lang.Integer",
+      "value": "0"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.getCommerceTypeVal()",
+      "class": "java.lang.Integer",
+      "value": "0"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.commerceTypeVal == 0",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.commerceType",
+      "class": "com.soapboxrace.core.bo.util.AchievementCommerceContext$CommerceType",
+      "value": "CAR_PURCHASE"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.commerceType == 'CAR_PURCHASE'",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.carClassesEntity.manufactor",
+      "class": "java.lang.String",
+      "value": "DODGE"
+    },
+    {
+      "bindings": "probe",
+      "script": "commerceCtx.carClassesEntity.manufactor == 'DODGE'",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "bundleCtx.carClassesEntity"
+    },
+    {
+      "bindings": "probe",
+      "script": "bundleCtx.carClassesEntity == null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "bundleCtx.carClassesEntity.manufactor == 'DODGE'",
+      "error": "javax.script.ScriptException"
+    },
+    {
+      "bindings": "probe",
+      "script": "personaAchievement.currentValue",
+      "class": "java.lang.Long",
+      "value": "27"
+    },
+    {
+      "bindings": "probe",
+      "script": "personaAchievement.currentValue + 1",
+      "class": "java.lang.Double",
+      "value": "28.0"
+    },
+    {
+      "bindings": "probe",
+      "script": "personaAchievement.currentValue != progression.level",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "personaAchievement.currentValue != progression.score",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "personaAchievement.currentValue == 27",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "personaAchievement.canProgress",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.cash",
+      "class": "java.lang.Integer",
+      "value": "100"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.cash > 0",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.level",
+      "class": "java.lang.Integer",
+      "value": "60"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.treasureStreak",
+      "class": "java.lang.Integer",
+      "value": "3"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.treasureStreakChanged",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.levelChanged",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "probe",
+      "script": "progression.inEvent",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "car_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "car_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && commerceCtx.carClassesEntity.manufactor == \"DODGE\" && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "car_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && commerceCtx.carClassesEntity.manufactor == \"BMW\" && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "car_purchase",
+      "script": "1",
+      "class": "java.lang.Integer",
+      "value": "1"
+    },
+    {
+      "bindings": "rental_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "rental_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && commerceCtx.carClassesEntity.manufactor == \"DODGE\" && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "rental_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && commerceCtx.carClassesEntity.manufactor == \"BMW\" && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "rental_purchase",
+      "script": "1",
+      "class": "java.lang.Integer",
+      "value": "1"
+    },
+    {
+      "bindings": "bundle_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "bundle_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && commerceCtx.carClassesEntity.manufactor == \"DODGE\" && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "bundle_purchase",
+      "script": "commerceCtx.commerceTypeVal == 0 && commerceCtx.carClassesEntity.manufactor == \"BMW\" && ownedCar.getExpirationDate() == null",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "bundle_purchase",
+      "script": "1",
+      "class": "java.lang.Integer",
+      "value": "1"
+    },
+    {
+      "bindings": "progression",
+      "script": "progression.cash > 0",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "progression",
+      "script": "progression.cash",
+      "class": "java.lang.Integer",
+      "value": "1500"
+    },
+    {
+      "bindings": "progression",
+      "script": "personaAchievement.currentValue != progression.level",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "progression",
+      "script": "progression.level",
+      "class": "java.lang.Integer",
+      "value": "60"
+    },
+    {
+      "bindings": "progression",
+      "script": "personaAchievement.currentValue != progression.score",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "progression",
+      "script": "progression.score",
+      "class": "java.lang.Integer",
+      "value": "27"
+    },
+    {
+      "bindings": "progression",
+      "script": "progression.treasureStreakChanged",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "progression",
+      "script": "progression.treasureStreak",
+      "class": "java.lang.Integer",
+      "value": "4"
+    },
+    {
+      "bindings": "progression",
+      "script": "1",
+      "class": "java.lang.Integer",
+      "value": "1"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "progression.cash > 0",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "progression.cash",
+      "class": "java.lang.Integer",
+      "value": "0"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "personaAchievement.currentValue != progression.level",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "progression.level",
+      "class": "java.lang.Integer",
+      "value": "60"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "personaAchievement.currentValue != progression.score",
+      "class": "java.lang.Boolean",
+      "value": "true"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "progression.score",
+      "class": "java.lang.Integer",
+      "value": "27"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "progression.treasureStreakChanged",
+      "class": "java.lang.Boolean",
+      "value": "false"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "progression.treasureStreak",
+      "class": "java.lang.Integer",
+      "value": "0"
+    },
+    {
+      "bindings": "progression_unchanged",
+      "script": "1",
+      "class": "java.lang.Integer",
+      "value": "1"
+    }
+  ]
+}

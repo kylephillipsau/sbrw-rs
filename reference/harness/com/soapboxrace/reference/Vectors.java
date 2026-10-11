@@ -43,6 +43,7 @@ public final class Vectors {
         write(out.resolve("email_validator.json"), emailValidator());
         write(out.resolve("ban_expires.json"), banExpires());
         write(out.resolve("java_number_to_string.json"), numberToString());
+        write(out.resolve("nashorn.json"), NashornVectors.vectors());
     }
 
     /** Float.toString and Double.toString, which JAXB uses for xs:float and xs:double. */

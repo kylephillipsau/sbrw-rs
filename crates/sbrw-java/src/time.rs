@@ -24,6 +24,24 @@ pub fn format_full_utc(t: PrimitiveDateTime) -> String {
     )
 }
 
+/// `LocalDateTime.toString()`: seconds only when not zero, and a fraction of
+/// 3, 6 or 9 digits only when there is one. Years 0 to 9999.
+pub fn local_date_time_to_string(t: PrimitiveDateTime) -> String {
+    let mut s = format!("{:04}-{:02}-{:02}T{:02}:{:02}", t.year(), u8::from(t.month()), t.day(), t.hour(), t.minute());
+    let nanos = t.nanosecond();
+    if t.second() > 0 || nanos > 0 {
+        s.push_str(&format!(":{:02}", t.second()));
+        if nanos > 0 && nanos.is_multiple_of(1_000_000) {
+            s.push_str(&format!(".{:03}", nanos / 1_000_000));
+        } else if nanos > 0 && nanos.is_multiple_of(1_000) {
+            s.push_str(&format!(".{:06}", nanos / 1_000));
+        } else if nanos > 0 {
+            s.push_str(&format!(".{nanos:09}"));
+        }
+    }
+    s
+}
+
 /// `XMLGregorianCalendar.toXMLFormat()` of `new GregorianCalendar()` at `t`:
 /// milliseconds always, and the zone as `Z` or `±hh:mm`.
 pub fn xml_gregorian_calendar(t: OffsetDateTime) -> String {
@@ -50,6 +68,19 @@ pub fn xml_gregorian_calendar(t: OffsetDateTime) -> String {
 mod tests {
     use super::*;
     use serde::Deserialize;
+
+    #[test]
+    fn local_date_times_print_as_java_does() {
+        use time::macros::datetime;
+        assert_eq!(local_date_time_to_string(datetime!(2026-01-02 12:34:56)), "2026-01-02T12:34:56");
+        assert_eq!(local_date_time_to_string(datetime!(2026-01-02 12:34)), "2026-01-02T12:34");
+        assert_eq!(local_date_time_to_string(datetime!(2026-01-02 12:34:00.5)), "2026-01-02T12:34:00.500");
+        assert_eq!(local_date_time_to_string(datetime!(2026-01-02 00:00:00.000_001)), "2026-01-02T00:00:00.000001");
+        assert_eq!(
+            local_date_time_to_string(datetime!(2026-01-02 00:00:00.000_000_001)),
+            "2026-01-02T00:00:00.000000001"
+        );
+    }
 
     #[derive(Deserialize)]
     struct Vectors {

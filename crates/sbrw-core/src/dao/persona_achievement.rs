@@ -52,3 +52,14 @@ pub fn insert(db: &Connection, pa: &mut PersonaAchievementEntity) -> rusqlite::R
     pa.id = db.last_insert_rowid();
     Ok(())
 }
+
+/// `PersonaAchievementDAO.update` (`merge`): every mapped column. Its ranks
+/// map no cascade to merge.
+pub fn update(db: &Connection, pa: &PersonaAchievementEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "UPDATE persona_achievement SET can_progress = ?2, current_value = ?3, achievement_id = ?4, persona_id = ?5
+         WHERE ID = ?1",
+    )?
+    .execute(params![pa.id, pa.can_progress, pa.current_value, pa.achievement_id, pa.persona_id])?;
+    Ok(())
+}

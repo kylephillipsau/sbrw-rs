@@ -1,7 +1,7 @@
 //! `AchievementProgressionContext`: what PROGRESSION achievement scripts see
 //! about a persona's progress.
 
-/// The getters are what scripts call; they land with ScriptingBO.
+/// Scripts read it through its getters (`bo::scripting`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct AchievementProgressionContext {
     pub cash: Option<i32>,

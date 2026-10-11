@@ -13,6 +13,7 @@ pub mod achievement;
 pub mod badge_definition;
 pub mod ban;
 pub mod car;
+pub mod car_classes;
 pub mod chat_room;
 pub mod hardware_info;
 pub mod inventory;

@@ -1,0 +1,285 @@
+{
+  "scenario": "boot/hardware_info",
+  "description": "SendHardwareInfo: hardware is stored once per hash (of the XML with memory, cpuid1_* and userID zeroed) and linked to the account; a CPU that is neither Intel nor AMD logs the account out.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "An Intel machine: a new hardware row, and its hash on the account.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The same machine with other memory and user id: the same hash, so the row's user is updated.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>1048576</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>7</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "An AMD machine with another GPU: a second row.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>AuthenticAMD</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>AMD Radeon RX 6800</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "No cpuid0.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>java.lang.NullPointerException\n\tat com.soapboxrace.core.api.Reporting.sendHardwareInfo(Reporting.java:46)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>java.lang.NullPointerException\n\tat com.soapboxrace.core.api.Reporting.sendHardwareInfo(Reporting.java:46)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Not XML.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "not xml",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>java.lang.RuntimeException: Failed to unmarshal stream to com.soapboxrace.jaxb.http.HardwareInfo instance\n\tat com.soapboxrace.jaxb.util.JAXBUtility.unMarshal(JAXBUtility.java:74)\n\tat com.soapboxrace.core.api.Reporting.sendHardwareInfo(Reporting.java:45)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: javax.xml.bind.UnmarshalException\n - with linked exception:\n[javax.xml.stream.XMLStreamException: ParseError at [row,col]:[1,1]\nMessage: Content is not allowed in prolog.]\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.handleStreamException(UnmarshallerImpl.java:455)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal0(UnmarshallerImpl.java:387)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal(UnmarshallerImpl.java:364)\n\tat com.soapboxrace.jaxb.util.JAXBUtility.unMarshal(JAXBUtility.java:71)\n\t... 22 more\nCaused by: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[1,1]\nMessage: Content is not allowed in prolog.\n\tat java.xml/com.sun.org.apache.xerces.internal.impl.XMLStreamReaderImpl.next(XMLStreamReaderImpl.java:652)\n\tat java.xml/javax.xml.stream.util.StreamReaderDelegate.next(StreamReaderDelegate.java:84)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.StAXStreamConnector.bridge(StAXStreamConnector.java:134)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal0(UnmarshallerImpl.java:385)\n\t... 24 more\n</StackTrace></InnerException><StackTrace>java.lang.RuntimeException: Failed to unmarshal stream to com.soapboxrace.jaxb.http.HardwareInfo instance\n\tat com.soapboxrace.jaxb.util.JAXBUtility.unMarshal(JAXBUtility.java:74)\n\tat com.soapboxrace.core.api.Reporting.sendHardwareInfo(Reporting.java:45)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: javax.xml.bind.UnmarshalException\n - with linked exception:\n[javax.xml.stream.XMLStreamException: ParseError at [row,col]:[1,1]\nMessage: Content is not allowed in prolog.]\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.handleStreamException(UnmarshallerImpl.java:455)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal0(UnmarshallerImpl.java:387)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal(UnmarshallerImpl.java:364)\n\tat com.soapboxrace.jaxb.util.JAXBUtility.unMarshal(JAXBUtility.java:71)\n\t... 22 more\nCaused by: javax.xml.stream.XMLStreamException: ParseError at [row,col]:[1,1]\nMessage: Content is not allowed in prolog.\n\tat java.xml/com.sun.org.apache.xerces.internal.impl.XMLStreamReaderImpl.next(XMLStreamReaderImpl.java:652)\n\tat java.xml/javax.xml.stream.util.StreamReaderDelegate.next(StreamReaderDelegate.java:84)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.StAXStreamConnector.bridge(StAXStreamConnector.java:134)\n\tat com.sun.xml.bind.v2.runtime.unmarshaller.UnmarshallerImpl.unmarshal0(UnmarshallerImpl.java:385)\n\t... 24 more\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Any other CPU vendor ends the session.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>VirtualApple</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "So the token no longer works.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getusersettings",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    }
+  ],
+  "db": {
+    "hardware_info": [
+      {
+        "ID": 1,
+        "banned": false,
+        "hardwareHash": "9023cd12e70095a51e3b15aa11cdd4a2e7e7481e",
+        "hardwareInfo": "<HardwareInfo><availableMem>0</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>0</cpuid1_0><cpuid1_1>0</cpuid1_1><cpuid1_2>0</cpuid1_2><cpuid1_3>0</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack></servicePack><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>0</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "userId": 7
+      },
+      {
+        "ID": 2,
+        "banned": false,
+        "hardwareHash": "b89f3d3db735485df11cc1ea4c69a6ef9e74bd42",
+        "hardwareInfo": "<HardwareInfo><availableMem>0</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>AuthenticAMD</cpuid0><cpuid1_0>0</cpuid1_0><cpuid1_1>0</cpuid1_1><cpuid1_2>0</cpuid1_2><cpuid1_3>0</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>AMD Radeon RX 6800</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack></servicePack><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>0</userID><vendorID>4318</vendorID></HardwareInfo>",
+        "userId": 1
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": "b89f3d3db735485df11cc1ea4c69a6ef9e74bd42",
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

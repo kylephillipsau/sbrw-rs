@@ -1,0 +1,760 @@
+{
+  "scenario": "boot/announcements_and_news",
+  "description": "Login announcements per language, cached per language for the life of the server, and news for everyone or for the selected driver.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>1</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>2</IconIndex><Level>60</Level><Name>DRIVER2</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>101</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              101,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Announcements for every language, for English and for German.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('everyone.jpg', 'https://example.com/a', 'ExternalLink', 'NotApplicable', NULL)",
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('english.jpg', 'SRV-CAR1', 'SafehouseProduct', 'CarPurchase', 'EN')",
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('german.jpg', NULL, 'ImageOnly', 'PaintShop', 'DE')"
+      ]
+    },
+    {
+      "note": "English: the shared one and the English one.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>everyone.jpg</ImageUrl><Target>https://example.com/a</Target><Type>ExternalLink</Type></LoginAnnouncementDefinition><LoginAnnouncementDefinition><Context>CarPurchase</Context><Id>2</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>english.jpg</ImageUrl><Target>SRV-CAR1</Target><Type>SafehouseProduct</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "Another English announcement.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('late.jpg', 'x', 'ExternalLinkNoButton', 'VinylShop', 'EN')"
+      ]
+    },
+    {
+      "note": "English again comes from the cache, without it.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>everyone.jpg</ImageUrl><Target>https://example.com/a</Target><Type>ExternalLink</Type></LoginAnnouncementDefinition><LoginAnnouncementDefinition><Context>CarPurchase</Context><Id>2</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>english.jpg</ImageUrl><Target>SRV-CAR1</Target><Type>SafehouseProduct</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "German is read now: the shared one and the German one.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "DE"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>everyone.jpg</ImageUrl><Target>https://example.com/a</Target><Type>ExternalLink</Type></LoginAnnouncementDefinition><LoginAnnouncementDefinition><Context>PaintShop</Context><Id>3</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>german.jpg</ImageUrl><Type>ImageOnly</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "A language with none of its own.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "FR"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>everyone.jpg</ImageUrl><Target>https://example.com/a</Target><Type>ExternalLink</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "News for everyone, for driver 100 and for driver 101.",
+      "sql": [
+        "INSERT INTO news_article (filters, iconType, longHALId, parameters, shortHALId, sticky, timestamp, type, persona_id, referenced_persona_id) VALUES ('All', 1, 'TXT_NEWS_WELCOME_LONG', 'a;b', 'TXT_NEWS_WELCOME', 1, '2025-12-24 08:30:15', 'WelcomeMessage', NULL, NULL)",
+        "INSERT INTO news_article (filters, iconType, longHALId, parameters, shortHALId, sticky, timestamp, type, persona_id, referenced_persona_id) VALUES ('Me', 2, 'TXT_LONG', NULL, 'TXT_SHORT', 0, '2026-01-01 11:59:59', 'CarInsuranceExpiring', 100, NULL)",
+        "INSERT INTO news_article (filters, iconType, longHALId, parameters, shortHALId, sticky, timestamp, type, persona_id, referenced_persona_id) VALUES ('Friends', 3, NULL, 'x', NULL, 0, '2000-02-29 23:59:59', 'FriendLeveledUp', 101, 100)"
+      ]
+    },
+    {
+      "note": "No driver selected: only the news for everyone.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/NewsArticles",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfNewsArticleTrans><NewsArticleTrans><Filters>2147483647</Filters><IconType>1</IconType><LongText_HALId>TXT_NEWS_WELCOME_LONG</LongText_HALId><NewsId>1</NewsId><Parameters>a;b</Parameters><PersonaId>0</PersonaId><ShortText_HALId>TXT_NEWS_WELCOME</ShortText_HALId><Sticky>1</Sticky><Timestamp>639021618150000000</Timestamp><Type>6</Type></NewsArticleTrans></ArrayOfNewsArticleTrans>"
+      }
+    },
+    {
+      "note": "Select driver 100.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 100's news and the news for everyone.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/NewsArticles",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfNewsArticleTrans><NewsArticleTrans><Filters>1</Filters><IconType>2</IconType><LongText_HALId>TXT_LONG</LongText_HALId><NewsId>2</NewsId><PersonaId>100</PersonaId><ShortText_HALId>TXT_SHORT</ShortText_HALId><Sticky>0</Sticky><Timestamp>639028655990000000</Timestamp><Type>17</Type></NewsArticleTrans><NewsArticleTrans><Filters>2147483647</Filters><IconType>1</IconType><LongText_HALId>TXT_NEWS_WELCOME_LONG</LongText_HALId><NewsId>1</NewsId><Parameters>a;b</Parameters><PersonaId>100</PersonaId><ShortText_HALId>TXT_NEWS_WELCOME</ShortText_HALId><Sticky>1</Sticky><Timestamp>639021618150000000</Timestamp><Type>6</Type></NewsArticleTrans></ArrayOfNewsArticleTrans>"
+      }
+    }
+  ],
+  "db": {
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      },
+      {
+        "id": 2,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 101
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 1,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 12,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 13,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 14,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 15,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 16,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 17,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 18,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 19,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 20,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 21,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 22,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-AMP-INSURANCE"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "login_announcement": [
+      {
+        "id": 1,
+        "imageUrl": "everyone.jpg",
+        "target": "https://example.com/a",
+        "type": "ExternalLink",
+        "context": "NotApplicable",
+        "language": null
+      },
+      {
+        "id": 2,
+        "imageUrl": "english.jpg",
+        "target": "SRV-CAR1",
+        "type": "SafehouseProduct",
+        "context": "CarPurchase",
+        "language": "EN"
+      },
+      {
+        "id": 3,
+        "imageUrl": "german.jpg",
+        "target": null,
+        "type": "ImageOnly",
+        "context": "PaintShop",
+        "language": "DE"
+      },
+      {
+        "id": 4,
+        "imageUrl": "late.jpg",
+        "target": "x",
+        "type": "ExternalLinkNoButton",
+        "context": "VinylShop",
+        "language": "EN"
+      }
+    ],
+    "news_article": [
+      {
+        "id": 1,
+        "filters": "All",
+        "iconType": 1,
+        "longHALId": "TXT_NEWS_WELCOME_LONG",
+        "parameters": "a;b",
+        "shortHALId": "TXT_NEWS_WELCOME",
+        "sticky": 1,
+        "timestamp": "2025-12-24 08:30:15",
+        "type": "WelcomeMessage",
+        "persona_id": null,
+        "referenced_persona_id": null
+      },
+      {
+        "id": 2,
+        "filters": "Me",
+        "iconType": 2,
+        "longHALId": "TXT_LONG",
+        "parameters": null,
+        "shortHALId": "TXT_SHORT",
+        "sticky": 0,
+        "timestamp": "2026-01-01 11:59:59",
+        "type": "CarInsuranceExpiring",
+        "persona_id": 100,
+        "referenced_persona_id": null
+      },
+      {
+        "id": 3,
+        "filters": "Friends",
+        "iconType": 3,
+        "longHALId": null,
+        "parameters": "x",
+        "shortHALId": null,
+        "sticky": 0,
+        "timestamp": "2000-02-29 23:59:59",
+        "type": "FriendLeveledUp",
+        "persona_id": 101,
+        "referenced_persona_id": 100
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 0.0,
+        "cash": 350000.0,
+        "curCarIndex": 0,
+        "iconIndex": 1,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      },
+      {
+        "ID": 101,
+        "boost": 0.0,
+        "cash": 350000.0,
+        "curCarIndex": 0,
+        "iconIndex": 2,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER2",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -1155869325,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      },
+      {
+        "personaId": 101,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": 431529176,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

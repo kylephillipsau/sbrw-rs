@@ -100,6 +100,13 @@ public final class Db implements AutoCloseable {
         }
     }
 
+    /** A scenario's `sql` step: each statement committed in turn. */
+    public void execute(List<String> statements) throws SQLException {
+        try (Statement st = conn.createStatement()) {
+            for (String statement : statements) st.execute(statement);
+        }
+    }
+
     /** Every runtime table that has rows, ordered by primary key. */
     public Map<String, List<Map<String, Object>>> snapshot() throws SQLException {
         Map<String, List<Map<String, Object>>> out = new TreeMap<>();

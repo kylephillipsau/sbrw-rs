@@ -1,0 +1,140 @@
+{
+  "scenario": "launcher/server_information",
+  "description": "The launcher's server list entry and ModNet switch from upstream's default parameters: ModNet is off.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "From the SERVER_INFO_* parameters and the online-users row written at boot.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"activatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL\"],\"adminList\":\"???\",\"country\":\"US\",\"disactivatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL_DISABLE\"],\"numberOfRegistered\":0,\"onlineNumber\":0,\"ownerList\":\"???\",\"requireTicket\":false,\"secondsToShutDown\":9999999,\"serverName\":\"Dev Server\",\"serverVersion\":\"unknown\",\"timezone\":0}"
+      }
+    },
+    {
+      "note": "MODDING_ENABLED isn't set: 404.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Modding/GetModInfo",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Registering doesn't change the counts until the stats job runs.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"activatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL\"],\"adminList\":\"???\",\"country\":\"US\",\"disactivatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL_DISABLE\"],\"numberOfRegistered\":0,\"onlineNumber\":0,\"ownerList\":\"???\",\"requireTicket\":false,\"secondsToShutDown\":9999999,\"serverName\":\"Dev Server\",\"serverVersion\":\"unknown\",\"timezone\":0}"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

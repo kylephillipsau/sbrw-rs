@@ -29,16 +29,18 @@ use tower_http::trace::{DefaultOnFailure, TraceLayer};
 
 #[derive(Clone)]
 pub struct AppState {
-    config: Arc<Config>,
     capture: CaptureSink,
     mods: Arc<mods::ModsDir>,
     world: WorldHandle,
 }
 
 impl AppState {
+    /// The launcher and game read the server's settings from the world's
+    /// parameters (see `Config::upstream_parameters`); the config here only
+    /// says where the mods are.
     pub fn new(config: Arc<Config>, capture: CaptureSink, world: WorldHandle) -> Self {
         let mods = Arc::new(mods::ModsDir::new(config.mods_dir()));
-        Self { config, capture, mods, world }
+        Self { capture, mods, world }
     }
 
     pub fn world(&self) -> &WorldHandle {
@@ -60,6 +62,7 @@ pub fn router(state: AppState) -> Router {
         // Upstream answers failed logins with 500 and game errors with 503; those
         // are protocol, not server failures, so don't log them as errors.
         .layer(TraceLayer::new_for_http().on_failure(DefaultOnFailure::new().level(tracing::Level::DEBUG)))
+        // port: api/util/HttpHeaderFilter#filter(ContainerRequestContext,ContainerResponseContext)
         // Upstream closes every connection; the launcher's proxy expects it.
         .layer(SetResponseHeaderLayer::overriding(CONNECTION, HeaderValue::from_static("close")))
         .with_state(state)

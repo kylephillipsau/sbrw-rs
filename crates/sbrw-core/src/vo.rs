@@ -1,6 +1,9 @@
 //! Upstream's value objects: the generated XML classes (`sbrw_xml::dto`), plus
 //! the few fields upstream keeps on them that JAXB never writes.
 
+mod mod_info;
+
+pub use mod_info::ModInfoVO;
 use sbrw_xml::dto::login::LoginStatusVO;
 
 /// `LoginStatusVO` together with its `@XmlTransient loginOk`, which decides

@@ -37,6 +37,8 @@ public final class Scenario {
         public Boolean fireTimers;
         /** A @Schedule method, e.g. "BanBO#checkExpiredBans". */
         public String job;
+        /** SQL statements run directly against the database, for rows no API creates. */
+        public List<String> sql;
     }
 
     public static final class HttpRequest {

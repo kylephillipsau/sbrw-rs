@@ -13,7 +13,7 @@ use http_body_util::BodyExt;
 use indexmap::IndexMap;
 use sbrw_common::{CaptureSink, Config, EffectLog, Effects, Env};
 use sbrw_core::openfire::Openfire;
-use sbrw_core::{World, WorldHandle, WorldOptions};
+use sbrw_core::{BuildInfo, World, WorldHandle, WorldOptions};
 use serde_json::Value;
 use time::Duration;
 use tower::ServiceExt;
@@ -50,6 +50,8 @@ impl SbrwServer {
             env: env.clone(),
             effects: effects.clone(),
             openfire,
+            // The reference build has no git.properties either.
+            build_info: BuildInfo::unknown(),
         })?;
         let world = WorldHandle::spawn(world);
         let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), world.clone());
@@ -106,6 +108,20 @@ impl SbrwServer {
     /// Run a scheduled job named after upstream's `@Schedule` method.
     pub async fn job(&mut self, name: &str) -> anyhow::Result<()> {
         bail!("sbrw-rs has no scheduled job {name}")
+    }
+
+    /// Run a scenario's `sql` step in one transaction.
+    pub async fn sql(&mut self, statements: &[String]) -> anyhow::Result<()> {
+        let statements = statements.to_vec();
+        self.world
+            .call(move |w| {
+                for statement in &statements {
+                    w.db().execute(statement, [])?;
+                }
+                Ok(())
+            })
+            .await
+            .map_err(|fault| anyhow!("{fault}"))
     }
 
     /// Effects since the last call.

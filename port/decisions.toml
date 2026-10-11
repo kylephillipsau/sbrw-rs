@@ -42,3 +42,11 @@ status = "dropped"
 reason = """
 @PreDestroy clearing presence keys from an external Redis that outlives the server and
 closing the pub/sub connection. In-memory presence dies with the process."""
+
+["api/util/BuildInfo#getGitPropertiesStream()"]
+status = "replaced"
+reason = """
+Upstream reads its branch, commit and build time from a git.properties resource built
+into the war, reporting "unknown" when it is missing (as in the reference rig).
+sbrw_core::BuildInfo takes the same values from SBRW_GIT_* variables at compile time,
+and the replay harness uses BuildInfo::unknown() to match the recordings."""

@@ -47,3 +47,38 @@ mod tests {
         assert_eq!(iterate(&["Aa", "BB", "C#", "é", "😀"]), ["Aa", "BB", "C#", "😀", "é"]);
     }
 }
+
+/// `Base64.getEncoder().encodeToString(bytes)`: the standard alphabet, padded.
+pub fn base64_encode(bytes: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let n = chunk.iter().enumerate().fold(0u32, |n, (i, &b)| n | u32::from(b) << (16 - 8 * i));
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+#[cfg(test)]
+mod base64_tests {
+    use super::*;
+
+    #[test]
+    fn encodes_like_java_util_base64() {
+        assert_eq!(base64_encode(b""), "");
+        assert_eq!(base64_encode(b"f"), "Zg==");
+        assert_eq!(base64_encode(b"fo"), "Zm8=");
+        assert_eq!(base64_encode(b"foo"), "Zm9v");
+        assert_eq!(base64_encode(&[0xfb, 0xff, 0xbf]), "+/+/");
+        // Upstream's cryptoticket: 10, 11, 12, 13 then zeros, 32 bytes.
+        let mut ticket = [0u8; 32];
+        ticket[..4].copy_from_slice(&[10, 11, 12, 13]);
+        assert_eq!(base64_encode(&ticket), "CgsMDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+    }
+}

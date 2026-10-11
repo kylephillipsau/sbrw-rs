@@ -1,0 +1,28 @@
+{
+  "description": "The launcher's server list entry and ModNet switch from upstream's default parameters: ModNet is off.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "From the SERVER_INFO_* parameters and the online-users row written at boot.",
+      "http": { "method": "GET", "path": "/Engine.svc/GetServerInformation" }
+    },
+    {
+      "note": "MODDING_ENABLED isn't set: 404.",
+      "http": { "method": "GET", "path": "/Engine.svc/Modding/GetModInfo" }
+    },
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Registering doesn't change the counts until the stats job runs.",
+      "http": { "method": "GET", "path": "/Engine.svc/GetServerInformation" }
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 // port: dao/HardwareInfoDAO#<init>()
 
-use rusqlite::{Connection, OptionalExtension, Row};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct HardwareInfoEntity {
@@ -31,4 +31,23 @@ pub fn find_by_hardware_hash(db: &Connection, hash: &str) -> rusqlite::Result<Op
     db.prepare_cached("SELECT * FROM hardware_info WHERE hardwareHash = ?1 ORDER BY ID LIMIT 1")?
         .query_row([hash], HardwareInfoEntity::from_row)
         .optional()
+}
+
+/// `HardwareInfoDAO.insert` (`persist`); sets the generated id.
+pub fn insert(db: &Connection, h: &mut HardwareInfoEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "INSERT INTO hardware_info (banned, hardwareHash, hardwareInfo, userId) VALUES (?1, ?2, ?3, ?4)",
+    )?
+    .execute(params![h.banned, h.hardware_hash, h.hardware_info, h.user_id])?;
+    h.id = db.last_insert_rowid();
+    Ok(())
+}
+
+/// `HardwareInfoDAO.update` (`merge`): every mapped column, from this copy.
+pub fn update(db: &Connection, h: &HardwareInfoEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "UPDATE hardware_info SET banned = ?2, hardwareHash = ?3, hardwareInfo = ?4, userId = ?5 WHERE ID = ?1",
+    )?
+    .execute(params![h.id, h.banned, h.hardware_hash, h.hardware_info, h.user_id])?;
+    Ok(())
 }

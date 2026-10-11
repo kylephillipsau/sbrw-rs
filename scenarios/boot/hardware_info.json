@@ -1,0 +1,86 @@
+{
+  "description": "SendHardwareInfo: hardware is stored once per hash (of the XML with memory, cpuid1_* and userID zeroed) and linked to the account; a CPU that is neither Intel nor AMD logs the account out.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "An Intel machine: a new hardware row, and its hash on the account.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "The same machine with other memory and user id: the same hash, so the row's user is updated.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>1048576</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>7</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "An AMD machine with another GPU: a second row.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>AuthenticAMD</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>AMD Radeon RX 6800</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "No cpuid0.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "Not XML.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "not xml"
+      }
+    },
+    {
+      "note": "Any other CPU vendor ends the session.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz</cpuBrand><cpuid0>VirtualApple</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "So the token no longer works.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getusersettings",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    }
+  ]
+}

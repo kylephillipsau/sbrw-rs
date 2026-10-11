@@ -1,0 +1,199 @@
+{
+  "description": "What the game asks for between the launcher handing over and the driver screen, in the order the client calls it, plus the calls it makes on a timer. The two calls that draw session-style UUIDs come last.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Server build and portal settings; the game asks with the launcher's token.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/systeminfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Holiday scenery from SERVER_INFO_*_SCENERY, and the level cap.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getusersettings",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The six rating bands.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/carclasses",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "No announcements in a fresh database.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": { "language": "EN" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "No language: the cache can't take a null key.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The XMPP server and the public chat rooms.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/Session/GetChatInfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Fixed network timings.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getregioninfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The free-roam UDP server.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getrebroadcasters",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Echoes the userId header.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/security/fraudConfig",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getsocialnetworkinfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getsocialsettings",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "No news, and no driver selected yet.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/NewsArticles",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Accepted and ignored.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendUserSettings",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<UserSettings><anything/></UserSettings>"
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/logging/client",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Sent every few minutes while the game runs.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/heartbeat",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Gifts/GetAndTriggerAvailableLevelGifts",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/SendMultiplayerConnect",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/SendClientPingTime",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/LoginAnnouncementClicked",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Reporting's catch-all PUT needs no session.",
+      "http": { "method": "PUT", "path": "/Engine.svc/Reporting/SendCrashInfo" }
+    },
+    {
+      "note": "Secured: no headers, no answer.",
+      "http": { "method": "GET", "path": "/Engine.svc/systeminfo" }
+    },
+    {
+      "note": "No race yet, so no relay ticket.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/crypto/relaycryptoticket/100",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Unsecured; its IV is UUID ...0003.",
+      "http": { "method": "GET", "path": "/Engine.svc/crypto/cryptoticket" }
+    },
+    {
+      "note": "UUID ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/security/generateWebToken",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    }
+  ]
+}

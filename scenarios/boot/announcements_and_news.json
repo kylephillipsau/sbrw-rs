@@ -1,0 +1,125 @@
+{
+  "description": "Login announcements per language, cached per language for the life of the server, and news for everyone or for the selected driver.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER2", "iconIndex": "2" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Announcements for every language, for English and for German.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('everyone.jpg', 'https://example.com/a', 'ExternalLink', 'NotApplicable', NULL)",
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('english.jpg', 'SRV-CAR1', 'SafehouseProduct', 'CarPurchase', 'EN')",
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('german.jpg', NULL, 'ImageOnly', 'PaintShop', 'DE')"
+      ]
+    },
+    {
+      "note": "English: the shared one and the English one.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": { "language": "EN" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Another English announcement.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('late.jpg', 'x', 'ExternalLinkNoButton', 'VinylShop', 'EN')"
+      ]
+    },
+    {
+      "note": "English again comes from the cache, without it.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": { "language": "EN" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "German is read now: the shared one and the German one.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": { "language": "DE" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A language with none of its own.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": { "language": "FR" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "News for everyone, for driver 100 and for driver 101.",
+      "sql": [
+        "INSERT INTO news_article (filters, iconType, longHALId, parameters, shortHALId, sticky, timestamp, type, persona_id, referenced_persona_id) VALUES ('All', 1, 'TXT_NEWS_WELCOME_LONG', 'a;b', 'TXT_NEWS_WELCOME', 1, '2025-12-24 08:30:15', 'WelcomeMessage', NULL, NULL)",
+        "INSERT INTO news_article (filters, iconType, longHALId, parameters, shortHALId, sticky, timestamp, type, persona_id, referenced_persona_id) VALUES ('Me', 2, 'TXT_LONG', NULL, 'TXT_SHORT', 0, '2026-01-01 11:59:59', 'CarInsuranceExpiring', 100, NULL)",
+        "INSERT INTO news_article (filters, iconType, longHALId, parameters, shortHALId, sticky, timestamp, type, persona_id, referenced_persona_id) VALUES ('Friends', 3, NULL, 'x', NULL, 0, '2000-02-29 23:59:59', 'FriendLeveledUp', 101, 100)"
+      ]
+    },
+    {
+      "note": "No driver selected: only the news for everyone.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/NewsArticles",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Select driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 100's news and the news for everyone.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/NewsArticles",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    }
+  ]
+}

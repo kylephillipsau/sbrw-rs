@@ -1,0 +1,663 @@
+{
+  "scenario": "boot/game_boot",
+  "description": "What the game asks for between the launcher handing over and the driver screen, in the order the client calls it, plus the calls it makes on a timer. The two calls that draw session-style UUIDs come last.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Server build and portal settings; the game asks with the launcher's token.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/systeminfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SystemInfo><Branch>unknown</Branch><ChangeList>unknown</ChangeList><ClientVersion>1614b</ClientVersion><ClientVersionCheck>true</ClientVersionCheck><Deployed>unknown</Deployed><EntitlementsToDownload>true</EntitlementsToDownload><ForcePermanentSession>true</ForcePermanentSession><JidPrepender>sbrw</JidPrepender><LauncherServiceUrl>http://127.0.0.1</LauncherServiceUrl><NucleusNamespace>sbrw-live</NucleusNamespace><NucleusNamespaceWeb>sbr_web</NucleusNamespaceWeb><PersonaCacheTimeout>900</PersonaCacheTimeout><PortalDomain>sbrw.io</PortalDomain><PortalStoreFailurePage>sbrw.io/nfsw-portal-error</PortalStoreFailurePage><PortalTimeOut>6000</PortalTimeOut><ShardName>CORE</ShardName><Time>2026-01-01T12:00:00.000Z</Time><Version>unknown</Version></SystemInfo>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Holiday scenery from SERVER_INFO_*_SCENERY, and the level cap.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getusersettings",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<User_Settings><CarCacheAgeLimit>600</CarCacheAgeLimit><IsRaceNowEnabled>true</IsRaceNowEnabled><MaxCarCacheSize>250</MaxCarCacheSize><MinRaceNowLevel>2</MinRaceNowLevel><VoipAvailable>false</VoipAvailable><activatedHolidaySceneryGroups><string>SCENERY_GROUP_NORMAL</string></activatedHolidaySceneryGroups><activeHolidayIds><long>0</long></activeHolidayIds><disactivatedHolidaySceneryGroups><string>SCENERY_GROUP_NORMAL_DISABLE</string></disactivatedHolidaySceneryGroups><firstTimeLogin>false</firstTimeLogin><maxLevel>60</maxLevel><starterPackApplied>false</starterPackApplied><userId>1</userId></User_Settings>"
+      }
+    },
+    {
+      "note": "The six rating bands.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/carclasses",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfCarClass><CarClass><CarClassHash>-2142411446</CarClassHash><MaxRating>999</MaxRating><MinRating>750</MinRating></CarClass><CarClass><CarClassHash>-406473455</CarClassHash><MaxRating>599</MaxRating><MinRating>500</MinRating></CarClass><CarClass><CarClassHash>-405837480</CarClassHash><MaxRating>749</MaxRating><MinRating>600</MinRating></CarClass><CarClass><CarClassHash>415909161</CarClassHash><MaxRating>399</MaxRating><MinRating>250</MinRating></CarClass><CarClass><CarClassHash>872416321</CarClassHash><MaxRating>249</MaxRating><MinRating>0</MinRating></CarClass><CarClass><CarClassHash>1866825865</CarClassHash><MaxRating>499</MaxRating><MinRating>400</MinRating></CarClass></ArrayOfCarClass>"
+      }
+    },
+    {
+      "note": "No announcements in a fresh database.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements/><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "No language: the cache can't take a null key.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ejb.EJBException: java.lang.NullPointerException\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.LoginAnnouncementBO$ByteBuddy$wJu5F7ha.getLoginAnnouncements(Unknown Source)\n\tat com.soapboxrace.core.api.LoginAnnouncements.loginAnnouncements(LoginAnnouncements.java:30)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.NullPointerException\n\tat java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1690)\n\tat com.soapboxrace.core.bo.LoginAnnouncementBO.getLoginAnnouncements(LoginAnnouncementBO.java:44)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\t... 24 more\n</StackTrace></InnerException><StackTrace>javax.ejb.EJBException: java.lang.NullPointerException\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:549)\n\tat com.soapboxrace.core.bo.LoginAnnouncementBO$ByteBuddy$wJu5F7ha.getLoginAnnouncements(Unknown Source)\n\tat com.soapboxrace.core.api.LoginAnnouncements.loginAnnouncements(LoginAnnouncements.java:30)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.NullPointerException\n\tat java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1690)\n\tat com.soapboxrace.core.bo.LoginAnnouncementBO.getLoginAnnouncements(LoginAnnouncementBO.java:44)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:488)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:544)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:300)\n\t... 24 more\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "The XMPP server and the public chat rooms.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Session/GetChatInfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<chatServer><Rooms><chatRoom><channelCount>2</channelCount><longName>TXT_CHAT_LANG_ENGLISH</longName><shortName>EN</shortName></chatRoom></Rooms><ip>127.0.0.1</ip><port>5222</port><prefix>sbrw</prefix></chatServer>"
+      }
+    },
+    {
+      "note": "Fixed network timings.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getregioninfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<RegionInfo><CountdownProposalInMilliseconds>3000</CountdownProposalInMilliseconds><DirectConnectTimeoutInMilliseconds>1000</DirectConnectTimeoutInMilliseconds><DropOutTimeInMilliseconds>15000</DropOutTimeInMilliseconds><EventLoadTimeoutInMilliseconds>30000</EventLoadTimeoutInMilliseconds><HeartbeatIntervalInMilliseconds>1000</HeartbeatIntervalInMilliseconds><UdpRelayBandwidthInBps>9600</UdpRelayBandwidthInBps><UdpRelayTimeoutInMilliseconds>60000</UdpRelayTimeoutInMilliseconds></RegionInfo>"
+      }
+    },
+    {
+      "note": "The free-roam UDP server.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getrebroadcasters",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfUdpRelayInfo><UdpRelayInfo><Host>127.0.0.1</Host><Port>9999</Port></UdpRelayInfo></ArrayOfUdpRelayInfo>"
+      }
+    },
+    {
+      "note": "Echoes the userId header.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/security/fraudConfig",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<FraudConfig><enabledBitField>12</enabledBitField><gameFileFreq>1000000</gameFileFreq><moduleFreq>360000</moduleFreq><startUpFreq>1000000</startUpFreq><userID>1</userID></FraudConfig>"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getsocialnetworkinfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SocialNetworkInfo><facebookName>test</facebookName></SocialNetworkInfo>"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getsocialsettings",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SocialSettings><AppearOffline>false</AppearOffline><DeclineGroupInvite>0</DeclineGroupInvite><DeclineIncommingFriendRequests>false</DeclineIncommingFriendRequests><DeclinePrivateInvite>0</DeclinePrivateInvite><HideOfflineFriends>false</HideOfflineFriends><ShowNewsOnSignIn>false</ShowNewsOnSignIn><ShowOnlyPlayersInSameChatChannel>false</ShowOnlyPlayersInSameChatChannel></SocialSettings>"
+      }
+    },
+    {
+      "note": "No news, and no driver selected yet.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/NewsArticles",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfNewsArticleTrans/>"
+      }
+    },
+    {
+      "note": "Accepted and ignored.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendUserSettings",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<UserSettings><anything/></UserSettings>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/logging/client",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ClientConfigTrans/>"
+      }
+    },
+    {
+      "note": "Sent every few minutes while the game runs.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/heartbeat",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<HeartBeat><MetagameFlags>2</MetagameFlags><enabledBitField>0</enabledBitField></HeartBeat>"
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/Gifts/GetAndTriggerAvailableLevelGifts",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfLevelGiftDefinition/>"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/SendMultiplayerConnect",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/SendClientPingTime",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Reporting/LoginAnnouncementClicked",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Reporting's catch-all PUT needs no session.",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/Reporting/SendCrashInfo",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Secured: no headers, no answer.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/systeminfo",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 401,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "No race yet, so no relay ticket.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/crypto/relaycryptoticket/100",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UdpRelayCryptoTicket><SessionKey>AAAAAAAAAAAAAAAAAAAAAA==</SessionKey><TicketIv>AAAAAAAAQACAAAAAAAAAAw==</TicketIv></UdpRelayCryptoTicket>"
+      }
+    },
+    {
+      "note": "Unsecured; its IV is UUID ...0003.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/crypto/cryptoticket",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ClientServerCryptoTicket><CryptoTicket>CgsMDQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</CryptoTicket><SessionKey>AAAAAAAAAAAAAAAAAAAAAA==</SessionKey><TicketIv>AAAAAAAAQACAAAAAAAAABA==</TicketIv></ClientServerCryptoTicket>"
+      }
+    },
+    {
+      "note": "UUID ...0004.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/security/generateWebToken",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<string>00000000-0000-4000-8000-000000000005</string>"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 //! `java.time` formatting upstream exposes to players.
 
-use time::PrimitiveDateTime;
+use time::{OffsetDateTime, PrimitiveDateTime};
 
 /// `DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withZone(ZoneId.systemDefault())`
 /// applied to a `LocalDateTime`, as the reference JVM does it: locale en_US
@@ -21,6 +21,28 @@ pub fn format_full_utc(t: PrimitiveDateTime) -> String {
         t.minute(),
         t.second(),
         if t.hour() < 12 { "AM" } else { "PM" },
+    )
+}
+
+/// `XMLGregorianCalendar.toXMLFormat()` of `new GregorianCalendar()` at `t`:
+/// milliseconds always, and the zone as `Z` or `±hh:mm`.
+pub fn xml_gregorian_calendar(t: OffsetDateTime) -> String {
+    let offset = t.offset();
+    let zone = if offset.is_utc() {
+        "Z".to_owned()
+    } else {
+        let (h, m, _) = offset.as_hms();
+        format!("{}{:02}:{:02}", if offset.is_negative() { '-' } else { '+' }, h.unsigned_abs(), m.unsigned_abs())
+    };
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}{zone}",
+        t.year(),
+        u8::from(t.month()),
+        t.day(),
+        t.hour(),
+        t.minute(),
+        t.second(),
+        t.millisecond()
     )
 }
 
@@ -51,5 +73,19 @@ mod tests {
             let t = PrimitiveDateTime::parse(&case.ends_at, format).unwrap();
             assert_eq!(format_full_utc(t), case.expires, "{}", case.ends_at);
         }
+    }
+}
+
+#[cfg(test)]
+mod xml_calendar_tests {
+    use super::*;
+    use time::macros::datetime;
+
+    #[test]
+    fn formats_like_xml_gregorian_calendar() {
+        assert_eq!(xml_gregorian_calendar(datetime!(2026-01-01 12:00 UTC)), "2026-01-01T12:00:00.000Z");
+        assert_eq!(xml_gregorian_calendar(datetime!(2026-01-01 12:00:01.25 UTC)), "2026-01-01T12:00:01.250Z");
+        assert_eq!(xml_gregorian_calendar(datetime!(2026-01-01 23:00 +11:00)), "2026-01-01T23:00:00.000+11:00");
+        assert_eq!(xml_gregorian_calendar(datetime!(2026-01-01 01:00 -03:30)), "2026-01-01T01:00:00.000-03:30");
     }
 }

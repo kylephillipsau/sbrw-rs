@@ -90,6 +90,9 @@ pub async fn replay(files: &ScenarioFiles) -> Result<Replay, ReplayError> {
             } else if let Some(job) = &step.job {
                 out.job = Some(job.clone());
                 server.job(job).await?;
+            } else if let Some(sql) = &step.sql {
+                out.sql = Some(sql.clone());
+                server.sql(sql).await?;
             }
             Ok(())
         }
@@ -159,6 +162,7 @@ fn check_fresh(scenario: &Scenario, fixture: &Fixture) -> anyhow::Result<()> {
             && s.http == f.request
             && s.advance_ms == f.advance_ms
             && s.job == f.job
+            && s.sql == f.sql
             && (s.fire_timers == Some(true)) == f.timers_fired.is_some();
         anyhow::ensure!(same, "step {i} differs between the scenario and the recording");
     }

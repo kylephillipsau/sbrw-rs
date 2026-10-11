@@ -14,7 +14,9 @@
 //! ported yet still gets upstream's routing and filters, then answers like the
 //! catch-all.
 
+mod boot;
 mod driver_persona;
+mod reporting;
 mod routes;
 mod user;
 
@@ -54,7 +56,6 @@ pub(crate) struct Call {
     pub query: Vec<(String, String)>,
     pub form: Vec<(String, String)>,
     pub headers: HeaderMap,
-    #[allow(dead_code)] // XML bodies arrive with the first ported POST endpoint.
     pub body: Bytes,
     pub remote_addr: IpAddr,
     /// The validated session, for `@Secured` routes.
@@ -96,6 +97,38 @@ impl Call {
             .transpose()
     }
 
+    /// `JAXBUtility.unMarshal(InputStream, T.class)`: the body as XML, with
+    /// namespaces ignored; anything unreadable fails the request (503, -500).
+    pub fn unmarshal<T: sbrw_xml::XmlType>(&self) -> Result<T, Fault> {
+        sbrw_xml::from_xml(&String::from_utf8_lossy(&self.body)).map_err(|e| {
+            Fault::Internal(anyhow::anyhow!(
+                "Failed to unmarshal stream to {} instance: {e}",
+                std::any::type_name::<T>().rsplit("::").next().unwrap_or_default()
+            ))
+        })
+    }
+
+    /// A `Long` `@HeaderParam`. `AuthenticationFilter` has already checked
+    /// `userId` on secured routes.
+    pub fn header_long(&self, name: &str) -> Result<Option<i64>, Fault> {
+        self.header(name)
+            .map(|v| v.parse().map_err(|_| Fault::Internal(anyhow::anyhow!("For input string: \"{v}\""))))
+            .transpose()
+    }
+
+    /// A `Long` `@PathParam`; one `Long.valueOf` rejects isn't found (503, -500).
+    pub fn path_long(&self, name: &str) -> Result<Option<i64>, Fault> {
+        self.path_param(name)
+            .map(|v| {
+                v.parse().map_err(|_| {
+                    Fault::Internal(anyhow::anyhow!(
+                        "Unable to extract parameter from http request: javax.ws.rs.PathParam(\"{name}\") value is '{v}'"
+                    ))
+                })
+            })
+            .transpose()
+    }
+
     /// The session `AuthenticationFilter` validated. Only `@Secured` routes reach
     /// handlers that ask for it.
     pub fn session(&self) -> &TokenSession {
@@ -112,7 +145,6 @@ impl Call {
         self.headers.get(name).map(|v| String::from_utf8_lossy(v.as_bytes()).into_owned())
     }
 
-    #[allow(dead_code)]
     pub fn path_param(&self, name: &str) -> Option<&str> {
         self.path_params.iter().find(|(k, _)| *k == name).map(|(_, v)| v.as_str())
     }
@@ -280,10 +312,31 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
             // port: api/Generic#genericEmptyPut(String)
             Ok(entity(call, StatusCode::OK, String::new()))
         }
-        "api/GetServerInformation#getServerInformation()" => {
-            Ok(launcher::server_information(state).await.into_response())
-        }
-        "api/Modding#getModInfo()" => Ok(launcher::mod_info(state).await),
+        "api/GetServerInformation#getServerInformation()" => launcher::server_information(state, call).await,
+        "api/Modding#getModInfo()" => launcher::mod_info(state, call).await,
+        "api/SystemInfo#systemInfo()" => boot::system_info(state, call).await,
+        "api/GetUserSettings#getUserSettingsGet()" => boot::get_user_settings(state, call).await,
+        "api/CarClasses#carClasses()" => boot::car_classes(call),
+        "api/Session#getChatInfo()" => boot::get_chat_info(state, call).await,
+        "api/GetRebroadcasters#getRebroadcasters()" => boot::get_rebroadcasters(state, call).await,
+        "api/GetRegionInfo#getRegionInfo()" => boot::get_region_info(call),
+        "api/Crypto#relayCryptoTicket(String,Long)" => boot::relay_crypto_ticket(state, call).await,
+        "api/Crypto#cryptoticket()" => boot::cryptoticket(state, call).await,
+        "api/LoginAnnouncements#loginAnnouncements(String)" => boot::login_announcements(state, call).await,
+        "api/NewsArticles#newsArticles()" => boot::news_articles(state, call).await,
+        "api/GetSocialNetworkInfo#getSocialNetworkInfo()" => boot::get_social_network_info(call),
+        "api/GetSocialSettings#getSocialSettings()" => boot::get_social_settings(call),
+        "api/Security#fraudConfig(Long)" => boot::fraud_config(call),
+        "api/Security#generateWebToken()" => boot::generate_web_token(state, call).await,
+        "api/HeartBeat#getPermanentSession(Long)" => boot::heart_beat(call),
+        "api/Logging#client()" => boot::logging_client(call),
+        "api/Gifts#getAndTriggerAvailableLevelGifts()" => boot::get_and_trigger_available_level_gifts(call),
+        "api/Reporting#sendHardwareInfo(InputStream)" => reporting::send_hardware_info(state, call).await,
+        "api/Reporting#sendUserSettings()"
+        | "api/Reporting#sendMultiplayerConnect()"
+        | "api/Reporting#sendClientPingTime()"
+        | "api/Reporting#loginAnnouncementClicked()"
+        | "api/Reporting#genericEmptyPut(String)" => reporting::ignored(call),
         "api/DriverPersona#getExpLevelPointsMap()" => driver_persona::get_exp_level_points_map(state, call).await,
         "api/DriverPersona#getPersonaInfo(Long)" => driver_persona::get_persona_info(state, call).await,
         "api/DriverPersona#reserveName(String)" => driver_persona::reserve_name(state, call).await,

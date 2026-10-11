@@ -144,6 +144,8 @@ impl Default for UdpConfig {
 }
 
 /// What the launcher shows in its server list (`GET /GetServerInformation`).
+/// Each field sets the upstream parameter it names; an unset optional field
+/// keeps upstream's default row (country `US`, admins and owners `???`).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct LauncherConfig {
@@ -171,9 +173,11 @@ pub struct LauncherConfig {
     pub allowed_countries: Option<String>,
     /// `SERVER_INFO_SHUTDOWN_TIMER`
     pub seconds_to_shutdown: i32,
-    /// `SERVER_INFO_ENABLED_SCENERY`
+    /// `SERVER_INFO_ENABLED_SCENERY`: holiday scenery the game turns on.
+    /// Defaults to upstream's `SCENERY_GROUP_NORMAL`.
     pub enabled_scenery: Vec<String>,
-    /// `SERVER_INFO_DISABLED_SCENERY`
+    /// `SERVER_INFO_DISABLED_SCENERY`. Defaults to upstream's
+    /// `SCENERY_GROUP_NORMAL_DISABLE`.
     pub disabled_scenery: Vec<String>,
 }
 
@@ -192,8 +196,8 @@ impl Default for LauncherConfig {
             owners: None,
             allowed_countries: None,
             seconds_to_shutdown: 7200,
-            enabled_scenery: Vec::new(),
-            disabled_scenery: Vec::new(),
+            enabled_scenery: vec!["SCENERY_GROUP_NORMAL".into()],
+            disabled_scenery: vec!["SCENERY_GROUP_NORMAL_DISABLE".into()],
         }
     }
 }
@@ -248,6 +252,54 @@ impl Config {
             }
         }
         Ok(config)
+    }
+
+    /// Upstream `parameter` rows this config sets, for the world to apply over
+    /// upstream's defaults. A field that is unset (`None`) leaves upstream's
+    /// row as it is; `parameters` entries win over everything else.
+    pub fn upstream_parameters(&self) -> BTreeMap<String, String> {
+        let mut p = BTreeMap::new();
+        let mut set = |name: &str, value: String| {
+            p.insert(name.to_owned(), value);
+        };
+        let host = &self.server.public_host;
+        set("SERVER_ADDRESS", self.public_http_url());
+        set("XMPP_IP", host.clone());
+        set("XMPP_PORT", self.xmpp.advertised_port().to_string());
+        set("UDP_FREEROAM_IP", host.clone());
+        set("UDP_FREEROAM_PORT", self.udp.freeroam.advertised_port().to_string());
+        set("UDP_RACE_IP", host.clone());
+        set("UDP_RACE_PORT", self.udp.race.advertised_port().to_string());
+
+        let l = &self.launcher;
+        set("SERVER_INFO_NAME", l.server_name.clone());
+        set("SERVER_INFO_TIMEZONE", l.timezone.to_string());
+        set("SERVER_INFO_SHUTDOWN_TIMER", l.seconds_to_shutdown.to_string());
+        set("SERVER_INFO_ENABLED_SCENERY", l.enabled_scenery.join(";"));
+        set("SERVER_INFO_DISABLED_SCENERY", l.disabled_scenery.join(";"));
+        for (name, value) in [
+            ("SERVER_INFO_MESSAGE", &l.message),
+            ("SERVER_INFO_COUNTRY", &l.country),
+            ("SERVER_INFO_BANNER_URL", &l.banner_url),
+            ("SERVER_INFO_HOMEPAGE_URL", &l.homepage_url),
+            ("SERVER_INFO_FACEBOOK_URL", &l.facebook_url),
+            ("SERVER_INFO_DISCORD_URL", &l.discord_url),
+            ("SERVER_INFO_ADMINS", &l.admins),
+            ("SERVER_INFO_OWNERS", &l.owners),
+            ("SERVER_INFO_ALLOWED_COUNTRIES", &l.allowed_countries),
+        ] {
+            if let Some(value) = value {
+                set(name, value.clone());
+            }
+        }
+
+        set("MODDING_ENABLED", self.modding.enabled.to_string());
+        set("MODDING_SERVER_ID", self.modding.server_id.clone());
+        set("MODDING_BASE_PATH", self.mods_base_url());
+        set("MODDING_FEATURES", self.modding.features.join(";"));
+
+        p.extend(self.parameters.clone());
+        p
     }
 
     /// Base URL players reach this server's HTTP listener on.
@@ -392,5 +444,31 @@ mod tests {
         assert_eq!(config.warnings().len(), 1);
         config.server.public_host = "game.example.com".into();
         assert_eq!(config.warnings().len(), 1);
+    }
+
+    #[test]
+    fn config_sets_upstream_parameters() {
+        let mut config = Config::default();
+        config.server.public_host = "203.0.113.7".into();
+        config.xmpp.public_port = Some(15222);
+        config.launcher.discord_url = Some("https://discord.gg/x".into());
+        config.modding.features = vec!["A".into(), "B".into()];
+        config.parameters.insert("XMPP_PORT".into(), "5333".into());
+        let p = config.upstream_parameters();
+        assert_eq!(p["XMPP_IP"], "203.0.113.7");
+        assert_eq!(p["UDP_FREEROAM_IP"], "203.0.113.7");
+        assert_eq!(p["UDP_FREEROAM_PORT"], "9999");
+        assert_eq!(p["UDP_RACE_PORT"], "9998");
+        assert_eq!(p["SERVER_ADDRESS"], "http://203.0.113.7:8680");
+        // An explicit parameter wins over the typed config.
+        assert_eq!(p["XMPP_PORT"], "5333");
+        assert_eq!(p["SERVER_INFO_NAME"], "sbrw-rs");
+        assert_eq!(p["SERVER_INFO_DISCORD_URL"], "https://discord.gg/x");
+        assert_eq!(p["SERVER_INFO_ENABLED_SCENERY"], "SCENERY_GROUP_NORMAL");
+        // Unset fields keep upstream's rows.
+        assert!(!p.contains_key("SERVER_INFO_COUNTRY"));
+        assert_eq!(p["MODDING_ENABLED"], "true");
+        assert_eq!(p["MODDING_BASE_PATH"], "http://203.0.113.7:8680/mods");
+        assert_eq!(p["MODDING_FEATURES"], "A;B");
     }
 }

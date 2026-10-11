@@ -7,7 +7,7 @@ use axum::body::Body;
 use axum::http::{Method, Request, StatusCode, header};
 use http_body_util::BodyExt;
 use sbrw_common::{CaptureSink, Config, EffectLog, Env};
-use sbrw_core::{World, WorldHandle, WorldOptions};
+use sbrw_core::{BuildInfo, World, WorldHandle, WorldOptions};
 use serde_json::Value;
 use tower::ServiceExt;
 
@@ -23,10 +23,11 @@ fn server_with(edit: impl FnOnce(&mut Config)) -> TestServer {
     edit(&mut config);
     let world = World::boot(WorldOptions {
         db_path: None,
-        parameters: Default::default(),
+        parameters: config.upstream_parameters(),
         env: Env::system(),
         effects: EffectLog::disabled(),
         openfire: Default::default(),
+        build_info: BuildInfo::of_this_build(),
     })
     .unwrap();
     let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), WorldHandle::spawn(world));
@@ -81,7 +82,9 @@ async fn server_information_matches_the_launcher_model() {
     }
     assert_eq!(info["secondsToShutDown"], 7200);
     assert_eq!(info["requireTicket"], false);
-    assert_eq!(info["modernAuthSupport"], false);
+    // Upstream never sends it; the launcher's bool then defaults to false, which
+    // keeps it on the SHA-1 login upstream implements.
+    assert!(info.get("modernAuthSupport").is_none_or(|v| v == false));
     assert!(info["activatedHolidaySceneryGroups"].is_array());
     assert!(info["disactivatedHolidaySceneryGroups"].is_array());
     assert!(info["serverVersion"].as_str().unwrap().starts_with("sbrw-rs "));

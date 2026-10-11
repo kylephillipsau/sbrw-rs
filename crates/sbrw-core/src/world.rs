@@ -17,12 +17,13 @@ use rusqlite::Connection;
 use sbrw_common::{EffectLog, Env};
 
 use crate::bo::achievement::{self, Achievements};
+use crate::bo::login_announcement::LoginAnnouncements;
 use crate::bo::online_users::{self, OnlineUsers};
 use crate::bo::token_session::TokenSessions;
 use crate::openfire::Openfire;
 use crate::params::Parameters;
 use crate::redis::Redis;
-use crate::{Fault, store};
+use crate::{BuildInfo, Fault, store};
 
 pub struct World {
     db: Connection,
@@ -35,6 +36,8 @@ pub struct World {
     /// Upstream's Redis, when `ENABLE_REDIS` is true.
     pub redis: Option<Redis>,
     pub achievements: Achievements,
+    pub login_announcements: LoginAnnouncements,
+    pub build_info: BuildInfo,
     async_jobs: VecDeque<AsyncJob>,
 }
 
@@ -49,6 +52,7 @@ pub struct WorldOptions {
     pub env: Env,
     pub effects: EffectLog,
     pub openfire: Openfire,
+    pub build_info: BuildInfo,
 }
 
 impl World {
@@ -70,6 +74,8 @@ impl World {
             openfire: options.openfire,
             redis,
             achievements,
+            login_announcements: LoginAnnouncements::default(),
+            build_info: options.build_info,
             async_jobs: VecDeque::new(),
         };
         // Upstream's @Startup beans, in the order the reference recordings show.
@@ -129,6 +135,7 @@ impl World {
             env: Env::deterministic(1, time::macros::datetime!(2026-01-01 12:00 UTC)),
             effects: EffectLog::recording(),
             openfire: Openfire::default(),
+            build_info: BuildInfo::unknown(),
         })
         .expect("booting a test world");
         world.effects.drain();
@@ -225,6 +232,7 @@ mod tests {
             env: Env::deterministic(1, time::macros::datetime!(2026-01-01 12:00 UTC)),
             effects: effects.clone(),
             openfire: Openfire::default(),
+            build_info: BuildInfo::unknown(),
         })
         .unwrap();
         let boot = effects.drain();

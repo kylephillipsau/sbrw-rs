@@ -1,0 +1,66 @@
+{
+  "description": "The launcher's server list entry, ModNet and the game's holiday scenery with the parameters an operator sets.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "MODDING_ENABLED": "true",
+    "MODDING_SERVER_ID": "sbrw-rs-test",
+    "MODDING_BASE_PATH": "http://127.0.0.1:8680/mods",
+    "MODDING_FEATURES": "FEATURE_A;FEATURE_B;",
+    "TICKET_TOKEN": "null",
+    "SERVER_INFO_NAME": "Friends & Family <Server>",
+    "SERVER_INFO_MESSAGE": "Welcome!",
+    "SERVER_INFO_BANNER_URL": "https://example.com/banner.png",
+    "SERVER_INFO_DISCORD_URL": "https://discord.gg/example",
+    "SERVER_INFO_TIMEZONE": "10",
+    "SERVER_INFO_SHUTDOWN_TIMER": "",
+    "SERVER_INFO_ALLOWED_COUNTRIES": "AU;NZ",
+    "SERVER_INFO_ENABLED_SCENERY": "SCENERY_GROUP_CHRISTMAS;SCENERY_GROUP_UNKNOWN;SCENERY_GROUP_NEWYEARS",
+    "SERVER_INFO_DISABLED_SCENERY": "SCENERY_GROUP_NORMAL_DISABLE;SCENERY_GROUP_UNKNOWN_DISABLE;SCENERY_GROUP_HALLOWEEN",
+    "MAX_PLAYER_LEVEL_FREE": "70",
+    "PORTAL_DOMAIN": ""
+  },
+  "steps": [
+    {
+      "note": "A ticket is required whenever TICKET_TOKEN is set, even to \"null\"; an empty shutdown timer means the default.",
+      "http": { "method": "GET", "path": "/Engine.svc/GetServerInformation" }
+    },
+    {
+      "note": "ModNet on: the server id, base path and features.",
+      "http": { "method": "GET", "path": "/Engine.svc/Modding/GetModInfo" }
+    },
+    {
+      "note": "Registration is still open: TICKET_TOKEN \"null\" means no ticket.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "An empty PORTAL_DOMAIN means the default.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/systeminfo",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Only known scenery groups are listed, but every enabled one gets an id (0 when unknown).",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getusersettings",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    }
+  ]
+}

@@ -8,10 +8,10 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M1 in progress. The launcher can list the server, install ModNet,
-register and log in. The game's session calls and driver creation and
-selection replay recordings of the original exactly; the game's other boot
-calls are next, then a check with the real client. See
+**Status:** M1 in progress. Every call the launcher and the game make up to
+the driver screen is ported and replays recordings of the original exactly,
+including creating and selecting a driver. What's left for M1 is a check with
+the real game, which also shows when it first connects to XMPP. See
 [docs/ROADMAP.md](docs/ROADMAP.md) for the design and milestones, and
 [docs/port-status.md](docs/port-status.md) for how much of the original is ported.
 
@@ -75,6 +75,9 @@ bind = "0.0.0.0:8680"
 [launcher]
 server_name = "My Server"
 discord_url = "https://discord.gg/..."
+country = "AU"
+admins = "..."                # unset fields show the original's defaults: US, ???
+owners = "..."
 
 [modding]
 enabled = true                # false makes the launcher skip ModNet
@@ -85,6 +88,11 @@ server_id = "my-server"
 SESSION_LENGTH_MINUTES = "1440"
 TICKET_TOKEN = "secret"       # registration then needs an invite ticket
 ```
+
+The `[server]`, `[xmpp]`, `[udp]`, `[launcher]` and `[modding]` settings are
+written into the original's parameters at startup (`public_host` becomes
+`XMPP_IP`, `UDP_FREEROAM_IP` and so on), so the ported code reads them as the
+original did. An entry in `[parameters]` wins over all of them.
 
 Accounts and game state live in `<data dir>/world.db` (SQLite).
 

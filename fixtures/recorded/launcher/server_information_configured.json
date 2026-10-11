@@ -1,0 +1,192 @@
+{
+  "scenario": "launcher/server_information_configured",
+  "description": "The launcher's server list entry, ModNet and the game's holiday scenery with the parameters an operator sets.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "A ticket is required whenever TICKET_TOKEN is set, even to \"null\"; an empty shutdown timer means the default.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"activatedHolidaySceneryGroups\":[\"SCENERY_GROUP_CHRISTMAS\",\"SCENERY_GROUP_UNKNOWN\",\"SCENERY_GROUP_NEWYEARS\"],\"adminList\":\"???\",\"allowedCountries\":\"AU;NZ\",\"bannerUrl\":\"https://example.com/banner.png\",\"country\":\"US\",\"disactivatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL_DISABLE\",\"SCENERY_GROUP_UNKNOWN_DISABLE\",\"SCENERY_GROUP_HALLOWEEN\"],\"discordUrl\":\"https://discord.gg/example\",\"messageSrv\":\"Welcome!\",\"numberOfRegistered\":0,\"onlineNumber\":0,\"ownerList\":\"???\",\"requireTicket\":true,\"secondsToShutDown\":7200,\"serverName\":\"Friends & Family <Server>\",\"serverVersion\":\"unknown\",\"timezone\":10}"
+      }
+    },
+    {
+      "note": "ModNet on: the server id, base path and features.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/Modding/GetModInfo",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"basePath\":\"http://127.0.0.1:8680/mods\",\"features\":[\"FEATURE_A\",\"FEATURE_B\"],\"serverID\":\"sbrw-rs-test\"}"
+      }
+    },
+    {
+      "note": "Registration is still open: TICKET_TOKEN \"null\" means no ticket.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "An empty PORTAL_DOMAIN means the default.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/systeminfo",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SystemInfo><Branch>unknown</Branch><ChangeList>unknown</ChangeList><ClientVersion>1614b</ClientVersion><ClientVersionCheck>true</ClientVersionCheck><Deployed>unknown</Deployed><EntitlementsToDownload>true</EntitlementsToDownload><ForcePermanentSession>true</ForcePermanentSession><JidPrepender>sbrw</JidPrepender><LauncherServiceUrl>http://127.0.0.1</LauncherServiceUrl><NucleusNamespace>sbrw-live</NucleusNamespace><NucleusNamespaceWeb>sbr_web</NucleusNamespaceWeb><PersonaCacheTimeout>900</PersonaCacheTimeout><PortalDomain>soapboxrace.world</PortalDomain><PortalStoreFailurePage>sbrw.io/nfsw-portal-error</PortalStoreFailurePage><PortalTimeOut>6000</PortalTimeOut><ShardName>CORE</ShardName><Time>2026-01-01T12:00:00.000Z</Time><Version>unknown</Version></SystemInfo>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Only known scenery groups are listed, but every enabled one gets an id (0 when unknown).",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getusersettings",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<User_Settings><CarCacheAgeLimit>600</CarCacheAgeLimit><IsRaceNowEnabled>true</IsRaceNowEnabled><MaxCarCacheSize>250</MaxCarCacheSize><MinRaceNowLevel>2</MinRaceNowLevel><VoipAvailable>false</VoipAvailable><activatedHolidaySceneryGroups><string>SCENERY_GROUP_CHRISTMAS</string><string>SCENERY_GROUP_NEWYEARS</string></activatedHolidaySceneryGroups><activeHolidayIds><long>3</long><long>0</long><long>5</long></activeHolidayIds><disactivatedHolidaySceneryGroups><string>SCENERY_GROUP_NORMAL_DISABLE</string><string>SCENERY_GROUP_HALLOWEEN</string></disactivatedHolidaySceneryGroups><firstTimeLogin>false</firstTimeLogin><maxLevel>70</maxLevel><starterPackApplied>false</starterPackApplied><userId>1</userId></User_Settings>"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

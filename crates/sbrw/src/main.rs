@@ -97,10 +97,11 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
 
     let world = sbrw_core::World::boot(sbrw_core::WorldOptions {
         db_path: Some(config.server.data_dir.join("world.db")),
-        parameters: config.parameters.clone(),
+        parameters: config.upstream_parameters(),
         env: sbrw_common::Env::system(),
         effects: sbrw_common::EffectLog::disabled(),
         openfire: Default::default(),
+        build_info: sbrw_core::BuildInfo::of_this_build(),
     })
     .context("starting the world")?;
     let world = sbrw_core::WorldHandle::spawn(world);

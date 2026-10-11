@@ -112,6 +112,9 @@ public final class Recorder {
             } else if (step.job != null) {
                 container.runJob(step.job);
                 result.put("job", step.job);
+            } else if (step.sql != null) {
+                db.execute(step.sql);
+                result.put("sql", step.sql);
             }
             Map<String, Object> effects = recording.drain();
             if (!effects.isEmpty()) result.put("effects", effects);

@@ -11,6 +11,7 @@
 //! container ran each EJB call from the (non-EJB) REST resources.
 
 pub mod bo;
+pub mod build_info;
 pub mod dao;
 pub mod datetime;
 pub mod engine;
@@ -22,5 +23,6 @@ pub mod store;
 pub mod vo;
 pub mod world;
 
+pub use build_info::BuildInfo;
 pub use engine::{EngineException, EngineExceptionCode, Fault};
 pub use world::{World, WorldHandle, WorldOptions};

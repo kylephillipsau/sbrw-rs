@@ -57,6 +57,10 @@ pub struct Step {
     pub fire_timers: Option<bool>,
     /// A scheduled job, named after upstream's `@Schedule` method: `BanBO#checkExpiredBans`.
     pub job: Option<String>,
+    /// SQL statements run directly against the database, for rows no API
+    /// creates. Write them so MySQL and SQLite read them alike: plain
+    /// `INSERT`s, ISO datetimes.
+    pub sql: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -118,6 +122,8 @@ pub struct StepOutcome {
     pub timers_fired: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub job: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sql: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Effects::is_empty")]
     pub effects: Effects,
     /// Set when sbrw-rs could not perform the step at all (never in recordings).

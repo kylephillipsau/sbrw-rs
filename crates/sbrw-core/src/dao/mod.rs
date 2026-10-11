@@ -12,11 +12,14 @@
 pub mod achievement;
 pub mod badge_definition;
 pub mod ban;
+pub mod chat_room;
 pub mod hardware_info;
 pub mod inventory;
 pub mod inventory_item;
 pub mod invite_ticket;
 pub mod level_rep;
+pub mod login_announcement;
+pub mod news_article;
 pub mod online_users;
 pub mod persona;
 pub mod persona_achievement;

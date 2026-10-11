@@ -230,7 +230,9 @@ pub fn normalize_body(body: &str) -> String {
 }
 
 /// Sort the child elements of every `<list>` element. The children are flat
-/// records, so each ends at its first closing tag.
+/// records, so each ends at its first closing tag. This applies wherever the
+/// element appears in a body; today only `CustomCarTrans` has these names.
+/// A response that uses one for an ordered list would need this narrowed.
 fn sort_children(body: &str, list: &str) -> String {
     let (open, close) = (format!("<{list}>"), format!("</{list}>"));
     let mut out = String::with_capacity(body.len());

@@ -5,9 +5,13 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use sbrw_core::Fault;
 use sbrw_core::bo::util::owned_car_converter;
-use sbrw_core::bo::{car_slot, inventory, persona, token_session};
+use sbrw_core::bo::{basket, car_slot, inventory, persona, token_session};
 use sbrw_xml::ToXml;
-use sbrw_xml::dto::http::{ArrayOfOwnedCarTrans, ArrayOfProductTrans, CarSlotInfoTrans, ProductTrans};
+use sbrw_xml::dto::http::{
+    ArrayOfCommerceItemTrans, ArrayOfInventoryItemTrans, ArrayOfOwnedCarTrans, ArrayOfProductTrans, ArrayOfWalletTrans,
+    BasketTrans, CarSlotInfoTrans, CommerceResultStatus, CommerceResultTrans, InvalidBasketTrans, InventoryItemTrans,
+    ProductTrans, WalletTrans,
+};
 
 use super::{Call, entity};
 use crate::AppState;
@@ -15,6 +19,74 @@ use crate::AppState;
 /// A `{personaId}` or `{carId}` path parameter; the route always has one.
 fn path_id(call: &Call, name: &str) -> Result<i64, Fault> {
     call.path_long(name)?.ok_or_else(|| Fault::null_pointer(name))
+}
+
+// port: api/Personas#baskets(InputStream,Long)
+/// Buying the first item of a basket. Ported so far: cars. Every answer has
+/// one empty inventory item and the persona's wallets as they end up.
+pub(super) async fn baskets(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id = path_id(call, "personaId")?;
+    let session = call.session();
+    token_session::verify_persona_ownership(session, persona_id)?;
+
+    let world = state.world();
+    let persona_entity = world.call(move |w| persona::get_persona_by_id(w, persona_id)).await?;
+
+    let mut commerce_result_trans = CommerceResultTrans {
+        commerce_items: Some(ArrayOfCommerceItemTrans::default()),
+        invalid_basket: Some(InvalidBasketTrans::default()),
+        inventory_items: Some(ArrayOfInventoryItemTrans { inventory_item_trans: vec![InventoryItemTrans::default()] }),
+        ..Default::default()
+    };
+
+    let basket_trans: BasketTrans = call.unmarshal()?;
+    let items = basket_trans.items.ok_or_else(|| Fault::null_pointer("BasketTrans.items"))?.basket_item_trans;
+    let item = items.into_iter().next().ok_or_else(|| anyhow::anyhow!("Index 0 out of bounds for length 0"))?;
+    let product_id = item.product_id.ok_or_else(|| Fault::null_pointer("BasketItemTrans.productId"))?;
+
+    let mut persona_entity = persona_entity;
+    if product_id == "-1" || product_id == "SRV-GARAGESLOT" {
+        commerce_result_trans.status = Some(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS);
+    } else if product_id.contains("SRV-POWERUP") {
+        return Err(Fault::unported("bo/BasketBO#buyPowerups(String,PersonaEntity)"));
+    } else if product_id == "SRV-REPAIR" {
+        return Err(Fault::unported("bo/BasketBO#repairCar(String,PersonaEntity)"));
+    } else if product_id == "SRV-THREVIVE" {
+        return Err(Fault::unported("bo/BasketBO#reviveTreasureHunt(String,PersonaEntity)"));
+    } else {
+        let product_entity = {
+            let product_id = product_id.clone();
+            world.call(move |w| basket::find_product(w, &product_id)).await?
+        };
+        match product_entity.product_type.as_str() {
+            "PRESETCAR" => {
+                let user = session.user.clone();
+                let (status, persona, result) = world
+                    .call(move |w| {
+                        let mut persona = persona_entity.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+                        let status =
+                            basket::buy_car(w, &product_entity, &mut persona, &user, &mut commerce_result_trans)?;
+                        Ok((status, persona, commerce_result_trans))
+                    })
+                    .await?;
+                persona_entity = Some(persona);
+                commerce_result_trans = result;
+                commerce_result_trans.status = Some(status);
+            }
+            "BUNDLE" => return Err(Fault::unported("bo/BasketBO#buyBundle(String,PersonaEntity,CommerceResultTrans)")),
+            "AMPLIFIER" => return Err(Fault::unported("bo/BasketBO#buyAmplifier(PersonaEntity,String)")),
+            _ => {}
+        }
+    }
+
+    let persona_entity = persona_entity.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    commerce_result_trans.wallets = Some(ArrayOfWalletTrans {
+        wallet_trans: vec![
+            WalletTrans { balance: persona_entity.cash, currency: Some("CASH".into()) },
+            WalletTrans { balance: persona_entity.boost, currency: Some("BOOST".into()) },
+        ],
+    });
+    Ok(entity(call, StatusCode::OK, commerce_result_trans.to_xml()))
 }
 
 // port: api/Personas#carslots(Long)

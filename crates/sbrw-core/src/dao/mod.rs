@@ -10,8 +10,10 @@
 //! - an EAGER relationship is loaded with its owner.
 
 pub mod achievement;
+pub mod amplifier;
 pub mod badge_definition;
 pub mod ban;
+pub mod basket_definition;
 pub mod car;
 pub mod car_classes;
 pub mod chat_room;

@@ -3,7 +3,7 @@
 
 // port: dao/CarDAO#<init>()
 
-use rusqlite::{Connection, OptionalExtension, Row};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 use time::PrimitiveDateTime;
 
 use crate::datetime;
@@ -262,4 +262,105 @@ pub fn find_num_by_persona_id(db: &Connection, persona_id: i64) -> rusqlite::Res
     Ok(db
         .prepare_cached("SELECT COUNT(*) FROM car WHERE personaId = ?1")?
         .query_row([persona_id], |r| r.get::<_, i64>(0))? as i32)
+}
+
+// port: dao/CarDAO#findNumNonRentalsByPersonaId(Long)
+// port: jpa/CarEntity@CarEntity.findNumNonRentalsByPersonaId
+pub fn find_num_non_rentals_by_persona_id(db: &Connection, persona_id: i64) -> rusqlite::Result<i64> {
+    db.prepare_cached("SELECT COUNT(*) FROM car WHERE personaId = ?1 AND expirationDate IS NULL")?
+        .query_row([persona_id], |r| r.get(0))
+}
+
+/// `CarDAO.insert` (`persist`): the car, then its parts (cascaded); sets the ids.
+pub fn insert(db: &Connection, car: &mut CarEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "INSERT INTO car (durability, expirationDate, heat, ownershipType, personaId, baseCar, carClassHash, isPreset,
+         level, name, physicsProfileHash, rating, resalePrice, rideHeightDrop, skillModSlotCount, version)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+    )?
+    .execute(params![
+        car.durability,
+        datetime::opt_to_sql(car.expiration_date),
+        f64::from(car.heat),
+        car.ownership_type,
+        car.persona_id,
+        car.base_car,
+        car.car_class_hash,
+        car.is_preset,
+        car.level,
+        car.name,
+        car.physics_profile_hash,
+        car.rating,
+        f64::from(car.resale_price),
+        f64::from(car.ride_height_drop),
+        car.skill_mod_slot_count,
+        car.version,
+    ])?;
+    car.id = db.last_insert_rowid();
+    for p in &mut car.paints {
+        db.prepare_cached(
+            "INSERT INTO paint (paintGroup, hue, sat, slot, paintVar, carId) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        )?
+        .execute(params![p.group, p.hue, p.sat, p.slot, p.var, car.id])?;
+        p.id = db.last_insert_rowid();
+    }
+    for p in &mut car.performance_parts {
+        db.prepare_cached("INSERT INTO performancepart (performancePartAttribHash, carId) VALUES (?1, ?2)")?
+            .execute(params![p.performance_part_attrib_hash, car.id])?;
+        p.id = db.last_insert_rowid();
+    }
+    for p in &mut car.skill_mod_parts {
+        db.prepare_cached("INSERT INTO skillmodpart (isFixed, skillModPartAttribHash, carId) VALUES (?1, ?2, ?3)")?
+            .execute(params![p.is_fixed, p.skill_mod_part_attrib_hash, car.id])?;
+        p.id = db.last_insert_rowid();
+    }
+    for v in &mut car.vinyls {
+        db.prepare_cached(
+            "INSERT INTO vinyl (hash, hue1, hue2, hue3, hue4, layer, mir, rot, sat1, sat2, sat3, sat4, scalex, scaley,
+             shear, tranx, trany, var1, var2, var3, var4, carId)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)",
+        )?
+        .execute(params![
+            v.hash, v.hue1, v.hue2, v.hue3, v.hue4, v.layer, v.mir, v.rot, v.sat1, v.sat2, v.sat3, v.sat4, v.scalex,
+            v.scaley, v.shear, v.tranx, v.trany, v.var1, v.var2, v.var3, v.var4, car.id,
+        ])?;
+        v.id = db.last_insert_rowid();
+    }
+    for p in &mut car.visual_parts {
+        db.prepare_cached("INSERT INTO visualpart (partHash, slotHash, carId) VALUES (?1, ?2, ?3)")?
+            .execute(params![p.part_hash, p.slot_hash, car.id])?;
+        p.id = db.last_insert_rowid();
+    }
+    Ok(())
+}
+
+/// `CarDAO.update` (`merge`), and what Hibernate flushes for a changed managed
+/// car: the car's columns. The merge cascades to parts the car already holds,
+/// which no caller ported so far changes.
+pub fn update(db: &Connection, car: &CarEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "UPDATE car SET durability = ?2, expirationDate = ?3, heat = ?4, ownershipType = ?5, personaId = ?6,
+         baseCar = ?7, carClassHash = ?8, isPreset = ?9, level = ?10, name = ?11, physicsProfileHash = ?12,
+         rating = ?13, resalePrice = ?14, rideHeightDrop = ?15, skillModSlotCount = ?16, version = ?17 WHERE id = ?1",
+    )?
+    .execute(params![
+        car.id,
+        car.durability,
+        datetime::opt_to_sql(car.expiration_date),
+        f64::from(car.heat),
+        car.ownership_type,
+        car.persona_id,
+        car.base_car,
+        car.car_class_hash,
+        car.is_preset,
+        car.level,
+        car.name,
+        car.physics_profile_hash,
+        car.rating,
+        f64::from(car.resale_price),
+        f64::from(car.ride_height_drop),
+        car.skill_mod_slot_count,
+        car.version,
+    ])?;
+    Ok(())
 }

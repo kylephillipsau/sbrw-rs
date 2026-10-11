@@ -103,6 +103,24 @@ pub fn find_by_product_id(db: &Connection, product_id: &str) -> Result<ProductEn
     found.ok_or_else(|| Fault::Internal(anyhow!("Could not find product with ID: {product_id}")))
 }
 
+// port: dao/ProductDAO#findByEntitlementTag(String)
+// port: jpa/ProductEntity@ProductEntity.findByEntitlementTag
+/// The first product with this entitlement tag; a missing one throws.
+pub fn find_by_entitlement_tag(db: &Connection, entitlement_tag: &str) -> Result<ProductEntity, Fault> {
+    let mut stmt = db.prepare_cached("SELECT * FROM product WHERE entitlementTag = ?1 ORDER BY id LIMIT 1")?;
+    let found = stmt.query_map([entitlement_tag], ProductEntity::from_row)?.next().transpose()?;
+    found.ok_or_else(|| Fault::Internal(anyhow!("Could not find product with tag: {entitlement_tag}")))
+}
+
+// port: dao/ProductDAO#findByHash(Integer)
+// port: jpa/ProductEntity@ProductEntity.findByHash
+/// The first product with this hash; a missing one throws.
+pub fn find_by_hash(db: &Connection, hash: i32) -> Result<ProductEntity, Fault> {
+    let mut stmt = db.prepare_cached("SELECT * FROM product WHERE hash = ?1 ORDER BY id LIMIT 1")?;
+    let found = stmt.query_map([hash], ProductEntity::from_row)?.next().transpose()?;
+    found.ok_or_else(|| Fault::Internal(anyhow!("Could not find product with hash: {hash}")))
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

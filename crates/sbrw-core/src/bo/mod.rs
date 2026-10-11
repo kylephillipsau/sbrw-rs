@@ -8,6 +8,8 @@
 pub mod achievement;
 pub mod achievement_transaction;
 pub mod authentication;
+pub mod basket;
+pub mod car_damage;
 pub mod car_slot;
 pub mod driver_persona;
 pub mod get_server_information;
@@ -18,6 +20,7 @@ pub mod matchmaking;
 pub mod modding;
 pub mod news_article;
 pub mod online_users;
+pub mod performance;
 pub mod persona;
 pub mod presence;
 pub mod scenery_util;

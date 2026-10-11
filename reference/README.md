@@ -53,7 +53,7 @@ It needs Docker and nothing else. The first run downloads MySQL 8 and about
 A scenario (`scenarios/**/*.json`, see `Scenario.java`) contains:
 - a seed and a starting time;
 - optional parameter overrides;
-- steps: HTTP requests, clock advances, timer firings, scheduled jobs, and SQL statements (`sql`) for rows no API creates, such as login announcements and news. Write SQL that MySQL and SQLite both accept: plain `INSERT`s with ISO datetimes.
+- steps: HTTP requests, clock advances, timer firings, scheduled jobs, and SQL statements (`sql`) for rows no API creates, such as login announcements and news. Write SQL that MySQL and SQLite both accept: plain `INSERT`s with ISO datetimes. Static game data isn't reset between scenarios in a recording run, so a scenario that changes it (to enable a product, say) must change it back in its last step; the replay gives every scenario its own copy.
 
 The recorded fixture (`fixtures/recorded/**/*.json`) contains:
 - every response (status, headers, body);

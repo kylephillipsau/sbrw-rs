@@ -35,6 +35,23 @@ impl InventoryItemEntity {
     }
 }
 
+// port: dao/InventoryItemDAO#findAllByPersonaIdAndEntitlementTag(Long,String)
+// port: jpa/InventoryItemEntity@InventoryItemEntity.findAllByPersonaIdAndTag
+/// The persona's items of products with this entitlement tag.
+pub fn find_all_by_persona_id_and_entitlement_tag(
+    db: &Connection,
+    persona_id: i64,
+    entitlement_tag: &str,
+) -> rusqlite::Result<Vec<InventoryItemEntity>> {
+    db.prepare_cached(
+        "SELECT ii.* FROM inventory_item ii JOIN inventory i ON i.id = ii.inventoryEntity_id
+         JOIN product p ON p.productId = ii.productId
+         WHERE i.personaId = ?1 AND p.entitlementTag = ?2 ORDER BY ii.id",
+    )?
+    .query_map(rusqlite::params![persona_id, entitlement_tag], InventoryItemEntity::from_row)?
+    .collect()
+}
+
 /// `InventoryEntity.inventoryItems`: a bag with no `@OrderBy`, which MySQL
 /// reads through the foreign key's index, so in id order.
 pub(crate) fn find_by_inventory_id(db: &Connection, inventory_id: i64) -> rusqlite::Result<Vec<InventoryItemEntity>> {

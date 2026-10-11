@@ -1,10 +1,10 @@
 //! `PersonaBO`: a persona's cars, as the garage and shops use them. Ported
-//! so far: the default car and choosing it, and looking cars up.
+//! so far: the default car and choosing it, looking cars up, and repairs.
 
 use sbrw_xml::dto::http::OwnedCarTrans;
 
-use crate::bo::car_slot;
 use crate::bo::util::owned_car_converter;
+use crate::bo::{car_damage, car_slot};
 use crate::dao::car::{self, CarEntity};
 use crate::dao::persona::{self, PersonaEntity};
 use crate::{Fault, World};
@@ -61,6 +61,14 @@ pub fn get_default_car(w: &mut World, persona_id: i64) -> Result<OwnedCarTrans, 
         Some(car_entity) => owned_car_converter::entity2_trans(&car_entity),
         None => OwnedCarTrans::default(),
     })
+}
+
+// port: bo/PersonaBO#repairAllCars(PersonaEntity)
+pub fn repair_all_cars(w: &mut World, persona_entity: &PersonaEntity) -> Result<(), Fault> {
+    for mut car_entity in car_slot::get_personas_car(w, persona_entity.persona_id)? {
+        car_damage::update_durability(w, &mut car_entity, 100)?;
+    }
+    Ok(())
 }
 
 // port: bo/PersonaBO#getCarByOwnedCarId(Long)

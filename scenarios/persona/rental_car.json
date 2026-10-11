@@ -1,0 +1,124 @@
+{
+  "description": "Buying rental cars: only once the driver owns a car, with an expiry, and with an insurance amplifier when the driver has none, which repairs every car.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002, with no drivers yet.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Driver 100, whose starting items include an insurance amplifier.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "5" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The data's one rental car (SRV-CAR56, a day long) is disabled, so it can't be bought.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CAR56</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Enabling it, and giving the driver the cash for several. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE product SET enabled = 1 WHERE productId = 'SRV-CAR56'",
+        "UPDATE persona SET cash = 2000000 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "A rental needs a car of one's own first: the EngineException becomes Fail_MaxStackOrRentalLimit.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CAR56</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "A starter car.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Now the rental: it expires in a day; the driver already has insurance, so none is added; owning a rental isn't ACH_OWN_CAR.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CAR56</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Damaging both cars and taking the insurance away.",
+      "sql": [
+        "UPDATE car SET durability = 40 WHERE personaId = 100",
+        "DELETE FROM inventory_item WHERE productId = 'SRV-AMP-INSURANCE'"
+      ]
+    },
+    { "advance_ms": 60000 },
+    {
+      "note": "A second rental adds an insurance amplifier, which repairs every car.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CAR56</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Three cars, two of them rentals, all repaired.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The new insurance amplifier.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE product SET enabled = 0 WHERE productId = 'SRV-CAR56'"
+      ]
+    }
+  ]
+}

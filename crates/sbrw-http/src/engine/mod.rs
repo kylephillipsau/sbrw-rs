@@ -358,6 +358,7 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/DriverPersona#updateStatusMessage(InputStream)" => {
             driver_persona::update_status_message(state, call).await
         }
+        "api/Personas#baskets(InputStream,Long)" => personas::baskets(state, call).await,
         "api/Personas#carslots(Long)" => personas::carslots(state, call).await,
         "api/Personas#inventoryObjects(String)" => personas::inventory_objects(state, call).await,
         "api/Personas#carsGet(Long)" => personas::cars_get(state, call).await,

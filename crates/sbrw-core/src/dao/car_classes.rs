@@ -61,3 +61,14 @@ pub fn find(db: &Connection, store_name: &str) -> rusqlite::Result<Option<CarCla
         .query_row([store_name], CarClassesEntity::from_row)
         .optional()
 }
+
+// port: dao/CarClassesDAO#findByHash(int)
+/// The car class with this physics profile hash; none when there isn't
+/// exactly one (`getSingleResult`'s exceptions are swallowed).
+pub fn find_by_hash(db: &Connection, hash: i32) -> rusqlite::Result<Option<CarClassesEntity>> {
+    let found: Vec<CarClassesEntity> = db
+        .prepare_cached("SELECT * FROM car_classes WHERE hash = ?1 LIMIT 2")?
+        .query_map([hash], CarClassesEntity::from_row)?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(if found.len() == 1 { found.into_iter().next() } else { None })
+}

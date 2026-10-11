@@ -16,6 +16,7 @@ hex.workspace = true
 http-body-util.workspace = true
 sbrw-common.workspace = true
 sbrw-core.workspace = true
+sbrw-java.workspace = true
 sbrw-xml.workspace = true
 serde.workspace = true
 serde_json.workspace = true

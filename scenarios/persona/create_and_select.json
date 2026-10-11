@@ -1,0 +1,238 @@
+{
+  "description": "Driver creation from the game's create screen: name and icon checks, three drivers per account, then selecting one (the LOGIN achievement transaction) in the session that created it, in a second session built from that one, and after a fresh launcher login.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Permanent session ...0002, with no drivers yet.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000001" }
+      }
+    },
+    {
+      "note": "Cumulative rep per level, from level_rep.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetExpLevelPointsMap",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A free name: an empty list.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/ReserveName",
+        "query": { "name": "DRIVER1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Unreserving does nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UnreserveName",
+        "query": { "name": "DRIVER1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Lower case fails the name pattern.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "abc", "iconIndex": "5" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "No name at all.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "iconIndex": "5" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "An icon index that isn't a number.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "x" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "An icon index past MAX_ICON_INDEX (26).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "27" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "The first driver: persona 100, with an inventory of starting items and treasure hunt state.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "5", "clan": "", "clanIcon": "" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Names are taken case-insensitively.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/ReserveName",
+        "query": { "name": "driver1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A taken name.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER1", "iconIndex": "5" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 101, with no icon index (0).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER2" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Driver 102, with the highest icon index.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER3", "iconIndex": "26" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A fourth driver is one too many.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": { "name": "DRIVER4", "iconIndex": "1" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A driver's profile, with no badges yet.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A driver that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": { "personaId": "999" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "Selecting driver 101 in the session that created it: first login, the LOGIN achievement push, selected index 1.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "101" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    { "advance_ms": 60000 },
+    {
+      "note": "Selecting it again a minute later moves only the last login.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "101" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "A second permanent session (...0003) from the same session: upstream builds it from the session's snapshot of the user, taken before any driver existed, so it lists none.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000002" }
+      }
+    },
+    {
+      "note": "So that session may not select one either (-773).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000003" }
+      }
+    },
+    {
+      "note": "Logging out of a driver it never selected still succeeds.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogoutPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000003" }
+      }
+    },
+    {
+      "note": "The launcher logs in afresh: token ...0004.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": { "email": "player@example.com", "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8" },
+        "headers": { "X-HWID": "HWID-1" }
+      }
+    },
+    {
+      "note": "Its permanent session (...0005) lists all three drivers and defaults to the one last selected.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000004" }
+      }
+    },
+    {
+      "note": "Selecting driver 100 there: its first login.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000005" }
+      }
+    },
+    {
+      "note": "And logging out of it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogoutPersona",
+        "query": { "personaId": "100" },
+        "headers": { "userId": "1", "securityToken": "00000000-0000-4000-8000-000000000005" }
+      }
+    }
+  ]
+}

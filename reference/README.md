@@ -46,7 +46,7 @@ It needs Docker and nothing else. The first run downloads MySQL 8 and about
    - **Openfire:** the XMPP connection and the REST client record what would have been sent, so every server push is part of the fixture.
    - **Redis:** in-memory, with Redis-on semantics. With Redis off upstream, presence and matchmaking silently don't work.
    - **Sentry** is silenced.
-5. **MySQL 8** loads the original `Schema.sql` and `Data.sql`, with case-insensitive names as on the Windows setups the original targeted. Between scenarios the runtime tables are truncated and the `parameter` table restored.
+5. **MySQL 8** loads the original `Schema.sql` and `Data.sql`, with case-insensitive names as on the Windows setups the original targeted. Between scenarios the runtime tables are truncated, with their starting ids restored (persona ids start at 100), and the `parameter` table is restored.
 
 ## Scenarios and fixtures
 

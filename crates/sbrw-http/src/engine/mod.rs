@@ -14,6 +14,7 @@
 //! ported yet still gets upstream's routing and filters, then answers like the
 //! catch-all.
 
+mod driver_persona;
 mod routes;
 mod user;
 
@@ -69,6 +70,21 @@ impl Call {
     /// A `Long` `@QueryParam`: `None` when absent; a value `Long.valueOf`
     /// rejects fails the request as RESTEasy does (503, -500).
     pub fn query_long(&self, name: &str) -> Result<Option<i64>, Fault> {
+        self.query(name)
+            .map(|v| {
+                v.parse().map_err(|_| {
+                    Fault::Internal(anyhow::anyhow!(
+                        "Unable to extract parameter from http request: javax.ws.rs.QueryParam(\"{name}\") value is '{v}'"
+                    ))
+                })
+            })
+            .transpose()
+    }
+
+    /// An `Integer` or `int` `@QueryParam`: `None` when absent (an `int` is then
+    /// 0); a value `Integer.valueOf` rejects fails the request as RESTEasy does
+    /// (503, -500).
+    pub fn query_int(&self, name: &str) -> Result<Option<i32>, Fault> {
         self.query(name)
             .map(|v| {
                 v.parse().map_err(|_| {
@@ -268,6 +284,13 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
             Ok(launcher::server_information(state).await.into_response())
         }
         "api/Modding#getModInfo()" => Ok(launcher::mod_info(state).await),
+        "api/DriverPersona#getExpLevelPointsMap()" => driver_persona::get_exp_level_points_map(state, call).await,
+        "api/DriverPersona#getPersonaInfo(Long)" => driver_persona::get_persona_info(state, call).await,
+        "api/DriverPersona#reserveName(String)" => driver_persona::reserve_name(state, call).await,
+        "api/DriverPersona#UnreserveName(String)" => driver_persona::unreserve_name(call),
+        "api/DriverPersona#createPersona(Long,String,String,int,String,String)" => {
+            driver_persona::create_persona(state, call).await
+        }
         "api/User#authenticateUser(String,String)" => user::authenticate_user(state, call).await,
         "api/User#createUser(String,String,String)" => user::create_user(state, call).await,
         "api/User#getPermanentSession()" => user::get_permanent_session(state, call).await,

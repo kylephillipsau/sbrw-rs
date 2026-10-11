@@ -9,6 +9,7 @@
 pub mod lang;
 mod random;
 pub mod time;
+pub mod util;
 pub mod validator;
 
 pub use random::JavaRandom;

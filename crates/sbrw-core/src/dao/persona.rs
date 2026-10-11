@@ -1,5 +1,7 @@
 //! `PersonaEntity` (a driver) and the parts of `PersonaDAO` ported so far.
 
+// port: dao/PersonaDAO#<init>()
+
 use rusqlite::{Connection, OptionalExtension, Row, params};
 use time::PrimitiveDateTime;
 
@@ -65,6 +67,45 @@ pub fn find(db: &Connection, persona_id: i64) -> rusqlite::Result<Option<Persona
     db.prepare_cached("SELECT * FROM persona WHERE ID = ?1")?
         .query_row([persona_id], PersonaEntity::from_row)
         .optional()
+}
+
+// port: dao/PersonaDAO#findByName(String)
+// port: jpa/PersonaEntity@PersonaEntity.findByName
+/// Names compare case-insensitively, as in upstream's MySQL collation. A
+/// null name matches nothing.
+pub fn find_by_name(db: &Connection, name: Option<&str>) -> rusqlite::Result<Option<PersonaEntity>> {
+    db.prepare_cached("SELECT * FROM persona WHERE name = ?1 ORDER BY ID LIMIT 1")?
+        .query_row([name], PersonaEntity::from_row)
+        .optional()
+}
+
+/// `PersonaDAO.insert` (`persist`): every mapped column; sets the generated id.
+pub fn insert(db: &Connection, p: &mut PersonaEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "INSERT INTO persona (boost, cash, curCarIndex, iconIndex, level, motto, name, percentToLevel, rating, rep,
+         repAtCurrentLevel, score, USERID, created, first_login, last_login)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+    )?
+    .execute(params![
+        p.boost,
+        p.cash,
+        p.cur_car_index,
+        p.icon_index,
+        p.level,
+        p.motto,
+        p.name,
+        f64::from(p.percent_to_level),
+        p.rating,
+        p.rep,
+        p.rep_at_current_level,
+        p.score,
+        p.user_id,
+        datetime::opt_to_sql(p.created),
+        datetime::opt_to_sql(p.first_login),
+        datetime::opt_to_sql(p.last_login),
+    ])?;
+    p.persona_id = db.last_insert_rowid();
+    Ok(())
 }
 
 /// `PersonaDAO.update` (`merge`): every mapped column, from this copy.

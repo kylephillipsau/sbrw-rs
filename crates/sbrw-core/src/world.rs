@@ -16,6 +16,7 @@ use anyhow::anyhow;
 use rusqlite::Connection;
 use sbrw_common::{EffectLog, Env};
 
+use crate::bo::achievement::{self, Achievements};
 use crate::bo::online_users::{self, OnlineUsers};
 use crate::bo::token_session::TokenSessions;
 use crate::openfire::Openfire;
@@ -33,6 +34,7 @@ pub struct World {
     pub openfire: Openfire,
     /// Upstream's Redis, when `ENABLE_REDIS` is true.
     pub redis: Option<Redis>,
+    pub achievements: Achievements,
     async_jobs: VecDeque<AsyncJob>,
 }
 
@@ -57,6 +59,7 @@ impl World {
         // port: bo/MatchmakingBO#initialize()
         // port: bo/PresenceBO#init()
         let redis = params.get_bool_param("ENABLE_REDIS").then(|| Redis::new(options.effects.clone()));
+        let achievements = achievement::load_data(&db)?;
         let mut world = Self {
             db,
             env: options.env,
@@ -66,6 +69,7 @@ impl World {
             online_users: OnlineUsers::default(),
             openfire: options.openfire,
             redis,
+            achievements,
             async_jobs: VecDeque::new(),
         };
         // Upstream's @Startup beans, in the order the reference recordings show.

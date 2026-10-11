@@ -1229,6 +1229,7 @@ dependencies = [
  "http-body-util",
  "sbrw-common",
  "sbrw-core",
+ "sbrw-java",
  "sbrw-xml",
  "serde",
  "serde_json",

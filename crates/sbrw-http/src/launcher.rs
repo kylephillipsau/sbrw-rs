@@ -143,7 +143,7 @@ pub(crate) async fn launch_filter(state: &AppState, call: &Call) -> Result<Optio
             .ok_or_else(|| anyhow::anyhow!("JSONObject[\"{key}\"] not a string.").into())
     };
     let lock = if let Some(agent) = call.header("X-UserAgent") {
-        let parts = java_split(&agent, ' ');
+        let parts = sbrw_java::lang::split(&agent, ' ');
         let version = || parts.get(1).cloned().ok_or_else(|| Fault::from(anyhow::anyhow!("Index 1 out of bounds")));
         if agent.starts_with("LegacyLauncher") {
             compare_versions(&version()?, &minimum("legacy")?)? == -1
@@ -153,7 +153,7 @@ pub(crate) async fn launch_filter(state: &AppState, call: &Call) -> Result<Optio
             true
         }
     } else if let Some(agent) = call.header("user-agent") {
-        let parts = java_split(&agent, '/');
+        let parts = sbrw_java::lang::split(&agent, '/');
         let version = parts.get(1).cloned().ok_or_else(|| Fault::from(anyhow::anyhow!("Index 1 out of bounds")))?;
         compare_versions(&version, &minimum("electron")?)? == -1
     } else {
@@ -173,7 +173,7 @@ pub(crate) async fn launch_filter(state: &AppState, call: &Call) -> Result<Optio
 // port: api/util/LaunchFilter#compareVersions(String,String)
 /// Dotted versions compared numerically, -1/0/1; a shorter equal prefix is older.
 fn compare_versions(v1: &str, v2: &str) -> Result<i32, Fault> {
-    let (a, b) = (java_split(v1, '.'), java_split(v2, '.'));
+    let (a, b) = (sbrw_java::lang::split(v1, '.'), sbrw_java::lang::split(v2, '.'));
     for (x, y) in a.iter().zip(&b) {
         let parse = |s: &str| s.parse::<i32>().map_err(|_| Fault::from(anyhow::anyhow!("For input string: \"{s}\"")));
         match parse(x)?.cmp(&parse(y)?) {
@@ -182,18 +182,6 @@ fn compare_versions(v1: &str, v2: &str) -> Result<i32, Fault> {
         }
     }
     Ok(a.len().cmp(&b.len()) as i32)
-}
-
-/// `String.split`: trailing empty strings are dropped.
-fn java_split(s: &str, c: char) -> Vec<String> {
-    let mut parts: Vec<String> = s.split(c).map(str::to_owned).collect();
-    while parts.len() > 1 && parts.last().is_some_and(String::is_empty) {
-        parts.pop();
-    }
-    if parts.len() == 1 && parts[0].is_empty() && !s.is_empty() {
-        parts.clear();
-    }
-    parts
 }
 
 #[cfg(test)]

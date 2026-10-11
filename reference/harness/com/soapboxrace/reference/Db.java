@@ -15,6 +15,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Resets the runtime tables between scenarios and snapshots them afterwards.
@@ -25,6 +27,7 @@ import java.util.TreeMap;
  * state: truncated, with its starting AUTO_INCREMENT restored.
  */
 public final class Db implements AutoCloseable {
+    private static final Pattern AUTO_INCREMENT = Pattern.compile("\\) ENGINE=\\w+ AUTO_INCREMENT=(\\d+)");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final Connection conn;
@@ -35,20 +38,31 @@ public final class Db implements AutoCloseable {
     public Db(String url, String user, String password) throws SQLException {
         conn = DriverManager.getConnection(url, user, password);
         try (Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery("SELECT TABLE_NAME, TABLE_ROWS, AUTO_INCREMENT FROM information_schema.TABLES "
+             ResultSet rs = st.executeQuery("SELECT TABLE_NAME FROM information_schema.TABLES "
                      + "WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME")) {
             List<String> tables = new ArrayList<>();
-            while (rs.next()) {
-                tables.add(rs.getString(1));
-                long ai = rs.getLong(3);
-                if (!rs.wasNull()) autoIncrements.put(rs.getString(1), ai);
-            }
+            while (rs.next()) tables.add(rs.getString(1));
             for (String t : tables) {
                 if (count(t) == 0) runtimeTables.add(t);
+                Long ai = autoIncrement(t);
+                if (ai != null) autoIncrements.put(t, ai);
             }
         }
         try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SELECT NAME, VALUE FROM parameter")) {
             while (rs.next()) parameters.put(rs.getString(1), rs.getString(2));
+        }
+    }
+
+    /**
+     * The table's next AUTO_INCREMENT value as SHOW CREATE TABLE reports it, or null
+     * when it has none. information_schema.TABLES.AUTO_INCREMENT can't be used: MySQL 8
+     * reports it from cached statistics, and gave null for persona's starting 100.
+     */
+    private Long autoIncrement(String table) throws SQLException {
+        try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery("SHOW CREATE TABLE `" + table + "`")) {
+            rs.next();
+            Matcher m = AUTO_INCREMENT.matcher(rs.getString(2));
+            return m.find() ? Long.valueOf(m.group(1)) : null;
         }
     }
 

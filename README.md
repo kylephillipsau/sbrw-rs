@@ -9,7 +9,9 @@ It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
 **Status:** M1 in progress. The launcher can list the server, install ModNet,
-register and log in; the game's own session calls are next. See
+register and log in. The game's session calls and driver creation and
+selection replay recordings of the original exactly; the game's other boot
+calls are next, then a check with the real client. See
 [docs/ROADMAP.md](docs/ROADMAP.md) for the design and milestones, and
 [docs/port-status.md](docs/port-status.md) for how much of the original is ported.
 

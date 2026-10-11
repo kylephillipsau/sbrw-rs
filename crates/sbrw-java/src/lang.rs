@@ -256,3 +256,80 @@ mod parse_double_tests {
         assert_eq!(parse_double(""), None);
     }
 }
+
+/// `String.hashCode()`: over UTF-16 code units, wrapping.
+pub fn string_hash_code(s: &str) -> i32 {
+    s.encode_utf16().fold(0i32, |h, unit| h.wrapping_mul(31).wrapping_add(i32::from(unit)))
+}
+
+/// `String.trim()`: strips every char <= ' ' from both ends.
+pub fn trim(s: &str) -> &str {
+    s.trim_matches(|c: char| c <= ' ')
+}
+
+/// `s.split(sep)` for a single literal character: trailing empty strings are
+/// dropped, so `";"` splits to nothing and `""` to one empty string.
+pub fn split(s: &str, sep: char) -> Vec<String> {
+    let mut parts: Vec<String> = s.split(sep).map(str::to_owned).collect();
+    while parts.len() > 1 && parts.last().is_some_and(String::is_empty) {
+        parts.pop();
+    }
+    if parts.len() == 1 && parts[0].is_empty() && !s.is_empty() {
+        parts.clear();
+    }
+    parts
+}
+
+/// `Math.round(float)`: `floor(a + 0.5)` computed exactly, NaN to 0, and
+/// saturating at the `int` range.
+pub fn round_float(a: f32) -> i32 {
+    // An f32 plus 0.5 is exact in f64, and `as` saturates and maps NaN to 0 as
+    // Java's (int) cast does.
+    (f64::from(a) + 0.5).floor() as i32
+}
+
+#[cfg(test)]
+mod string_and_math_tests {
+    use super::*;
+
+    #[test]
+    fn hash_codes_match_the_jvm() {
+        // From JDK 11's String.hashCode.
+        assert_eq!(string_hash_code("LOGIN"), 72611657);
+        assert_eq!(string_hash_code("EVENT"), 66353786);
+        assert_eq!(string_hash_code("PROGRESSION"), -1010458981);
+        assert_eq!(string_hash_code("COMMERCE"), 180214491);
+        assert_eq!(string_hash_code("é"), 233);
+        assert_eq!(string_hash_code("😀"), 1772899);
+        assert_eq!(string_hash_code(""), 0);
+    }
+
+    #[test]
+    fn split_drops_trailing_empties() {
+        assert_eq!(split("a|1", '|'), ["a", "1"]);
+        assert_eq!(split("a|", '|'), ["a"]);
+        assert_eq!(split("|1", '|'), ["", "1"]);
+        assert_eq!(split("a;;b;;", ';'), ["a", "", "b"]);
+        assert_eq!(split(";", ';'), Vec::<String>::new());
+        assert_eq!(split("", ';'), [""]);
+    }
+
+    #[test]
+    fn trims_control_characters() {
+        assert_eq!(trim("\t a b \n\u{1}"), "a b");
+        assert_eq!(trim("\u{a0}x\u{a0}"), "\u{a0}x\u{a0}");
+    }
+
+    #[test]
+    fn rounds_like_math_round() {
+        assert_eq!(round_float(0.0), 0);
+        assert_eq!(round_float(2.5), 3);
+        assert_eq!(round_float(-2.5), -2);
+        assert_eq!(round_float(-0.5), 0);
+        assert_eq!(round_float(0.49999997), 0);
+        assert_eq!(round_float(1250.4999), 1250);
+        assert_eq!(round_float(f32::NAN), 0);
+        assert_eq!(round_float(3e9), i32::MAX);
+        assert_eq!(round_float(-3e9), i32::MIN);
+    }
+}

@@ -4,8 +4,10 @@ use sbrw_java::validator::is_valid_email;
 
 use sbrw_xml::dto::http::{ArrayOfProfileData, ProfileData, User, UserInfo};
 
+use crate::bo::achievement;
+use crate::bo::achievement_transaction::{Binding, Bindings};
 use crate::dao::invite_ticket::{self, InviteTicketEntity};
-use crate::dao::persona::{self, PersonaEntity};
+use crate::dao::persona;
 use crate::dao::user::{self, UserEntity};
 use crate::vo::LoginStatus;
 use crate::{Fault, World, datetime, password};
@@ -95,9 +97,9 @@ pub fn create_user_with_ticket(
     Ok(LoginStatus::new(user.id, "", true))
 }
 
-/// `UserBO#secureLoginPersona(Long,Long)`: the game picked a driver. Not
-/// marked ported until AchievementBO is: for a persona of this user it stops
-/// at the LOGIN achievement transaction, which rolls the call back.
+// port: bo/UserBO#secureLoginPersona(Long,Long)
+/// The game picked a driver: record the login, run the LOGIN achievements,
+/// and remember which driver the account last used.
 pub fn secure_login_persona(w: &mut World, user_id: i64, persona_id: i64) -> Result<(), Fault> {
     let Some(mut persona_entity) = persona::find(w.db(), persona_id)? else { return Ok(()) };
     let owner = persona_entity.user_id.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?;
@@ -111,17 +113,13 @@ pub fn secure_login_persona(w: &mut World, user_id: i64, persona_id: i64) -> Res
     }
     persona_entity.last_login = Some(now);
     persona::update(w.db(), &persona_entity)?;
-    login_achievements(w, &persona_entity)?;
+    let mut transaction = achievement::create_transaction(persona_id);
+    transaction.add("LOGIN", Bindings::from([("persona".into(), Binding::Persona(persona_entity.clone()))]))?;
+    achievement::commit_transaction(w, &mut persona_entity, &mut transaction)?;
     let index = user.personas.iter().position(|p| p.persona_id == persona_id).map_or(-1, |i| i as i32);
     user.selected_persona_index = Some(index);
     user::update(w.db(), &user)?;
     Ok(())
-}
-
-/// `achievementBO.createTransaction(personaId)`, `add("LOGIN", {persona})`,
-/// `commitTransaction(persona, transaction)`.
-fn login_achievements(_w: &mut World, _persona: &PersonaEntity) -> Result<(), Fault> {
-    Err(Fault::unported("bo/AchievementBO#createTransaction(Long)"))
 }
 
 // port: bo/UserBO#getUserInfo(UserEntity)
@@ -153,6 +151,7 @@ pub fn get_user_info(user: &UserEntity) -> Result<UserInfo, Fault> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dao::persona::PersonaEntity;
     use sbrw_xml::ToXml;
 
     fn persona(persona_id: i64, name: &str) -> PersonaEntity {
@@ -234,8 +233,17 @@ mod tests {
         w.transaction(|w| secure_login_persona(w, 1, 555)).unwrap();
         assert_eq!(persona::find(w.db(), 100).unwrap(), untouched);
 
-        // The owner's login reaches AchievementBO, unported: the call fails and rolls back.
-        assert!(matches!(w.transaction(|w| secure_login_persona(w, 1, 100)), Err(Fault::Internal(_))));
-        assert_eq!(persona::find(w.db(), 100).unwrap(), untouched);
+        assert!(w.effects.drain().is_empty());
+
+        // The owner's login: first and last login set, the LOGIN achievement
+        // push, and the driver's index remembered.
+        w.db().execute_batch("UPDATE user SET selectedPersonaIndex = 5 WHERE ID = 1").unwrap();
+        w.transaction(|w| secure_login_persona(w, 1, 100)).unwrap();
+        let logged_in = persona::find(w.db(), 100).unwrap().unwrap();
+        let now = Some(time::macros::datetime!(2026-01-01 12:00));
+        assert_eq!((logged_in.first_login, logged_in.last_login), (now, now));
+        assert_eq!(user::find(w.db(), 1).unwrap().unwrap().selected_persona_index, Some(0));
+        let pushes = w.effects.drain().xmpp;
+        assert_eq!(pushes.iter().map(|p| p.to).collect::<Vec<_>>(), [100]);
     }
 }

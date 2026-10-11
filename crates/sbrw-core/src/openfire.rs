@@ -1,14 +1,16 @@
-//! What upstream asked of Openfire's REST API, now in-process.
+//! What upstream asked of Openfire, now in-process.
 //!
 //! Upstream provisions an XMPP account per persona, the engine's own account
-//! and the public chat rooms through `OpenFireRestApiCli`. sbrw-rs runs its own
-//! XMPP server, so this keeps the same operations as in-process state for it to
+//! and the public chat rooms through `OpenFireRestApiCli`, and pushes messages
+//! to game clients through `OpenFireSoapBoxCli`. sbrw-rs runs its own XMPP
+//! server, so this keeps the same operations as in-process state for it to
 //! use, and reports each one to the effect log exactly as the reference
-//! recorder captured the REST calls.
+//! recorder captured the calls.
 
 use std::collections::HashMap;
 
 use sbrw_common::EffectLog;
+use sbrw_xml::{ToXml, XmlRoot};
 use serde_json::json;
 
 #[derive(Debug, Default)]
@@ -39,6 +41,20 @@ impl Openfire {
     pub fn create_update_persona(&mut self, persona_id: i64, password: &str, effects: &EffectLog) {
         effects.openfire("createUpdatePersona", vec![json!(persona_id), json!(password)]);
         self.accounts.insert(format!("sbrw.{persona_id}"), password.to_owned());
+    }
+
+    // port: xmpp/OpenFireSoapBoxCli#send(Object,Long)
+    /// Push `object`, as XML, to a persona's game client.
+    pub fn send<T: XmlRoot>(&self, object: &T, to: i64, effects: &EffectLog) {
+        self.send_string(&object.to_xml(), to, effects);
+    }
+
+    // port: xmpp/OpenFireSoapBoxCli#send(String,Long)
+    pub fn send_string(&self, msg: &str, to: i64, effects: &EffectLog) {
+        // Upstream's OpenFireConnector sends this as an XMPP message from the
+        // engine's account. sbrw-xmpp will deliver it; for now the effect log
+        // is its only record.
+        effects.xmpp(to, msg);
     }
 
     /// The password of an XMPP account, for sbrw-xmpp's logins.

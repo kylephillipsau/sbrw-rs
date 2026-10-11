@@ -18,6 +18,11 @@ impl EngineException {
     pub fn new(code: EngineExceptionCode, fatal: bool) -> Self {
         Self { code, fatal, message: None }
     }
+
+    /// `new EngineException(message, code, fatal)`.
+    pub fn with_message(message: impl Into<String>, code: EngineExceptionCode, fatal: bool) -> Self {
+        Self { code, fatal, message: Some(message.into()) }
+    }
 }
 
 /// What a world call can fail with, by how upstream's container handled it.

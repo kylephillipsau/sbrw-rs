@@ -78,8 +78,8 @@ python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openf
 - **TLS:** current JDKs disable TLS 1.0, so the image's `java.security` re-enables it. Openfire runs with `-Djsse.enableCBCProtection=false`, as SBRW's launcher did.
 - **What `transcript.py` does:**
   - `setup_openfire()` creates the engine account, both public rooms and two players through REST, with the bodies the core sends.
-  - `scenario()` acts as the game over TLS 1.0. It logs in, sends an unknown iq, then joins `channel.EN__1`, chats there, messages the other player and leaves. It creates a group room and unlocks it. The engine sends two pushes, and a second login takes over the first's resource.
-- **Stability:** stream ids and generated stanza ids are numbered in order of appearance. Two fresh containers give identical transcripts.
+  - `scenario()` acts as the game over TLS 1.0. It logs in, sends an unknown iq, then joins `channel.EN__1`, chats there, messages the other player and leaves. It creates a group room and unlocks it. The engine sends two pushes, a second login takes over the first's resource, a player rejoins the room to get its history, and another closes its stream.
+- **Stability:** stream ids and generated stanza ids are numbered in order of appearance, and timestamps keep their format with the digits replaced. Two fresh containers give identical transcripts.
 
 `fixtures/xmpp/openfire.txt` shows:
 
@@ -99,13 +99,15 @@ python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openf
 - **One-to-one chat** to a full JID arrives with `from` stamped as the sender's full JID. The sender gets nothing back.
 - **Group rooms:** joining a `group.channel.*` room that doesn't exist creates it with the joiner as owner. The room is non-anonymous, so items carry `jid`, with statuses 110, 100 and 201. It stays **locked**: anyone else who joins gets a 404 `item-not-found` presence error until the owner submits an empty `jabber:x:data` form to `muc#owner` (an instant room, XEP-0045 §10.1.2). After that, joiners see the owner and themselves with status 100. Nothing shows whether the game unlocks its rooms that way; SBRW's private lobbies worked, so it must do something that unlocks them.
 - **Push bodies** are re-serialised by Openfire: `"` and `'` come out unescaped, `<`, `>` and `&` escaped, and newlines and UTF-8 (including non-BMP) raw.
-- **Same resource:** a second login with the same resource succeeds. The first stream gets `<stream:error><conflict xmlns="urn:ietf:params:xml:ns:xmpp-streams"/></stream:error></stream:stream>` and is closed.
+- **Same resource:** a second login with the same resource succeeds. The first stream gets `<stream:error><conflict xmlns="urn:ietf:params:xml:ns:xmpp-streams"/></stream:error></stream:stream>` and is closed, and leaves its rooms.
+- **Room history:** a joiner gets the room's earlier groupchat after its own presence and before the subject. Each is the message as relayed, with `<delay xmlns="urn:xmpp:delay" stamp="2026-10-14T00:23:26.671Z" from="room/nick"/>` appended. Openfire keeps the last 25 by default; the recording has one.
+- **Disconnects** (closing the stream, or being kicked by a conflict): the other occupants get a presence Openfire builds itself, so its attributes come in a different order: `<presence type="unavailable" from="room/nick" to="…">` with `role="none"` and no status. The client that closes gets `</stream:stream>` back.
 
 Not covered: the REST plugin's SBRW-only endpoints (`chatrooms/forUser`, `messages/game`), which the official plugin lacks; and anything the game sends that the scenario doesn't, such as how it unlocks group rooms.
 
 ### Replaying it against sbrw-rs
 
-Until sbrw-xmpp has a listener, its unit tests replay the fixture without the network. `stream::tests::logs_in_as_openfire_does` feeds client A's login through the framer and stream. `hub::tests::rooms_chat_and_pushes_as_openfire_does` runs A, B and the engine through rooms, chat and pushes. Both compare every stanza each client receives. Once the listener and TLS exist, the full replay works as follows.
+Until sbrw-xmpp has a listener, its unit tests replay the fixture without the network. `stream::tests::logs_in_as_openfire_does` feeds client A's login through the framer and stream. `hub::tests::rooms_chat_and_pushes_as_openfire_does` runs every client from the room joins to the end: rooms, chat, pushes, history, the conflict and a disconnect. Both compare every stanza each client receives. Once the listener and TLS exist, the full replay works as follows.
 
 The replay runs `transcript.py`'s `scenario()` against sbrw-rs, without `setup_openfire()`. In sbrw-rs the accounts are live sessions, so the replay first logs the personas in over HTTP with a token starting `0123456789abcdef`, and the rooms come from `chat_room`. It then compares the two transcripts:
 

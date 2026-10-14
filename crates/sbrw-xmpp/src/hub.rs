@@ -4,7 +4,10 @@
 //! client's own stanza: a copy with `to` replaced and `from` (and `type`)
 //! added after the attributes already there.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
+
+use time::OffsetDateTime;
+use time::macros::format_description;
 
 use crate::element::Element;
 use crate::stream::FullJid;
@@ -14,6 +17,10 @@ const NS_MUC: &str = "http://jabber.org/protocol/muc";
 const NS_MUC_USER: &str = "http://jabber.org/protocol/muc#user";
 const NS_MUC_OWNER: &str = "http://jabber.org/protocol/muc#owner";
 const NS_STANZAS: &str = "urn:ietf:params:xml:ns:xmpp-stanzas";
+
+/// Messages a room replays to a joiner: Openfire's default
+/// `xmpp.muc.history.maxNumber`. Only one is recorded so far.
+const HISTORY: usize = 25;
 
 /// A stanza for one client.
 #[derive(Debug, PartialEq)]
@@ -37,6 +44,8 @@ struct Room {
     /// Created by joining and not yet configured.
     locked: bool,
     occupants: Vec<Occupant>,
+    /// Groupchat as relayed, with when it was sent and the sender's occupant JID.
+    history: VecDeque<(Element, OffsetDateTime, String)>,
 }
 
 pub struct Hub {
@@ -45,35 +54,78 @@ pub struct Hub {
     sessions: Vec<FullJid>,
     rooms: HashMap<String, Room>,
     new_id: Box<dyn FnMut() -> String + Send>,
+    now: Box<dyn FnMut() -> OffsetDateTime + Send>,
 }
 
 impl Hub {
-    /// `new_id` makes the ids of room subjects and `stanza-id`s.
-    pub fn new(domain: &str, new_id: Box<dyn FnMut() -> String + Send>) -> Self {
+    /// `new_id` makes the ids of room subjects and `stanza-id`s; `now` stamps room history.
+    pub fn new(
+        domain: &str,
+        new_id: Box<dyn FnMut() -> String + Send>,
+        now: Box<dyn FnMut() -> OffsetDateTime + Send>,
+    ) -> Self {
         Hub {
             domain: domain.to_owned(),
             conference: format!("conference.{domain}"),
             sessions: Vec::new(),
             rooms: HashMap::new(),
             new_id,
+            now,
         }
     }
 
     /// A public room, as the core creates them at startup: persistent and
     /// semi-anonymous (`OpenFireRestApiCli.createGeneralChatRoom`).
     pub fn create_public_room(&mut self, name: &str) {
-        let room = Room { anonymous: true, persistent: true, locked: false, occupants: Vec::new() };
+        let room =
+            Room { anonymous: true, persistent: true, locked: false, occupants: Vec::new(), history: VecDeque::new() };
         self.rooms.insert(name.to_lowercase(), room);
     }
 
-    /// A client has logged in. True if it replaced a session with the same
-    /// address, which the caller ends with a `conflict` stream error.
-    pub fn connect(&mut self, jid: &FullJid) -> bool {
-        let replaced = self.sessions.contains(jid);
-        if !replaced {
-            self.sessions.push(jid.clone());
+    /// A client has logged in. If it replaced a session with the same
+    /// address, the old one has left its rooms (these deliveries), and the
+    /// caller ends its stream with a `conflict` error.
+    pub fn connect(&mut self, jid: &FullJid) -> (bool, Vec<Delivery>) {
+        if self.sessions.contains(jid) {
+            return (true, self.leave_all(jid));
         }
-        replaced
+        self.sessions.push(jid.clone());
+        (false, Vec::new())
+    }
+
+    /// A client's stream has ended.
+    pub fn disconnect(&mut self, jid: &FullJid) -> Vec<Delivery> {
+        self.sessions.retain(|s| s != jid);
+        self.leave_all(jid)
+    }
+
+    /// Take the client out of every room. Openfire builds these presences
+    /// itself, so their attributes come in its own order.
+    fn leave_all(&mut self, jid: &FullJid) -> Vec<Delivery> {
+        let mut out = Vec::new();
+        let mut names: Vec<&String> = self.rooms.keys().collect();
+        names.sort();
+        let names: Vec<String> = names.into_iter().cloned().collect();
+        for name in names {
+            let room_jid = self.room_jid(&name);
+            let room = self.rooms.get_mut(&name).expect("listed");
+            while let Some(i) = room.occupants.iter().position(|o| o.jid == *jid) {
+                let gone = room.occupants.remove(i);
+                let affiliation = if gone.owner { "owner" } else { "none" };
+                for other in &room.occupants {
+                    let presence = Element::new("presence")
+                        .attr("type", "unavailable")
+                        .attr("from", &format!("{room_jid}/{}", gone.nick))
+                        .attr("to", &other.jid.to_string())
+                        .child(muc_user(room, &gone, affiliation, "none", &[]));
+                    out.push(as_sent(&other.jid, &presence));
+                }
+            }
+            if room.occupants.is_empty() && !room.persistent {
+                self.rooms.remove(&name);
+            }
+        }
+        out
     }
 
     /// The core's push to a persona, as `OpenFireConnector.send` sends it
@@ -132,7 +184,13 @@ impl Hub {
         let creating = !self.rooms.contains_key(room_name);
         if creating {
             // Openfire's defaults for a room made by joining it.
-            let room = Room { anonymous: false, persistent: false, locked: true, occupants: Vec::new() };
+            let room = Room {
+                anonymous: false,
+                persistent: false,
+                locked: true,
+                occupants: Vec::new(),
+                history: VecDeque::new(),
+            };
             self.rooms.insert(room_name.to_owned(), room);
         }
         let room = self.rooms.get_mut(room_name).expect("just ensured");
@@ -160,6 +218,13 @@ impl Hub {
             statuses.push("201");
         }
         out.push(deliver(from, &occupant_presence(&room_jid, room, &new, from, &statuses)));
+        for (message, sent, sender) in &room.history {
+            let mut message = message.clone();
+            message.push(
+                Element::new("delay").attr("xmlns", "urn:xmpp:delay").attr("stamp", &stamp(*sent)).attr("from", sender),
+            );
+            out.push(deliver(from, &message));
+        }
         let subject = Element::new("message")
             .attr("from", &room_jid)
             .attr("type", "groupchat")
@@ -192,13 +257,19 @@ impl Hub {
 
     fn groupchat(&mut self, from: &FullJid, room_name: &str, stanza: Element) -> Vec<Delivery> {
         let room_jid = self.room_jid(room_name);
-        let Some(room) = self.rooms.get(room_name) else { return Vec::new() };
+        let Some(room) = self.rooms.get_mut(room_name) else { return Vec::new() };
         let Some(sender) = room.occupants.iter().find(|o| o.jid == *from) else { return Vec::new() };
+        let sender = format!("{room_jid}/{}", sender.nick);
         let mut message = stanza;
-        message.set_attr("from", &format!("{room_jid}/{}", sender.nick));
+        message.set_attr("from", &sender);
         let id = (self.new_id)();
         message.push(Element::new("stanza-id").attr("xmlns", "urn:xmpp:sid:0").attr("id", &id).attr("by", &room_jid));
-        room.occupants.iter().map(|o| deliver(&o.jid, &message)).collect()
+        let out = room.occupants.iter().map(|o| deliver(&o.jid, &message)).collect();
+        if room.history.len() == HISTORY {
+            room.history.pop_front();
+        }
+        room.history.push_back((message, (self.now)(), sender));
+        out
     }
 
     /// An owner submitting the room's configuration form; an empty one makes
@@ -268,6 +339,13 @@ fn muc_user(room: &Room, occupant: &Occupant, affiliation: &str, role: &str, sta
     x
 }
 
+/// XEP-0082 in UTC with milliseconds, as Openfire stamps a delay.
+fn stamp(t: OffsetDateTime) -> String {
+    let utc = t.to_offset(time::UtcOffset::UTC);
+    utc.format(format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]Z"))
+        .expect("formats")
+}
+
 fn stanza_error(code: &str, kind: &str, condition: &str) -> Element {
     Element::new("error").attr("code", code).attr("type", kind).child(Element::new(condition).attr("xmlns", NS_STANZAS))
 }
@@ -302,6 +380,15 @@ mod tests {
         stream: Stream,
         framer: Framer,
         received: String,
+        live: bool,
+    }
+
+    fn deliver_all(clients: &mut HashMap<String, Client>, deliveries: Vec<Delivery>) {
+        for d in deliveries {
+            let client =
+                clients.values_mut().find(|c| c.live && c.stream.jid().is_some_and(|j| j.to_string() == d.to)).unwrap();
+            client.received.push_str(&d.stanza);
+        }
     }
 
     #[test]
@@ -315,20 +402,21 @@ mod tests {
                 ids += 1;
                 format!("uuid{ids}")
             }),
+            Box::new(|| time::macros::datetime!(2026-10-14 00:23:26.671 UTC)),
         );
         hub.create_public_room("channel.EN__1");
         hub.create_public_room("channel.EN__2");
-        let mut clients: HashMap<&str, Client> = HashMap::new();
-        let mut expected_by_client: HashMap<&str, String> = HashMap::new();
-        let section =
-            text.split("# A joins the public room").nth(1).unwrap().split("# A logs in again").next().unwrap();
-        // A's stream is already logged in; B's and the engine's log in here.
+        let mut clients: HashMap<String, Client> = HashMap::new();
+        let mut expected_by_client: HashMap<String, String> = HashMap::new();
+        let section = text.split("# A joins the public room").nth(1).unwrap();
+        // A's stream is already logged in; the others log in here.
         let mut a = Stream::new("127.0.0.1", "stream1");
         let login = "<iq id='auth2' type='set'><query xmlns='jabber:iq:auth'><username>sbrw.100</username><password>0123456789abcdef</password><resource>EA-Chat</resource></query></iq>";
         a.tls_started();
         a.handle(crate::framer::Frame::Stanza(login.into()), &Players).unwrap();
         hub.connect(a.jid().unwrap());
-        clients.insert("A", Client { stream: a, framer: Framer::default(), received: String::new() });
+        clients
+            .insert("A".into(), Client { stream: a, framer: Framer::default(), received: String::new(), live: true });
         let mut next_stream = 2;
 
         for line in section.lines() {
@@ -336,29 +424,25 @@ mod tests {
             let (dir, text) = rest.split_at(1);
             let text = text.trim_start().replace("\\n", "\n");
             match dir {
-                "<" => expected_by_client.entry(who).or_default().push_str(&expected(&text)),
+                "<" => expected_by_client.entry(who.into()).or_default().push_str(&expected(&text)),
                 // The engine's message is the core's send, which sbrw-rs makes with push.
                 ">" if who == "E" && text.starts_with("<message") => {
                     let body = Element::parse(&text).unwrap().child_text("body").unwrap();
-                    for d in hub.push(100, &body) {
-                        let client = clients
-                            .values_mut()
-                            .find(|c| c.stream.jid().is_some_and(|j| j.to_string() == d.to))
-                            .unwrap();
-                        client.received.push_str(&d.stanza);
-                    }
+                    let deliveries = hub.push(100, &body);
+                    deliver_all(&mut clients, deliveries);
                 }
                 ">" => {
-                    let client = clients.entry(who).or_insert_with(|| {
+                    let client = clients.entry(who.into()).or_insert_with(|| {
                         next_stream += 1;
                         Client {
                             stream: Stream::new("127.0.0.1", &format!("stream{}", next_stream - 1)),
                             framer: Framer::default(),
                             received: String::new(),
+                            live: true,
                         }
                     });
                     client.framer.push(text.as_bytes());
-                    let mut deliveries = Vec::new();
+                    let (mut deliveries, mut kicked, mut closed) = (Vec::new(), None, false);
                     while let Some(frame) = client.framer.next_frame().unwrap() {
                         let was_logged_in = client.stream.jid().is_some();
                         match client.stream.handle(frame, &Players) {
@@ -367,7 +451,7 @@ mod tests {
                                     match out {
                                         Out::Send(s) => client.received.push_str(&s),
                                         Out::StartTls => client.stream.tls_started(),
-                                        Out::Close => panic!("{who} closed"),
+                                        Out::Close => closed = true,
                                     }
                                 }
                             }
@@ -377,22 +461,37 @@ mod tests {
                             }
                         }
                         if !was_logged_in && let Some(jid) = client.stream.jid() {
-                            hub.connect(jid);
+                            let (replaced, left) = hub.connect(jid);
+                            if replaced {
+                                kicked = Some(jid.to_string());
+                            }
+                            deliveries.extend(left);
                         }
                     }
-                    for d in deliveries {
-                        let client = clients
-                            .values_mut()
-                            .find(|c| c.stream.jid().is_some_and(|j| j.to_string() == d.to))
-                            .unwrap();
-                        client.received.push_str(&d.stanza);
+                    if closed {
+                        client.live = false;
+                        let jid = client.stream.jid().unwrap().clone();
+                        deliveries.extend(hub.disconnect(&jid));
                     }
+                    if let Some(jid) = kicked {
+                        let (_, old) = clients
+                            .iter_mut()
+                            .find(|(name, c)| {
+                                name.as_str() != who && c.live && c.stream.jid().is_some_and(|j| j.to_string() == jid)
+                            })
+                            .unwrap();
+                        old.received.push_str(r#"<stream:error xmlns:stream="http://etherx.jabber.org/streams"><conflict xmlns="urn:ietf:params:xml:ns:xmpp-streams"/></stream:error></stream:stream>"#);
+                        old.live = false;
+                    }
+                    deliver_all(&mut clients, deliveries);
                 }
                 _ => {}
             }
         }
-        for who in ["A", "B", "E"] {
-            assert_eq!(clients[who].received, expected_by_client[who], "what {who} received");
+        let stamps = regex::Regex::new(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z").unwrap();
+        for who in ["A", "B", "E", "A2"] {
+            let received = stamps.replace_all(&clients[who].received, "YYYY-MM-DDThh:mm:ss.sssZ");
+            assert_eq!(received, expected_by_client[who], "what {who} received");
         }
     }
 }

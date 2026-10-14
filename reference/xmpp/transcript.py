@@ -9,7 +9,8 @@ join a public room and chat, the engine account sends a push, and a second
 login with the same resource kicks the first.
 
 Each line is `<who> > <text>` for what a client sent, `<who> < <text>` for
-what it received, and `REST ...` for setup calls. A newline in the text is
+what it received, and `REST ...` for setup calls. Timestamps keep their
+format with the digits replaced. A newline in the text is
 printed as `\\n`. Stream ids and generated
 stanza ids are numbered in order of appearance, so runs compare with diff.
 """
@@ -39,6 +40,7 @@ def normalise(text):
     text = re.sub(r'( to="[^"/]*/)([a-z0-9]{8,10})"', lambda m: m.group(1) + ids.get(("stream", m.group(2)), m.group(2)) + '"', text)
     text = re.sub(r'( id=)"([0-9a-f]{8}-[0-9a-f-]{27})"', stable("uuid"), text)
     text = re.sub(r'( id=)"([0-9]+-[0-9]+)"', stable("server"), text)
+    text = re.sub(r'stamp="\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z"', 'stamp="YYYY-MM-DDThh:mm:ss.sssZ"', text)
     return text
 
 
@@ -217,9 +219,20 @@ def scenario():
     engine.recv()
     a.recv()
 
-    print("# A logs in again with the same resource")
+    print("# A logs in again with the same resource; B is still in A's group room")
     a2 = login("A2", "sbrw.100", PASSWORD)
     a.recv()
+    a2.recv()
+    b.recv()
+
+    print("# B joins the public room again, A2 joins it, then B closes its stream")
+    b.send(f"<presence to='{room}/sbrw.101'><x xmlns='http://jabber.org/protocol/muc'/></presence>")
+    b.recv()
+    a2.send(f"<presence to='{room}/sbrw.100'><x xmlns='http://jabber.org/protocol/muc'/></presence>")
+    a2.recv()
+    b.recv()
+    b.send("</stream:stream>")
+    b.recv()
     a2.recv()
 
 

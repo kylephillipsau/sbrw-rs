@@ -27,11 +27,11 @@ sbrw-rs, so nothing here comes from a capture yet. Sources:
 2. TLS: SBRW ran Openfire on JDK 10 with `-Djsse.enableCBCProtection=false` (guide `sbrwopenfirelauncher.bat`). That flag stops Java splitting TLS 1.0 CBC records into 1/n−1 pieces. Someone turned it off on purpose, which suggests the game's TLS stack mishandles split records. It matches the roadmap's `DONT_INSERT_EMPTY_FRAGMENTS`. nfswo serves TLS from node with `ciphers: "DEFAULT@SECLEVEL=0", minVersion: "TLSv1"`.
 3. After TLS the game restarts the stream. The fork's features list **leaves out `<mechanisms>`** unless the stream's `from` contains `.engine.engine`, so the game falls back to `jabber:iq:auth` (fork `SASLAuthentication.getSASLMechanisms`). nfswo sends an empty `<stream:features/>`.
 
-Whether the real client completes the handshake can't be checked without it. That is the roadmap's top risk.
+The reference container (below) completes a TLS 1.0 handshake with OpenSSL. Whether the real client does can't be checked without it. That is the roadmap's top risk.
 
 ## Logging in: `jabber:iq:auth` (XEP-0078)
 
-- **`get`** returns the fields the server accepts. nonsasl `IQAuthHandler` answers `<query xmlns='jabber:iq:auth'><username>…</username><password/><digest/><resource/></query>`, echoing the username if the request had one; `password` and `digest` are there because Openfire's default auth provider can retrieve passwords. nfswo adds `<clientlock xmlns='http://www.jabber.com/schemas/clientlocking.xsd'/>` after `<resource/>`, presumably copied from EA's server. Openfire never sent it, so SBRW clients worked without it.
+- **`get`** returns the fields the server accepts; the container's exact replies are under The reference container. nonsasl `IQAuthHandler` answers `<query xmlns='jabber:iq:auth'><username>…</username><password/><digest/><resource/></query>`, echoing the username if the request had one; `password` and `digest` are there because Openfire's default auth provider can retrieve passwords. nfswo adds `<clientlock xmlns='http://www.jabber.com/schemas/clientlocking.xsd'/>` after `<resource/>`, presumably copied from EA's server. Openfire never sent it, so SBRW clients worked without it.
 - **`set`** carries the username, resource and either a plaintext `password` or `digest = sha1(streamId + password)` in lowercase hex. A missing resource is `not-acceptable`, bad credentials are `not-authorized` (nonsasl). Success is an empty `result`.
 - **A second login with the same resource** kicks the older session: with Openfire's default kick limit of 0 it gets a `conflict` stream error and is closed (nonsasl `login`).
 
@@ -63,12 +63,27 @@ Every push the core sends goes through `OpenFireConnector.send(msg, personaId)`:
 - nfswo rewrites a trailing `'>` into `'/>` before parsing each packet. That suggests the game sends some stanzas without their closing tag, and the framer may need the fallback the roadmap mentions.
 - Presence to rooms, groupchat messages, one-to-one `chat` messages and any iq beyond auth have no recorded example from the game.
 
-## The reference to build next
+## The reference container
 
-The fork is stock Openfire apart from the hidden mechanisms. So a stock Openfire of the same vintage can serve as the oracle for auth, rooms, presence and message delivery. Plan:
+The fork is stock Openfire apart from the hidden mechanisms, so `reference/xmpp/` runs Openfire 4.5.0, the release nearest the fork, with nonsasl 1.0.1:
 
-1. Run Openfire 4.4.x on a JDK 11 base in Docker, from Docker Hub or igniterealtime's release tarball, with the nonsasl plugin. Before scripting the install, check whether that version reads `<autosetup>` from `openfire.xml`.
-2. Drive it with a scripted client over TLS 1.0 (OpenSSL): open the stream, STARTTLS, iq:auth `get` and `set`, join `channel.EN__1`, send groupchat, have a second client join and leave, kick on resource conflict. Have the engine account send a push with a bare `to`.
-3. Commit the transcripts under `fixtures/xmpp/` and replay them against sbrw-rs with stream ids, timestamps and the `from` of server-generated stanzas normalised.
+```sh
+docker build -t sbrw-openfire:4.5.0 reference/xmpp
+docker run -d --name sbrw-openfire -p 15222:5222 sbrw-openfire:4.5.0
+python3 reference/xmpp/transcript.py 127.0.0.1 15222
+```
 
-Until then, MUC behaviour and the exact error stanzas are written from the sources above, not checked.
+- Setup runs unattended at build time (`setup.sh`). Autosetup takes the wizard's steps but also turns on `user.scramHashedPasswordOnly`, which the wizard leaves off. With it on, `get` drops `<password/><digest/>` and nonsasl refuses every login, because it only authenticates when passwords can be retrieved. SBRW's game logged in, so its install had it off; `setup.sh` turns it off again.
+- JDK 11 disables TLS 1.0, so the image's `java.security` re-enables it. Openfire runs with `-Djsse.enableCBCProtection=false`, as SBRW's launcher did.
+- Accounts are made with in-band registration, where the core used the REST plugin; the accounts end up the same.
+
+What it has shown so far (`transcript.py`, client pinned to TLS 1.0 at `SECLEVEL=0`):
+
+- TLS 1.0 negotiates `ECDHE-RSA-AES256-SHA`.
+- Stream features before TLS: `starttls`, SASL `mechanisms`, `compression`, `ver`, `auth` (iq-auth), `register`, `c`. After TLS the same without `starttls`. The fork drops `mechanisms` for the game, and SBRW's guide turns compression off.
+- iq:auth `get` → `<iq type="result" id="…"><query xmlns="jabber:iq:auth"><username>sbrw.100</username><password/><digest/><resource/></query></iq>`.
+- iq:auth `set` with the right password → `<iq type="result" id="…" to="sbrw.100@127.0.0.1/EA-Chat"/>`. A wrong one → `type="error"` echoing the query, with `<error code="401" type="auth"><not-authorized …/></error>`. Once the stream is logged in, another `set` gets `result` whatever the password.
+- `<presence/>` comes back to the sender from its own full JID.
+- Room names are lowercased: joining `channel.EN__1` gets presence `from="channel.en__1@conference.127.0.0.1/sbrw.100"`. A first joiner of a missing room becomes its owner with statuses 110, 100 and 201 and an empty `<subject/>` message.
+
+Still to do: create the public rooms as the core does (persistent, before anyone joins), script a second client for presence fan-out, groupchat, leaving and a resource conflict, send a push from the engine account, and commit the transcripts under `fixtures/xmpp/` for the replay. Until then MUC fan-out and conflict handling are from the sources above, not checked.

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jive>
+  <adminConsole>
+    <port>9090</port>
+    <securePort>9091</securePort>
+  </adminConsole>
+  <locale>en</locale>
+  <connectionProvider>
+    <className>org.jivesoftware.database.DefaultConnectionProvider</className>
+  </connectionProvider>
+  <!-- What SBRW's setup guide enters in the web wizard; the wizard and autosetup take the same steps. -->
+  <autosetup>
+    <run>true</run>
+    <locale>en</locale>
+    <xmpp>
+      <domain>127.0.0.1</domain>
+      <fqdn>127.0.0.1</fqdn>
+      <auth>
+        <anonymous>false</anonymous>
+      </auth>
+      <socket>
+        <ssl>
+          <active>false</active>
+        </ssl>
+      </socket>
+    </xmpp>
+    <encryption>
+      <algorithm>AES</algorithm>
+      <key>sbrw-reference</key>
+    </encryption>
+    <database>
+      <mode>standard</mode>
+      <defaultProvider>
+        <driver>org.hsqldb.jdbcDriver</driver>
+        <serverURL>jdbc:hsqldb:file:/opt/openfire/embedded-db/openfire;hsqldb.write_delay=false</serverURL>
+        <username>sa</username>
+        <password></password>
+        <minConnections>1</minConnections>
+        <maxConnections>5</maxConnections>
+        <connectionTimeout>1.0</connectionTimeout>
+      </defaultProvider>
+    </database>
+    <admin>
+      <email>admin@example.com</email>
+      <password>admin</password>
+    </admin>
+    <authprovider>
+      <mode>default</mode>
+    </authprovider>
+  </autosetup>
+</jive>

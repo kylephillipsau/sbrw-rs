@@ -88,3 +88,7 @@ Smaller differences that no recording exercises yet:
 - **Database time:** four named queries compare against MySQL's `CURRENT_TIMESTAMP`, and two columns default to it, which the Java source patches can't reach. The harness sets MySQL's session clock to the reference clock at the start of every transaction. sbrw-rs passes its own clock into those queries.
 
 - **`StartupBO.init`** inserts the online-stats row a second time, in the same second as `OnlineUsersBO`'s own `@PostConstruct`. Real servers survive because a cold start pushes the two into different seconds. The harness skips the duplicate; see `port/decisions.toml`.
+
+## XMPP
+
+`reference/xmpp/` is a separate rig: Openfire 4.5.0 with the nonSASL plugin in a container, driven by `transcript.py`. SBRW ran a fork of Openfire, not the core, for XMPP; `docs/protocol/xmpp.md` says what the container covers and how to run it.

@@ -10,6 +10,7 @@ pub mod framer;
 pub mod hub;
 pub mod stream;
 pub mod subject;
+pub mod tls;
 
 use std::io;
 use std::net::SocketAddr;

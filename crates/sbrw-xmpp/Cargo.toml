@@ -9,12 +9,14 @@ publish.workspace = true
 
 [dependencies]
 hex.workspace = true
+openssl.workspace = true
 quick-xml.workspace = true
 sbrw-common.workspace = true
 sha1.workspace = true
 thiserror.workspace = true
 time.workspace = true
 tokio.workspace = true
+tokio-openssl.workspace = true
 tokio-util.workspace = true
 tracing.workspace = true
 

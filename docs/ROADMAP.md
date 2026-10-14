@@ -158,7 +158,7 @@ Milestone status is tracked in the README.
 - **Reference per layer (the real client isn't available, so these are the oracles):**
   - HTTP and game logic: recordings of the original core from the `reference/` rig, replayed by `sbrw-testkit`.
   - Script semantics: Nashorn results recorded by the rig as `fixtures/vectors/`.
-  - XMPP: NFS-World-Offline's XMPP server (built against the real client) and the Openfire fork for push shapes, plus an OpenSSL client pinned to TLS 1.0. Whether the real client completes the TLS handshake stays unverified until a client is available (top risk 1).
+  - XMPP: an Openfire 4.5.0 container (`reference/xmpp/`), which is what SBRW's fork is apart from the SASL mechanisms it hides, driven by a scripted client pinned to TLS 1.0 into `fixtures/xmpp/openfire.txt`. NFS-World-Offline supplies the subject-hash vectors. Whether the real client completes the TLS handshake stays unverified until a client is available (top risk 1).
   - UDP free-roam: a differential test against the Go `freeroamd` in a container.
 - **Real client (not run; kept for when one is available):** `cargo run -- serve` natively with `SBRW_CAPTURE=…`, then the SBRW launcher under CrossOver pointed at `http://127.0.0.1:8680/Engine.svc`. Captures from each session are redacted and committed as regression fixtures.
 - **Packaging:** `docker compose up` on the Mac, then the same checklist. The final check is on a Linux VPS with a second player.

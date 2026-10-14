@@ -8,13 +8,19 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M2 in progress. Every call the launcher and the game make up to
-the driver screen is ported and replays recordings of the original exactly,
-including creating and selecting a driver. XMPP's login, rooms, chat and
-pushes match a recorded Openfire reference and run on port 5222.
-Milestones are verified against
-recordings of the original and the other reference implementations, not with
-the real game, so nothing here has been run against the game itself yet. See
+**Status:** M2 done; M3 (free-roam multiplayer) is next. Everything the
+launcher and the game do up to spawning in the world is in place:
+- Every HTTP call up to and including creating, selecting and deleting a
+  driver, the starter car, the garage and the inventory is ported, and
+  replays recordings of the original exactly.
+- XMPP on port 5222 (TLS, login, rooms, chat and pushes) matches recordings
+  of an Openfire reference.
+- The free-roam handshake on UDP 9999, answering a lone player with empty
+  slots, matches the Go free-roam server.
+
+Milestones are verified against recordings of the original and of these
+reference servers, not with the real game, so nothing here has been run
+against the game itself yet. See
 [docs/ROADMAP.md](docs/ROADMAP.md) for the design and milestones, and
 [docs/port-status.md](docs/port-status.md) for how much of the original is ported.
 
@@ -22,7 +28,7 @@ the real game, so nothing here has been run against the game itself yet. See
 |---|---|
 | M0 Foundations: launcher sees the server, ModNet, protocol capture, probes | done |
 | M1 Register, log in, game boots | done |
-| M2 Create a driver, XMPP, spawn in the world | in progress |
+| M2 Create a driver, XMPP, spawn in the world | done |
 | M3 Free-roam multiplayer | |
 | M4 Garage and economy | |
 | M5 Single-player events, rewards, achievements | |
@@ -37,7 +43,7 @@ Natively, which is the easiest way to develop because nothing rewrites UDP
 source addresses:
 
 ```sh
-cargo run -- serve --probe-udp
+cargo run -- serve
 ```
 
 With Docker:
@@ -57,9 +63,9 @@ they can reach (see below).
 | 9999 | UDP | Free-roam |
 | 9998 | UDP | Race relay |
 
-`serve` runs the XMPP server on 5222. `--probe-xmpp` replaces it with a probe,
-and `--probe-udp` binds the UDP ports; both record what the game sends without
-ever answering. The UDP probe is a stand-in until the UDP servers land.
+`serve` runs the XMPP server on 5222 and the free-roam server on 9999; the
+race relay comes with M6. `--probe-xmpp` and `--probe-udp` replace them with
+probes that record what the game sends without ever answering.
 
 ## Configuration
 
@@ -150,7 +156,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 | `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |
 | `sbrw-xml` | Upstream's 177 XML classes, generated from JAXB's own model; written byte for byte as JAXB writes them and read as leniently as JAXB reads |
 | `sbrw-xmpp` | XMPP: STARTTLS, login, rooms, chat and pushes |
-| `sbrw-udp` | Free-roam and race UDP (probe only so far) |
+| `sbrw-udp` | Free-roam (handshake and empty slots so far; ported from the Go server) and race UDP |
 
 ## Credits and license
 

@@ -113,7 +113,8 @@ one process `sbrw serve`
   - **Auth:** iq:auth `get` returns the Openfire/nfswo shape, including `clientlock`. `set` accepts a plaintext password or `digest = sha1(streamId + pw)`. One connection per persona; a newer one kicks the older.
   - **Routing:** route on the localpart and accept any domain.
   - **MUC:** join, leave, presence fan-out (with status 110 for self), and groupchat relay. `group.channel.*` rooms are created on first join. One-to-one `chat` messages are relayed. Unknown iq gets a configurable reply and is always logged.
-  - **Subject hash:** computed over UTF-16 code units, printed as a signed i64. A config toggle switches to SBRW's constant subject.
+  - **Subject:** SBRW's constant `1337733113377331` by default, as the core sent it. A config toggle switches to the stock client's hash, computed over UTF-16 code units and printed as a signed i64.
+  - The protocol, with a source for each fact, is in `docs/protocol/xmpp.md`.
 - **UDP:**
   - Each server has one socket and one task that owns its state. The `PacketCodec` seam handles whole datagrams.
   - **Free-roam:** a faithful port of the Go constants and slot logic, plus a rate limit, a client cap, and logging of unknown TLVs.

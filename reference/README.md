@@ -15,6 +15,7 @@ sbrw-rs needs neither Java nor this rig.
 ./reference/record.sh scenarios/user/register_and_login.json
 ./reference/record.sh vectors                        # JDK vectors -> fixtures/vectors/
 ./reference/record.sh dtos                           # XML classes -> fixtures/dto/
+node reference/nfswo/subject_vectors.js > fixtures/vectors/xmpp_subject.json   # XMPP subject hash, from NFS-World-Offline
 ```
 
 `dtos` writes three files:

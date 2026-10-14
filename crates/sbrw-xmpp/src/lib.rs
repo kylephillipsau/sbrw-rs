@@ -1,8 +1,10 @@
 //! XMPP server for NFS World chat and server-to-client pushes.
 //!
-//! So far this only has a probe: it accepts connections and records what the
-//! client sends without ever answering, to learn when the game first connects
-//! and what its opening stream looks like.
+//! So far this has a probe, which accepts connections and records what the
+//! client sends without ever answering, and the push subject. The protocol is
+//! written up in `docs/protocol/xmpp.md`.
+
+pub mod subject;
 
 use std::io;
 use std::net::SocketAddr;

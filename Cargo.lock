@@ -1359,9 +1359,14 @@ dependencies = [
 name = "sbrw-xmpp"
 version = "0.1.0"
 dependencies = [
+ "hex",
+ "quick-xml",
+ "regex",
  "sbrw-common",
  "serde",
  "serde_json",
+ "sha1",
+ "thiserror",
  "tokio",
  "tokio-util",
  "tracing",

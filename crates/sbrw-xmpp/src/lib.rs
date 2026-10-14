@@ -1,9 +1,13 @@
 //! XMPP server for NFS World chat and server-to-client pushes.
 //!
 //! So far this has a probe, which accepts connections and records what the
-//! client sends without ever answering, and the push subject. The protocol is
-//! written up in `docs/protocol/xmpp.md`.
+//! client sends without ever answering; the framer and the login stream, not
+//! yet behind a listener; and the push subject. The protocol is written up in
+//! `docs/protocol/xmpp.md`.
 
+pub mod element;
+pub mod framer;
+pub mod stream;
 pub mod subject;
 
 use std::io;

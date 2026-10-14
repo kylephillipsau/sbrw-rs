@@ -9,7 +9,8 @@ join a public room and chat, the engine account sends a push, and a second
 login with the same resource kicks the first.
 
 Each line is `<who> > <text>` for what a client sent, `<who> < <text>` for
-what it received, and `REST ...` for setup calls. Stream ids and generated
+what it received, and `REST ...` for setup calls. A newline in the text is
+printed as `\\n`. Stream ids and generated
 stanza ids are numbered in order of appearance, so runs compare with diff.
 """
 import re
@@ -41,6 +42,11 @@ def normalise(text):
     return text
 
 
+def one_line(text):
+    """Newlines printed as `\\n`, so each entry stays on one line."""
+    return text.replace("\n", "\\n")
+
+
 def rest(method, path, body=None):
     req = urllib.request.Request(f"http://{HOST}:{REST_PORT}/plugins/restapi/v1/{path}", method=method,
                                  data=body.encode() if body else None,
@@ -55,7 +61,7 @@ class Conn:
         self.sock = socket.create_connection((HOST, PORT), timeout=5)
 
     def send(self, text):
-        print(f"{self.name} > {text}")
+        print(f"{self.name} > {one_line(text)}")
         self.sock.sendall(text.encode())
 
     def recv(self, wait=0.6):
@@ -72,7 +78,7 @@ class Conn:
             pass
         text = normalise(data.decode())
         if text:
-            print(f"{self.name} < {text}")
+            print(f"{self.name} < {one_line(text)}")
         return text
 
     def starttls(self):
@@ -120,14 +126,19 @@ def chat_room(name):
             "<broadcastPresenceRole>visitor</broadcastPresenceRole></broadcastPresenceRoles></chatRoom>")
 
 
-def main():
-    # OpenFireRestApiCli.init and UserBO.createXmppUser.
+def setup_openfire():
+    """What OpenFireRestApiCli.init and UserBO.createXmppUser do through REST.
+    sbrw-rs has no REST side: its accounts are live sessions and its rooms
+    come from `chat_room`."""
     rest("POST", "users", f"<user><username>sbrw.engine.engine</username><password>{TOKEN}</password></user>")
     for n in (1, 2):
         rest("POST", "chatrooms", chat_room(f"channel.EN__{n}"))
     for user in ("sbrw.100", "sbrw.101"):
         rest("POST", "users", f"<user><username>{user}</username><password>{PASSWORD}</password></user>")
 
+
+def scenario():
+    """The XMPP side, which a replay can run against sbrw-rs as it is."""
     print("# A logs in with a wrong password, then the right one")
     a = Conn("A")
     a.open_stream()
@@ -146,6 +157,10 @@ def main():
     a.send("<presence/>")
     a.recv()
 
+    print("# An iq in a namespace the server doesn't serve")
+    a.send(f"<iq id='odd1' type='get' to='{DOMAIN}'><query xmlns='jabber:iq:nonsense'/></iq>")
+    a.recv()
+
     print("# A joins the public room, then B")
     room = f"channel.EN__1@conference.{DOMAIN}"
     a.send(f"<presence to='{room}/sbrw.100'><x xmlns='http://jabber.org/protocol/muc'/></presence>")
@@ -162,8 +177,29 @@ def main():
     a.recv()
     b.recv()
 
+    print("# A sends B a one-to-one message")
+    a.send(f"<message to='sbrw.101@{DOMAIN}/EA-Chat' type='chat'><body>psst</body></message>")
+    a.recv()
+    b.recv()
+
     print("# B leaves the room")
     b.send(f"<presence to='{room}/sbrw.101' type='unavailable'/>")
+    b.recv()
+    a.recv()
+
+    print("# A creates a group room by joining it, then B joins")
+    group = f"group.channel.sbrw100@conference.{DOMAIN}"
+    a.send(f"<presence to='{group}/sbrw.100'><x xmlns='http://jabber.org/protocol/muc'/></presence>")
+    a.recv()
+    b.send(f"<presence to='{group}/sbrw.101'><x xmlns='http://jabber.org/protocol/muc'/></presence>")
+    b.recv()
+    a.recv()
+
+    print("# A unlocks it as an instant room (XEP-0045 10.1.2), then B joins again")
+    a.send(f"<iq id='inst1' type='set' to='{group}'><query xmlns='http://jabber.org/protocol/muc#owner'>"
+           "<x xmlns='jabber:x:data' type='submit'/></query></iq>")
+    a.recv()
+    b.send(f"<presence to='{group}/sbrw.101'><x xmlns='http://jabber.org/protocol/muc'/></presence>")
     b.recv()
     a.recv()
 
@@ -174,6 +210,13 @@ def main():
     engine.recv()
     a.recv()
 
+    print("# A push whose body has quotes, &, <, newlines and non-ASCII text")
+    engine.send(f"<message to='sbrw.100@{DOMAIN}' id='JN_1234567'><subject>1337733113377331</subject>"
+                "<body>&lt;response status='1' ticket='0'&gt;\n&lt;Message&gt;a &quot;b&quot; &apos;c&apos; "
+                "d &amp;amp; e &amp;lt; caf\u00e9 \U0001F600&lt;/Message&gt;\n&lt;/response&gt;</body></message>")
+    engine.recv()
+    a.recv()
+
     print("# A logs in again with the same resource")
     a2 = login("A2", "sbrw.100", PASSWORD)
     a.recv()
@@ -181,4 +224,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    setup_openfire()
+    scenario()

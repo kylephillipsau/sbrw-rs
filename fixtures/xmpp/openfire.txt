@@ -19,6 +19,9 @@ A > <iq id='auth2' type='set'><query xmlns='jabber:iq:auth'><username>sbrw.100</
 A < <iq type="result" id="auth2" to="sbrw.100@127.0.0.1/EA-Chat"/>
 A > <presence/>
 A < <presence from="sbrw.100@127.0.0.1/EA-Chat" to="sbrw.100@127.0.0.1/EA-Chat"/>
+# An iq in a namespace the server doesn't serve
+A > <iq id='odd1' type='get' to='127.0.0.1'><query xmlns='jabber:iq:nonsense'/></iq>
+A < <iq type="error" id="odd1" from="127.0.0.1" to="sbrw.100@127.0.0.1/EA-Chat"><query xmlns="jabber:iq:nonsense"></query><error code="501" type="cancel"><feature-not-implemented xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/></error></iq>
 # A joins the public room, then B
 A > <presence to='channel.EN__1@conference.127.0.0.1/sbrw.100'><x xmlns='http://jabber.org/protocol/muc'/></presence>
 A < <presence to="sbrw.100@127.0.0.1/EA-Chat" from="channel.en__1@conference.127.0.0.1/sbrw.100"><x xmlns="http://jabber.org/protocol/muc#user"><item affiliation="none" role="participant"/><status code="110"/></x></presence><message from="channel.en__1@conference.127.0.0.1" type="groupchat" id="uuid1" to="sbrw.100@127.0.0.1/EA-Chat"><subject/></message>
@@ -42,10 +45,24 @@ A < <iq type="get" id="server1" to="sbrw.100@127.0.0.1/EA-Chat" from="127.0.0.1"
 A > <message to='channel.EN__1@conference.127.0.0.1' type='groupchat'><body>hello</body></message>
 A < <message to="sbrw.100@127.0.0.1/EA-Chat" type="groupchat" from="channel.en__1@conference.127.0.0.1/sbrw.100"><body>hello</body><stanza-id xmlns="urn:xmpp:sid:0" id="uuid3" by="channel.en__1@conference.127.0.0.1"/></message>
 B < <message to="sbrw.101@127.0.0.1/EA-Chat" type="groupchat" from="channel.en__1@conference.127.0.0.1/sbrw.100"><body>hello</body><stanza-id xmlns="urn:xmpp:sid:0" id="uuid3" by="channel.en__1@conference.127.0.0.1"/></message>
+# A sends B a one-to-one message
+A > <message to='sbrw.101@127.0.0.1/EA-Chat' type='chat'><body>psst</body></message>
+B < <message to="sbrw.101@127.0.0.1/EA-Chat" type="chat" from="sbrw.100@127.0.0.1/EA-Chat"><body>psst</body></message>
 # B leaves the room
 B > <presence to='channel.EN__1@conference.127.0.0.1/sbrw.101' type='unavailable'/>
-B < <presence to="sbrw.101@127.0.0.1/EA-Chat" type="unavailable" from="channel.en__1@conference.127.0.0.1/sbrw.101"><x xmlns="http://jabber.org/protocol/muc#user"><item affiliation="none" role="none"/><status code="110"/></x></presence>
+B < <presence to="sbrw.101@127.0.0.1/EA-Chat" type="unavailable" from="channel.en__1@conference.127.0.0.1/sbrw.101"><x xmlns="http://jabber.org/protocol/muc#user"><item affiliation="none" role="none"/><status code="110"/></x></presence><iq type="get" id="server2" to="sbrw.101@127.0.0.1/EA-Chat" from="127.0.0.1"><query xmlns="jabber:iq:version"/></iq>
 A < <presence to="sbrw.100@127.0.0.1/EA-Chat" type="unavailable" from="channel.en__1@conference.127.0.0.1/sbrw.101"><x xmlns="http://jabber.org/protocol/muc#user"><item affiliation="none" role="none"/></x></presence>
+# A creates a group room by joining it, then B joins
+A > <presence to='group.channel.sbrw100@conference.127.0.0.1/sbrw.100'><x xmlns='http://jabber.org/protocol/muc'/></presence>
+A < <presence to="sbrw.100@127.0.0.1/EA-Chat" from="group.channel.sbrw100@conference.127.0.0.1/sbrw.100"><x xmlns="http://jabber.org/protocol/muc#user"><item jid="sbrw.100@127.0.0.1/EA-Chat" affiliation="owner" role="moderator"/><status code="110"/><status code="100"/><status code="201"/></x></presence><message from="group.channel.sbrw100@conference.127.0.0.1" type="groupchat" id="uuid4" to="sbrw.100@127.0.0.1/EA-Chat"><subject/></message>
+B > <presence to='group.channel.sbrw100@conference.127.0.0.1/sbrw.101'><x xmlns='http://jabber.org/protocol/muc'/></presence>
+B < <presence to="sbrw.101@127.0.0.1/EA-Chat" from="group.channel.sbrw100@conference.127.0.0.1/sbrw.101" type="error"><x xmlns="http://jabber.org/protocol/muc"></x><error code="404" type="cancel"><item-not-found xmlns="urn:ietf:params:xml:ns:xmpp-stanzas"/></error></presence>
+# A unlocks it as an instant room (XEP-0045 10.1.2), then B joins again
+A > <iq id='inst1' type='set' to='group.channel.sbrw100@conference.127.0.0.1'><query xmlns='http://jabber.org/protocol/muc#owner'><x xmlns='jabber:x:data' type='submit'/></query></iq>
+A < <iq type="result" id="inst1" from="group.channel.sbrw100@conference.127.0.0.1" to="sbrw.100@127.0.0.1/EA-Chat"/>
+B > <presence to='group.channel.sbrw100@conference.127.0.0.1/sbrw.101'><x xmlns='http://jabber.org/protocol/muc'/></presence>
+B < <presence to="sbrw.101@127.0.0.1/EA-Chat" from="group.channel.sbrw100@conference.127.0.0.1/sbrw.100"><x xmlns="http://jabber.org/protocol/muc#user"><item jid="sbrw.100@127.0.0.1/EA-Chat" affiliation="owner" role="moderator"/></x></presence><presence to="sbrw.101@127.0.0.1/EA-Chat" from="group.channel.sbrw100@conference.127.0.0.1/sbrw.101"><x xmlns="http://jabber.org/protocol/muc#user"><item jid="sbrw.101@127.0.0.1/EA-Chat" affiliation="none" role="participant"/><status code="110"/><status code="100"/></x></presence><message from="group.channel.sbrw100@conference.127.0.0.1" type="groupchat" id="uuid5" to="sbrw.101@127.0.0.1/EA-Chat"><subject/></message>
+A < <presence to="sbrw.100@127.0.0.1/EA-Chat" from="group.channel.sbrw100@conference.127.0.0.1/sbrw.101"><x xmlns="http://jabber.org/protocol/muc#user"><item jid="sbrw.101@127.0.0.1/EA-Chat" affiliation="none" role="participant"/></x></presence>
 # The engine pushes to A, as OpenFireConnector.send does
 E > <?xml version='1.0' ?><stream:stream to='127.0.0.1' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>
 E < <?xml version='1.0' encoding='UTF-8'?><stream:stream xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" from="127.0.0.1" id="stream3" xml:lang="en" version="1.0"><stream:features><starttls xmlns="urn:ietf:params:xml:ns:xmpp-tls"></starttls><mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl"><mechanism>PLAIN</mechanism><mechanism>SCRAM-SHA-1</mechanism><mechanism>CRAM-MD5</mechanism><mechanism>DIGEST-MD5</mechanism></mechanisms><ver xmlns="urn:xmpp:features:rosterver"/><auth xmlns="http://jabber.org/features/iq-auth"/><c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="https://www.igniterealtime.org/projects/openfire/" ver="hww8Xim/9AwIQ8iwMHvOZ1qdNCw="/></stream:features>
@@ -60,6 +77,9 @@ E > <iq id='auth2' type='set'><query xmlns='jabber:iq:auth'><username>sbrw.engin
 E < <iq type="result" id="auth2" to="sbrw.engine.engine@127.0.0.1/EA_Chat"/>
 E > <message to='sbrw.100@127.0.0.1' id='JN_1234567'><subject>1337733113377331</subject><body>&lt;response status='1' ticket='0'&gt;&lt;/response&gt;</body></message>
 A < <message to="sbrw.100@127.0.0.1" id="JN_1234567" from="sbrw.engine.engine@127.0.0.1/EA_Chat"><subject>1337733113377331</subject><body>&lt;response status='1' ticket='0'&gt;&lt;/response&gt;</body></message>
+# A push whose body has quotes, &, <, newlines and non-ASCII text
+E > <message to='sbrw.100@127.0.0.1' id='JN_1234567'><subject>1337733113377331</subject><body>&lt;response status='1' ticket='0'&gt;\n&lt;Message&gt;a &quot;b&quot; &apos;c&apos; d &amp;amp; e &amp;lt; café 😀&lt;/Message&gt;\n&lt;/response&gt;</body></message>
+A < <message to="sbrw.100@127.0.0.1" id="JN_1234567" from="sbrw.engine.engine@127.0.0.1/EA_Chat"><subject>1337733113377331</subject><body>&lt;response status='1' ticket='0'&gt;\n&lt;Message&gt;a "b" 'c' d &amp;amp; e &amp;lt; café 😀&lt;/Message&gt;\n&lt;/response&gt;</body></message>
 # A logs in again with the same resource
 A2 > <?xml version='1.0' ?><stream:stream to='127.0.0.1' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>
 A2 < <?xml version='1.0' encoding='UTF-8'?><stream:stream xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" from="127.0.0.1" id="stream4" xml:lang="en" version="1.0"><stream:features><starttls xmlns="urn:ietf:params:xml:ns:xmpp-tls"></starttls><mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl"><mechanism>PLAIN</mechanism><mechanism>SCRAM-SHA-1</mechanism><mechanism>CRAM-MD5</mechanism><mechanism>DIGEST-MD5</mechanism></mechanisms><ver xmlns="urn:xmpp:features:rosterver"/><auth xmlns="http://jabber.org/features/iq-auth"/><c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="https://www.igniterealtime.org/projects/openfire/" ver="hww8Xim/9AwIQ8iwMHvOZ1qdNCw="/></stream:features>

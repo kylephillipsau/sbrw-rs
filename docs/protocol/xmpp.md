@@ -76,7 +76,9 @@ python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openf
 - **Setup** runs unattended at build time (`setup.sh`), then makes the guide's admin-console settings: in-band registration off, compression off, REST API on with a secret.
 - **SCRAM-only passwords:** autosetup also turns on `user.scramHashedPasswordOnly`, which the web wizard leaves off. With it on, `get` drops `<password/><digest/>` and nonsasl refuses every login, because it only authenticates when passwords can be retrieved. SBRW's game logged in, so its install had it off, and `setup.sh` turns it off again.
 - **TLS:** current JDKs disable TLS 1.0, so the image's `java.security` re-enables it. Openfire runs with `-Djsse.enableCBCProtection=false`, as SBRW's launcher did.
-- **What `transcript.py` does:** it creates the engine account, both public rooms and two players through REST with the bodies the core sends. Then, as the game would over TLS 1.0, it logs in, joins `channel.EN__1`, chats and leaves. The engine sends a push, and a second login takes over the first's resource.
+- **What `transcript.py` does:**
+  - `setup_openfire()` creates the engine account, both public rooms and two players through REST, with the bodies the core sends.
+  - `scenario()` acts as the game over TLS 1.0. It logs in, sends an unknown iq, then joins `channel.EN__1`, chats there, messages the other player and leaves. It creates a group room and unlocks it. The engine sends two pushes, and a second login takes over the first's resource.
 - **Stability:** stream ids and generated stanza ids are numbered in order of appearance. Two fresh containers give identical transcripts.
 
 `fixtures/xmpp/openfire.txt` shows:
@@ -93,6 +95,20 @@ python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openf
 - **Groupchat** is echoed to the sender and relayed to everyone from `room/<nick>`, with `<stanza-id xmlns="urn:xmpp:sid:0" id="…" by="room"/>` added.
 - **Leaving:** the leaver gets `type="unavailable"` with `role="none"` and status 110; the others get the same without 110.
 - **Pushes:** a message from the engine to a bare JID arrives with `to` unchanged, `id` and child order kept, and `from` stamped `sbrw.engine.engine@127.0.0.1/EA_Chat`.
+- **Unknown iq** (`jabber:iq:nonsense` to the server) → `type="error"` from the domain, echoing the query as `<query xmlns="…"></query>`, with `<error code="501" type="cancel"><feature-not-implemented …/></error>`.
+- **One-to-one chat** to a full JID arrives with `from` stamped as the sender's full JID. The sender gets nothing back.
+- **Group rooms:** joining a `group.channel.*` room that doesn't exist creates it with the joiner as owner. The room is non-anonymous, so items carry `jid`, with statuses 110, 100 and 201. It stays **locked**: anyone else who joins gets a 404 `item-not-found` presence error until the owner submits an empty `jabber:x:data` form to `muc#owner` (an instant room, XEP-0045 §10.1.2). After that, joiners see the owner and themselves with status 100. Nothing shows whether the game unlocks its rooms that way; SBRW's private lobbies worked, so it must do something that unlocks them.
+- **Push bodies** are re-serialised by Openfire: `"` and `'` come out unescaped, `<`, `>` and `&` escaped, and newlines and UTF-8 (including non-BMP) raw.
 - **Same resource:** a second login with the same resource succeeds. The first stream gets `<stream:error><conflict xmlns="urn:ietf:params:xml:ns:xmpp-streams"/></stream:error></stream:stream>` and is closed.
 
-Still to do: one-to-one `chat`, group rooms (`group.channel.*`) that the game creates, and the REST plugin's SBRW-only endpoints (`chatrooms/forUser`, `messages/game`, which the official plugin lacks). Then a replay that runs the same client against sbrw-rs and compares with this fixture.
+Not covered: the REST plugin's SBRW-only endpoints (`chatrooms/forUser`, `messages/game`), which the official plugin lacks; and anything the game sends that the scenario doesn't, such as how it unlocks group rooms.
+
+### Replaying it against sbrw-rs
+
+The replay runs `transcript.py`'s `scenario()` against sbrw-rs, without `setup_openfire()`. In sbrw-rs the accounts are live sessions, so the replay first logs the personas in over HTTP with a token starting `0123456789abcdef`, and the rooms come from `chat_room`. It then compares the two transcripts:
+
+- **Per client, stanza by stanza, not line by line.** Each `<` line is whatever arrived within 600 ms, so how stanzas are grouped into lines depends on timing.
+- **Allowed differences:**
+  - stream features: `<mechanisms>` (the fork hides it from the game) and the `<c>` caps hash, which sbrw-rs leaves out;
+  - the server's `jabber:iq:version` query: Openfire sends it on a timer, and with no capture of how the game answers, sbrw-rs doesn't send it;
+  - stream ids, generated stanza ids and the cipher name.

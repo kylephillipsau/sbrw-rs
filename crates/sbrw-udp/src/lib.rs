@@ -3,6 +3,8 @@
 //! So far this only has a probe: it binds a port and records every datagram
 //! without answering, to collect real client packets for the protocol notes.
 
+pub mod freeroam;
+
 use std::collections::HashSet;
 use std::io;
 

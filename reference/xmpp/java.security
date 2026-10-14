@@ -1,4 +1,4 @@
-# JDK 11's defaults without TLSv1, TLSv1.1, DES, 3DES, MD5withRSA, ECDH, anon and NULL,
+# The JDK's defaults without TLSv1, TLSv1.1, DES, 3DES, MD5withRSA, ECDH, anon and NULL,
 # so a TLS 1.0 client with old ciphers can connect.
 jdk.tls.disabledAlgorithms=SSLv3, RC4, DH keySize < 1024, EC keySize < 224
 jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224

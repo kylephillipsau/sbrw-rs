@@ -91,4 +91,4 @@ Smaller differences that no recording exercises yet:
 
 ## XMPP
 
-`reference/xmpp/` is a separate rig: Openfire 4.5.0 with the nonSASL plugin in a container, driven by `transcript.py`. SBRW ran a fork of Openfire, not the core, for XMPP; `docs/protocol/xmpp.md` says what the container covers and how to run it.
+`reference/xmpp/` is a separate rig: Openfire 4.5.0 with the nonSASL and REST API plugins in a container, driven by `transcript.py` into `fixtures/xmpp/openfire.txt`. SBRW ran a fork of Openfire, not the core, for XMPP; `docs/protocol/xmpp.md` says what the container covers and how to run it.

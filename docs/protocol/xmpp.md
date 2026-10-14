@@ -65,25 +65,34 @@ Every push the core sends goes through `OpenFireConnector.send(msg, personaId)`:
 
 ## The reference container
 
-The fork is stock Openfire apart from the hidden mechanisms, so `reference/xmpp/` runs Openfire 4.5.0, the release nearest the fork, with nonsasl 1.0.1:
+The fork is stock Openfire apart from the hidden mechanisms, so `reference/xmpp/` runs Openfire 4.5.0, the release nearest the fork, with the nonsasl (1.0.1) and REST API (1.3.10) plugins. It runs on Java 8: SBRW ran JDK 10, and 8 is the nearest current JDK that still bundles the JAXB the REST plugin needs.
 
 ```sh
 docker build -t sbrw-openfire:4.5.0 reference/xmpp
-docker run -d --name sbrw-openfire -p 15222:5222 sbrw-openfire:4.5.0
-python3 reference/xmpp/transcript.py 127.0.0.1 15222
+docker run -d --name sbrw-openfire -p 15222:5222 -p 19090:9090 sbrw-openfire:4.5.0
+python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openfire.txt
 ```
 
-- Setup runs unattended at build time (`setup.sh`). Autosetup takes the wizard's steps but also turns on `user.scramHashedPasswordOnly`, which the wizard leaves off. With it on, `get` drops `<password/><digest/>` and nonsasl refuses every login, because it only authenticates when passwords can be retrieved. SBRW's game logged in, so its install had it off; `setup.sh` turns it off again.
-- JDK 11 disables TLS 1.0, so the image's `java.security` re-enables it. Openfire runs with `-Djsse.enableCBCProtection=false`, as SBRW's launcher did.
-- Accounts are made with in-band registration, where the core used the REST plugin; the accounts end up the same.
+- **Setup** runs unattended at build time (`setup.sh`), then makes the guide's admin-console settings: in-band registration off, compression off, REST API on with a secret.
+- **SCRAM-only passwords:** autosetup also turns on `user.scramHashedPasswordOnly`, which the web wizard leaves off. With it on, `get` drops `<password/><digest/>` and nonsasl refuses every login, because it only authenticates when passwords can be retrieved. SBRW's game logged in, so its install had it off, and `setup.sh` turns it off again.
+- **TLS:** current JDKs disable TLS 1.0, so the image's `java.security` re-enables it. Openfire runs with `-Djsse.enableCBCProtection=false`, as SBRW's launcher did.
+- **What `transcript.py` does:** it creates the engine account, both public rooms and two players through REST with the bodies the core sends. Then, as the game would over TLS 1.0, it logs in, joins `channel.EN__1`, chats and leaves. The engine sends a push, and a second login takes over the first's resource.
+- **Stability:** stream ids and generated stanza ids are numbered in order of appearance. Two fresh containers give identical transcripts.
 
-What it has shown so far (`transcript.py`, client pinned to TLS 1.0 at `SECLEVEL=0`):
+`fixtures/xmpp/openfire.txt` shows:
 
-- TLS 1.0 negotiates `ECDHE-RSA-AES256-SHA`.
-- Stream features before TLS: `starttls`, SASL `mechanisms`, `compression`, `ver`, `auth` (iq-auth), `register`, `c`. After TLS the same without `starttls`. The fork drops `mechanisms` for the game, and SBRW's guide turns compression off.
-- iq:auth `get` → `<iq type="result" id="…"><query xmlns="jabber:iq:auth"><username>sbrw.100</username><password/><digest/><resource/></query></iq>`.
-- iq:auth `set` with the right password → `<iq type="result" id="…" to="sbrw.100@127.0.0.1/EA-Chat"/>`. A wrong one → `type="error"` echoing the query, with `<error code="401" type="auth"><not-authorized …/></error>`. Once the stream is logged in, another `set` gets `result` whatever the password.
-- `<presence/>` comes back to the sender from its own full JID.
-- Room names are lowercased: joining `channel.EN__1` gets presence `from="channel.en__1@conference.127.0.0.1/sbrw.100"`. A first joiner of a missing room becomes its owner with statuses 110, 100 and 201 and an empty `<subject/>` message.
+- **TLS** negotiates `ECDHE-RSA-AES256-SHA` at TLS 1.0.
+- **Features after TLS:** SASL `mechanisms`, `ver`, `auth` (iq-auth) and `c`, with no `register` and no `compression`. The fork also drops `mechanisms` for the game.
+- **iq:auth:**
+  - `get` → `<iq type="result" id="…"><query xmlns="jabber:iq:auth"><username>sbrw.100</username><password/><digest/><resource/></query></iq>`.
+  - `set` with the right password → `<iq type="result" id="…" to="sbrw.100@127.0.0.1/EA-Chat"/>`.
+  - A wrong password → `type="error"` addressed to `<domain>/<stream id>`, echoing the query, with `<error code="401" type="auth"><not-authorized …/></error>`.
+- **Initial presence** comes back to the sender from its own full JID. Some time after it, the server sends the client `<iq type="get" id="…" from="127.0.0.1"><query xmlns="jabber:iq:version"/></iq>`.
+- **Room names are lowercased:** joining `channel.EN__1` gets presence from `channel.en__1@conference.127.0.0.1/<nick>`.
+- **The public rooms are semi-anonymous** (`canAnyoneDiscoverJID` false), so items carry no `jid`. A joiner gets the existing occupants' presence (`affiliation="none" role="participant"`), then its own with status 110, then `<message type="groupchat" id="…"><subject/></message>`. Occupants already in the room get the new presence without 110.
+- **Groupchat** is echoed to the sender and relayed to everyone from `room/<nick>`, with `<stanza-id xmlns="urn:xmpp:sid:0" id="…" by="room"/>` added.
+- **Leaving:** the leaver gets `type="unavailable"` with `role="none"` and status 110; the others get the same without 110.
+- **Pushes:** a message from the engine to a bare JID arrives with `to` unchanged, `id` and child order kept, and `from` stamped `sbrw.engine.engine@127.0.0.1/EA_Chat`.
+- **Same resource:** a second login with the same resource succeeds. The first stream gets `<stream:error><conflict xmlns="urn:ietf:params:xml:ns:xmpp-streams"/></stream:error></stream:stream>` and is closed.
 
-Still to do: create the public rooms as the core does (persistent, before anyone joins), script a second client for presence fan-out, groupchat, leaving and a resource conflict, send a push from the engine account, and commit the transcripts under `fixtures/xmpp/` for the replay. Until then MUC fan-out and conflict handling are from the sources above, not checked.
+Still to do: one-to-one `chat`, group rooms (`group.channel.*`) that the game creates, and the REST plugin's SBRW-only endpoints (`chatrooms/forUser`, `messages/game`, which the official plugin lacks). Then a replay that runs the same client against sbrw-rs and compares with this fixture.

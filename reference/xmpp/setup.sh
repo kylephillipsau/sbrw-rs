@@ -1,7 +1,7 @@
 #!/bin/sh
-# Run Openfire's autosetup once at build time, then undo the one step where
-# autosetup differs from the web wizard SBRW's guide clicks through: autosetup
-# turns on user.scramHashedPasswordOnly, the wizard leaves it off. With it on,
+# Run Openfire's autosetup once at build time, then make the settings SBRW's
+# guide makes in the admin console. Autosetup also turns on
+# user.scramHashedPasswordOnly, which the web wizard leaves off; with it on,
 # the nonSASL plugin refuses every jabber:iq:auth login.
 set -eu
 cd /opt/openfire
@@ -16,4 +16,21 @@ done
 kill $pid; wait $pid || true
 grep -l "scramHashedPasswordOnly" embedded-db/* | xargs sed -i "s/'user.scramHashedPasswordOnly','true'/'user.scramHashedPasswordOnly','false'/"
 ! grep -q "'user.scramHashedPasswordOnly','true'" embedded-db/*
+# HSQLDB replays its redo log at the next start: one session, then COMMIT.
+{
+    echo "/*C99*/SET SCHEMA PUBLIC"
+    while read -r name value; do
+        echo "DELETE FROM OFPROPERTY WHERE NAME='$name'"
+        echo "INSERT INTO OFPROPERTY VALUES('$name','$value',0,NULL)"
+    done <<'PROPS'
+register.inband false
+xmpp.client.compression.policy disabled
+xmpp.server.compression.policy disabled
+plugin.restapi.enabled true
+plugin.restapi.httpAuth secret
+plugin.restapi.secret sbrw-openfire-token
+PROPS
+    echo "COMMIT"
+    echo "DISCONNECT"
+} >> embedded-db/openfire.log
 rm -rf logs/*

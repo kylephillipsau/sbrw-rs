@@ -24,6 +24,8 @@ pub enum Out {
     Send(String),
     /// Switch the connection to TLS before reading on.
     StartTls,
+    /// The client sent its initial presence: it can now be sent stored messages.
+    Available,
     Close,
 }
 
@@ -120,7 +122,8 @@ impl Stream {
             && let Some(jid) = &self.jid
         {
             let jid = jid.to_string();
-            return send(Element::new("presence").attr("from", &jid).attr("to", &jid));
+            let echo = Element::new("presence").attr("from", &jid).attr("to", &jid);
+            return Ok(vec![Out::Send(echo.to_string()), Out::Available]);
         }
         Err(stanza)
     }
@@ -249,6 +252,7 @@ mod tests {
                     match out {
                         Out::Send(s) => sent.push_str(&s),
                         Out::StartTls => stream.tls_started(),
+                        Out::Available => {}
                         Out::Close => panic!("closed"),
                     }
                 }

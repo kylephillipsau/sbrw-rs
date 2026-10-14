@@ -112,6 +112,7 @@ mod tests {
                         match out {
                             Out::Send(s) => tcp.write_all(s.as_bytes()).await.unwrap(),
                             Out::StartTls => break 'plain,
+                            Out::Available => {}
                             Out::Close => return,
                         }
                     }

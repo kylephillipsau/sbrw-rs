@@ -107,6 +107,7 @@ async fn connection(conn: u64, mut tcp: TcpStream, server: Arc<Server>, shutdown
                 match out {
                     Out::Send(s) => tcp.write_all(s.as_bytes()).await?,
                     Out::StartTls => break 'plain,
+                    Out::Available => {}
                     Out::Close => return Ok(()),
                 }
             }
@@ -169,6 +170,10 @@ async fn secure<S: AsyncRead + AsyncWrite + Unpin>(
                         match out {
                             Out::Send(s) => tls.write_all(s.as_bytes()).await?,
                             Out::StartTls => {}
+                            Out::Available => {
+                                let jid = stream.jid().expect("presence is answered only after login").clone();
+                                server.with_hub(|hub| hub.available(&jid));
+                            }
                             Out::Close => return Ok(()),
                         }
                     }
@@ -247,6 +252,8 @@ mod tests {
         );
         tls.write_all(auth.as_bytes()).unwrap();
         read_until(&mut tls, &format!(r#"<iq type="result" id="auth2" to="{user}@127.0.0.1/EA-Chat"/>"#));
+        tls.write_all(b"<presence/>").unwrap();
+        read_until(&mut tls, &format!(r#"to="{user}@127.0.0.1/EA-Chat"/>"#));
         tls
     }
 

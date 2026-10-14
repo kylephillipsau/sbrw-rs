@@ -235,6 +235,14 @@ def scenario():
     b.recv()
     a2.recv()
 
+    print("# The engine pushes to B while B is offline; B logs in again and sends its presence")
+    engine.send(f"<message to='sbrw.101@{DOMAIN}' id='JN_1234567'><subject>1337733113377331</subject>"
+                "<body>offline</body></message>")
+    engine.recv()
+    b2 = login("B2", "sbrw.101", PASSWORD)
+    b2.send("<presence/>")
+    b2.recv(1.0)
+
 
 if __name__ == "__main__":
     setup_openfire()

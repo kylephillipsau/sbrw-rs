@@ -78,7 +78,7 @@ python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openf
 - **TLS:** current JDKs disable TLS 1.0, so the image's `java.security` re-enables it. Openfire runs with `-Djsse.enableCBCProtection=false`, as SBRW's launcher did.
 - **What `transcript.py` does:**
   - `setup_openfire()` creates the engine account, both public rooms and two players through REST, with the bodies the core sends.
-  - `scenario()` acts as the game over TLS 1.0. It logs in, sends an unknown iq, then joins `channel.EN__1`, chats there, messages the other player and leaves. It creates a group room and unlocks it. The engine sends two pushes, a second login takes over the first's resource, a player rejoins the room to get its history, and another closes its stream.
+  - `scenario()` acts as the game over TLS 1.0. It logs in, sends an unknown iq, then joins `channel.EN__1`, chats there, messages the other player and leaves. It creates a group room and unlocks it. The engine sends two pushes, a second login takes over the first's resource, a player rejoins the room to get its history, and another closes its stream, gets a push while offline, and logs in again to receive it.
 - **Stability:** stream ids and generated stanza ids are numbered in order of appearance, and timestamps keep their format with the digits replaced. Two fresh containers give identical transcripts.
 
 `fixtures/xmpp/openfire.txt` shows:
@@ -101,6 +101,7 @@ python3 reference/xmpp/transcript.py 127.0.0.1 15222 19090 > fixtures/xmpp/openf
 - **Push bodies** are re-serialised by Openfire: `"` and `'` come out unescaped, `<`, `>` and `&` escaped, and newlines and UTF-8 (including non-BMP) raw.
 - **Same resource:** a second login with the same resource succeeds. The first stream gets `<stream:error><conflict xmlns="urn:ietf:params:xml:ns:xmpp-streams"/></stream:error></stream:stream>` and is closed, and leaves its rooms.
 - **Room history:** a joiner gets the room's earlier groupchat after its own presence and before the subject. Each is the message as relayed, with `<delay xmlns="urn:xmpp:delay" stamp="2026-10-14T00:23:26.671Z" from="room/nick"/>` appended. Openfire keeps the last 25 by default; the recording has one.
+- **Pushes to an offline player are stored**, as are pushes to one who hasn't sent initial presence yet. They are delivered right after the player's presence echo, with `<delay xmlns="urn:xmpp:delay" from="<domain>" stamp="…"/>` appended; note `from` before `stamp`, unlike room history. This matters because the game calls `SecureLoginPersona`, which pushes `AchievementsAwarded`, before it connects to XMPP.
 - **Disconnects** (closing the stream, or being kicked by a conflict): the other occupants get a presence Openfire builds itself, so its attributes come in a different order: `<presence type="unavailable" from="room/nick" to="…">` with `role="none"` and no status. The client that closes gets `</stream:stream>` back.
 
 Not covered: the REST plugin's SBRW-only endpoints (`chatrooms/forUser`, `messages/game`), which the official plugin lacks; and anything the game sends that the scenario doesn't, such as how it unlocks group rooms.

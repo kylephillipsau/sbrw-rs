@@ -52,6 +52,10 @@ pub struct Hub {
     domain: String,
     conference: String,
     sessions: Vec<FullJid>,
+    /// Sessions that have sent their initial presence.
+    available: Vec<FullJid>,
+    /// Messages for users with no available session, by node, with when they came.
+    offline: HashMap<String, Vec<(Element, OffsetDateTime)>>,
     rooms: HashMap<String, Room>,
     new_id: Box<dyn FnMut() -> String + Send>,
     now: Box<dyn FnMut() -> OffsetDateTime + Send>,
@@ -68,6 +72,8 @@ impl Hub {
             domain: domain.to_owned(),
             conference: format!("conference.{domain}"),
             sessions: Vec::new(),
+            available: Vec::new(),
+            offline: HashMap::new(),
             rooms: HashMap::new(),
             new_id,
             now,
@@ -87,6 +93,7 @@ impl Hub {
     /// caller ends its stream with a `conflict` error.
     pub fn connect(&mut self, jid: &FullJid) -> (bool, Vec<Delivery>) {
         if self.sessions.contains(jid) {
+            self.available.retain(|s| s != jid);
             return (true, self.leave_all(jid));
         }
         self.sessions.push(jid.clone());
@@ -96,7 +103,42 @@ impl Hub {
     /// A client's stream has ended.
     pub fn disconnect(&mut self, jid: &FullJid) -> Vec<Delivery> {
         self.sessions.retain(|s| s != jid);
+        self.available.retain(|s| s != jid);
         self.leave_all(jid)
+    }
+
+    /// The client sent its initial presence. Messages stored while its user
+    /// had no available session come now, stamped as Openfire stamps them.
+    pub fn available(&mut self, jid: &FullJid) -> Vec<Delivery> {
+        if !self.available.contains(jid) {
+            self.available.push(jid.clone());
+        }
+        let stored = self.offline.remove(&jid.node).unwrap_or_default();
+        stored
+            .into_iter()
+            .map(|(mut message, received)| {
+                message.push(
+                    Element::new("delay")
+                        .attr("xmlns", "urn:xmpp:delay")
+                        .attr("from", &self.domain)
+                        .attr("stamp", &stamp(received)),
+                );
+                as_sent(jid, &message)
+            })
+            .collect()
+    }
+
+    /// Deliver a message for a user to its available sessions, or store it
+    /// until one is available, as Openfire's offline storage does.
+    fn deliver_to_user(&mut self, node: &str, resource: Option<&str>, message: Element) -> Vec<Delivery> {
+        let targets: Vec<&FullJid> =
+            self.available.iter().filter(|s| s.node == node && resource.is_none_or(|r| r == s.resource)).collect();
+        if targets.is_empty() && resource.is_none() {
+            let received = (self.now)();
+            self.offline.entry(node.to_owned()).or_default().push((message, received));
+            return Vec::new();
+        }
+        targets.into_iter().map(|s| as_sent(s, &message)).collect()
     }
 
     /// Take the client out of every room. Openfire builds these presences
@@ -130,7 +172,7 @@ impl Hub {
 
     /// The core's push to a persona, as `OpenFireConnector.send` sends it
     /// from the engine's account and Openfire delivers it.
-    pub fn push(&self, persona_id: i64, body: &str) -> Vec<Delivery> {
+    pub fn push(&mut self, persona_id: i64, body: &str) -> Vec<Delivery> {
         let node = format!("sbrw.{persona_id}");
         let to = format!("{node}@{}", self.domain);
         let message = Element::new("message")
@@ -139,7 +181,7 @@ impl Hub {
             .attr("from", &format!("sbrw.engine.engine@{}/EA_Chat", self.domain))
             .child(Element::new("subject").text(SBRW_SUBJECT))
             .child(Element::new("body").text(body));
-        self.sessions.iter().filter(|s| s.node == node).map(|s| as_sent(s, &message)).collect()
+        self.deliver_to_user(&node, None, message)
     }
 
     /// Route a stanza the client's stream didn't answer itself.
@@ -164,12 +206,8 @@ impl Hub {
         if domain == self.domain && stanza.name == "message" {
             let mut message = stanza;
             message.set_attr("from", &from.to_string());
-            return self
-                .sessions
-                .iter()
-                .filter(|s| s.node == node && resource.is_none_or(|r| r == s.resource))
-                .map(|s| as_sent(s, &message))
-                .collect();
+            let (node, resource) = (node.to_owned(), resource.map(str::to_owned));
+            return self.deliver_to_user(&node, resource.as_deref(), message);
         }
         Vec::new()
     }
@@ -415,6 +453,7 @@ mod tests {
         a.tls_started();
         a.handle(crate::framer::Frame::Stanza(login.into()), &Players).unwrap();
         hub.connect(a.jid().unwrap());
+        hub.available(a.jid().unwrap());
         clients
             .insert("A".into(), Client { stream: a, framer: Framer::default(), received: String::new(), live: true });
         let mut next_stream = 2;
@@ -427,8 +466,10 @@ mod tests {
                 "<" => expected_by_client.entry(who.into()).or_default().push_str(&expected(&text)),
                 // The engine's message is the core's send, which sbrw-rs makes with push.
                 ">" if who == "E" && text.starts_with("<message") => {
-                    let body = Element::parse(&text).unwrap().child_text("body").unwrap();
-                    let deliveries = hub.push(100, &body);
+                    let message = Element::parse(&text).unwrap();
+                    let to = message.attribute("to").unwrap();
+                    let persona = to.strip_prefix("sbrw.").and_then(|r| r.split('@').next()).unwrap().parse().unwrap();
+                    let deliveries = hub.push(persona, &message.child_text("body").unwrap());
                     deliver_all(&mut clients, deliveries);
                 }
                 ">" => {
@@ -451,6 +492,10 @@ mod tests {
                                     match out {
                                         Out::Send(s) => client.received.push_str(&s),
                                         Out::StartTls => client.stream.tls_started(),
+                                        Out::Available => {
+                                            let jid = client.stream.jid().unwrap().clone();
+                                            deliveries.extend(hub.available(&jid));
+                                        }
                                         Out::Close => closed = true,
                                     }
                                 }
@@ -489,7 +534,7 @@ mod tests {
             }
         }
         let stamps = regex::Regex::new(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z").unwrap();
-        for who in ["A", "B", "E", "A2"] {
+        for who in ["A", "B", "E", "A2", "B2"] {
             let received = stamps.replace_all(&clients[who].received, "YYYY-MM-DDThh:mm:ss.sssZ");
             assert_eq!(received, expected_by_client[who], "what {who} received");
         }

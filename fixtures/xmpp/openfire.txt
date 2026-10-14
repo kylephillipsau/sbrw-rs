@@ -103,3 +103,19 @@ B < <presence to="sbrw.101@127.0.0.1/EA-Chat" from="channel.en__1@conference.127
 B > </stream:stream>
 B < </stream:stream>
 A2 < <presence type="unavailable" from="channel.en__1@conference.127.0.0.1/sbrw.101" to="sbrw.100@127.0.0.1/EA-Chat"><x xmlns="http://jabber.org/protocol/muc#user"><item affiliation="none" role="none"/></x></presence>
+# The engine pushes to B while B is offline; B logs in again and sends its presence
+E > <message to='sbrw.101@127.0.0.1' id='JN_1234567'><subject>1337733113377331</subject><body>offline</body></message>
+E < <iq type="get" id="server3" to="sbrw.engine.engine@127.0.0.1/EA_Chat" from="127.0.0.1"><query xmlns="jabber:iq:version"/></iq>
+B2 > <?xml version='1.0' ?><stream:stream to='127.0.0.1' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>
+B2 < <?xml version='1.0' encoding='UTF-8'?><stream:stream xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" from="127.0.0.1" id="stream5" xml:lang="en" version="1.0"><stream:features><starttls xmlns="urn:ietf:params:xml:ns:xmpp-tls"></starttls><mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl"><mechanism>PLAIN</mechanism><mechanism>SCRAM-SHA-1</mechanism><mechanism>CRAM-MD5</mechanism><mechanism>DIGEST-MD5</mechanism></mechanisms><ver xmlns="urn:xmpp:features:rosterver"/><auth xmlns="http://jabber.org/features/iq-auth"/><c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="https://www.igniterealtime.org/projects/openfire/" ver="hww8Xim/9AwIQ8iwMHvOZ1qdNCw="/></stream:features>
+B2 > <starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>
+B2 < <proceed xmlns="urn:ietf:params:xml:ns:xmpp-tls"/>
+B2 = TLS TLSv1 ECDHE-RSA-AES256-SHA
+B2 > <?xml version='1.0' ?><stream:stream to='127.0.0.1' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>
+B2 < <?xml version='1.0' encoding='UTF-8'?><stream:stream xmlns:stream="http://etherx.jabber.org/streams" xmlns="jabber:client" from="127.0.0.1" id="stream5" xml:lang="en" version="1.0"><stream:features><mechanisms xmlns="urn:ietf:params:xml:ns:xmpp-sasl"><mechanism>PLAIN</mechanism><mechanism>SCRAM-SHA-1</mechanism><mechanism>CRAM-MD5</mechanism><mechanism>DIGEST-MD5</mechanism></mechanisms><ver xmlns="urn:xmpp:features:rosterver"/><auth xmlns="http://jabber.org/features/iq-auth"/><c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="https://www.igniterealtime.org/projects/openfire/" ver="hww8Xim/9AwIQ8iwMHvOZ1qdNCw="/></stream:features>
+B2 > <iq id='auth1' type='get'><query xmlns='jabber:iq:auth'><username>sbrw.101</username></query></iq>
+B2 < <iq type="result" id="auth1"><query xmlns="jabber:iq:auth"><username>sbrw.101</username><password/><digest/><resource/></query></iq>
+B2 > <iq id='auth2' type='set'><query xmlns='jabber:iq:auth'><username>sbrw.101</username><password>0123456789abcdef</password><resource>EA-Chat</resource></query></iq>
+B2 < <iq type="result" id="auth2" to="sbrw.101@127.0.0.1/EA-Chat"/>
+B2 > <presence/>
+B2 < <presence from="sbrw.101@127.0.0.1/EA-Chat" to="sbrw.101@127.0.0.1/EA-Chat"/><message to="sbrw.101@127.0.0.1" id="JN_1234567" from="sbrw.engine.engine@127.0.0.1/EA_Chat"><subject>1337733113377331</subject><body>offline</body><delay xmlns="urn:xmpp:delay" from="127.0.0.1" stamp="YYYY-MM-DDThh:mm:ss.sssZ"/></message>

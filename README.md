@@ -11,7 +11,8 @@ It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 **Status:** M2 in progress. Every call the launcher and the game make up to
 the driver screen is ported and replays recordings of the original exactly,
 including creating and selecting a driver. XMPP's login, rooms, chat and
-pushes match a recorded Openfire reference, but aren't serving port 5222 yet.
+pushes match a recorded Openfire reference, but `sbrw serve` doesn't run them on
+port 5222 yet.
 Milestones are verified against
 recordings of the original and the other reference implementations, not with
 the real game, so nothing here has been run against the game itself yet. See
@@ -148,7 +149,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 | `sbrw-core` | The game logic: upstream's business objects, DAOs and entities, ported 1:1 |
 | `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |
 | `sbrw-xml` | Upstream's 177 XML classes, generated from JAXB's own model; written byte for byte as JAXB writes them and read as leniently as JAXB reads |
-| `sbrw-xmpp` | XMPP: framer, login stream, rooms and pushes (not yet listening) |
+| `sbrw-xmpp` | XMPP: STARTTLS, login, rooms, chat and pushes (not yet wired into `sbrw serve`) |
 | `sbrw-udp` | Free-roam and race UDP (probe only so far) |
 
 ## Credits and license

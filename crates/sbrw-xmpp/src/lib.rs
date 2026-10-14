@@ -1,13 +1,15 @@
 //! XMPP server for NFS World chat and server-to-client pushes.
 //!
-//! So far this has a probe, which accepts connections and records what the
-//! client sends without ever answering; the framer and the login stream, not
-//! yet behind a listener; and the push subject. The protocol is written up in
-//! `docs/protocol/xmpp.md`.
+//! The server (`server::run`) takes STARTTLS (`tls`), logs players in
+//! (`stream`) and routes rooms, chat and pushes (`hub`), each checked against
+//! a recorded Openfire. `sbrw serve` still runs only the probe, which accepts
+//! connections and records what the client sends without answering. The
+//! protocol is written up in `docs/protocol/xmpp.md`.
 
 pub mod element;
 pub mod framer;
 pub mod hub;
+pub mod server;
 pub mod stream;
 pub mod subject;
 pub mod tls;

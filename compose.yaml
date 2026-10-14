@@ -5,8 +5,8 @@ services:
   sbrw:
     build: .
     image: sbrw-rs:dev
-    # XMPP and UDP only record traffic until their real servers land.
-    command: ["serve", "--probe-udp"]
+    # XMPP and free-roam run for real; the race relay on 9998 comes with M6.
+    command: ["serve"]
     environment:
       SBRW__SERVER__PUBLIC_HOST: ${SBRW_PUBLIC_HOST:-127.0.0.1}
       SBRW_CAPTURE: ${SBRW_CAPTURE:-}

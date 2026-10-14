@@ -39,7 +39,8 @@ struct ServeArgs {
     /// instead of running the XMPP server
     #[arg(long)]
     probe_xmpp: bool,
-    /// Bind the free-roam and race UDP ports and log datagrams, without answering
+    /// Bind the free-roam and race UDP ports and log datagrams, without
+    /// answering, instead of running the free-roam server
     #[arg(long)]
     probe_udp: bool,
 }
@@ -183,6 +184,11 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
             tracing::info!(%bind, server = stream.name(), "UDP probe listening");
             tasks.spawn(sbrw_udp::run_probe(stream, socket, capture.clone(), shutdown.clone()));
         }
+    } else {
+        let bind = config.udp.freeroam.bind;
+        let socket = UdpSocket::bind(bind).await.with_context(|| format!("binding free-roam to {bind}"))?;
+        tracing::info!(%bind, "free-roam listening");
+        tasks.spawn(sbrw_udp::run_freeroam(socket, capture.clone(), shutdown.clone()));
     }
 
     let early_exit = tokio::select! {

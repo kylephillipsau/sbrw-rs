@@ -105,6 +105,8 @@ Not covered: the REST plugin's SBRW-only endpoints (`chatrooms/forUser`, `messag
 
 ### Replaying it against sbrw-rs
 
+Until sbrw-xmpp has a listener, its unit tests replay the fixture without the network. `stream::tests::logs_in_as_openfire_does` feeds client A's login through the framer and stream. `hub::tests::rooms_chat_and_pushes_as_openfire_does` runs A, B and the engine through rooms, chat and pushes. Both compare every stanza each client receives. Once the listener and TLS exist, the full replay works as follows.
+
 The replay runs `transcript.py`'s `scenario()` against sbrw-rs, without `setup_openfire()`. In sbrw-rs the accounts are live sessions, so the replay first logs the personas in over HTTP with a token starting `0123456789abcdef`, and the rooms come from `chat_room`. It then compares the two transcripts:
 
 - **Per client, stanza by stanza, not line by line.** Each `<` line is whatever arrived within 600 ms, so how stanzas are grouped into lines depends on timing.

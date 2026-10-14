@@ -7,6 +7,7 @@
 
 pub mod element;
 pub mod framer;
+pub mod hub;
 pub mod stream;
 pub mod subject;
 

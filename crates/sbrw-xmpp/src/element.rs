@@ -47,6 +47,24 @@ impl Element {
         self
     }
 
+    /// Set an attribute where it is, or add it at the end, as dom4j does.
+    pub fn set_attr(&mut self, name: &str, value: &str) {
+        match self.attributes.iter_mut().find(|(k, _)| k == name) {
+            Some((_, v)) => *v = value.to_owned(),
+            None => self.attributes.push((name.to_owned(), value.to_owned())),
+        }
+    }
+
+    pub fn push(&mut self, child: Element) {
+        self.children.push(Node::Element(child));
+    }
+
+    /// Drop the child elements with this name and namespace.
+    pub fn remove(&mut self, name: &str, xmlns: &str) {
+        self.children
+            .retain(|n| !matches!(n, Node::Element(e) if e.name == name && e.attribute("xmlns") == Some(xmlns)));
+    }
+
     pub fn attribute(&self, name: &str) -> Option<&str> {
         self.attributes.iter().find(|(k, _)| k == name).map(|(_, v)| v.as_str())
     }

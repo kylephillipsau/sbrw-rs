@@ -36,6 +36,43 @@ pub fn handshake_reply(seq: u16, server_tick: u16, tick_diff: i16) -> [u8; 11] {
 mod tests {
     use super::*;
 
+    #[derive(serde::Deserialize)]
+    struct Case {
+        packet: String,
+        reply: Option<String>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct Vectors {
+        cases: Vec<Case>,
+    }
+
+    fn bytes(hex: &str) -> Vec<u8> {
+        (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect()
+    }
+
+    #[test]
+    fn matches_the_go_server() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/vectors/freeroam_handshake.json");
+        let text = std::fs::read_to_string(path).expect("run reference/freeroam/handshake_vectors.py");
+        let vectors: Vectors = serde_json::from_str(&text).unwrap();
+        assert!(vectors.cases.iter().any(|c| c.reply.is_some()) && vectors.cases.iter().any(|c| c.reply.is_none()));
+        for case in vectors.cases {
+            let packet = bytes(&case.packet);
+            let Some(reply) = case.reply.as_deref().map(bytes) else {
+                assert_eq!(hello_tick(&packet), None, "freeroamd ignored {}", case.packet);
+                continue;
+            };
+            let client_tick = hello_tick(&packet).expect("freeroamd answered it as a hello");
+            let server_tick = u16::from_be_bytes([reply[3], reply[4]]);
+            // freeroamd reads its clock once for the difference and again for
+            // the reply, so the first read can be a millisecond earlier.
+            let same_ms = handshake_reply(0, server_tick, tick_diff(client_tick, server_tick));
+            let ms_before = handshake_reply(0, server_tick, tick_diff(client_tick, server_tick.wrapping_sub(1)));
+            assert!(reply == same_ms || reply == ms_before, "{} -> {}", case.packet, case.reply.unwrap());
+        }
+    }
+
     #[test]
     fn recognises_a_hello_by_length_and_type() {
         let mut hello = [0u8; 58];

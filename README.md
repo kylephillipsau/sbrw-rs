@@ -11,8 +11,7 @@ It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 **Status:** M2 in progress. Every call the launcher and the game make up to
 the driver screen is ported and replays recordings of the original exactly,
 including creating and selecting a driver. XMPP's login, rooms, chat and
-pushes match a recorded Openfire reference, but `sbrw serve` doesn't run them on
-port 5222 yet.
+pushes match a recorded Openfire reference and run on port 5222.
 Milestones are verified against
 recordings of the original and the other reference implementations, not with
 the real game, so nothing here has been run against the game itself yet. See
@@ -38,7 +37,7 @@ Natively, which is the easiest way to develop because nothing rewrites UDP
 source addresses:
 
 ```sh
-cargo run -- serve --probe-xmpp --probe-udp
+cargo run -- serve --probe-udp
 ```
 
 With Docker:
@@ -58,8 +57,9 @@ they can reach (see below).
 | 9999 | UDP | Free-roam |
 | 9998 | UDP | Race relay |
 
-`--probe-xmpp` and `--probe-udp` bind those ports and record what the game
-sends without ever answering. They are stand-ins until the real servers land.
+`serve` runs the XMPP server on 5222. `--probe-xmpp` replaces it with a probe,
+and `--probe-udp` binds the UDP ports; both record what the game sends without
+ever answering. The UDP probe is a stand-in until the UDP servers land.
 
 ## Configuration
 
@@ -149,7 +149,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 | `sbrw-core` | The game logic: upstream's business objects, DAOs and entities, ported 1:1 |
 | `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |
 | `sbrw-xml` | Upstream's 177 XML classes, generated from JAXB's own model; written byte for byte as JAXB writes them and read as leniently as JAXB reads |
-| `sbrw-xmpp` | XMPP: STARTTLS, login, rooms, chat and pushes (not yet wired into `sbrw serve`) |
+| `sbrw-xmpp` | XMPP: STARTTLS, login, rooms, chat and pushes |
 | `sbrw-udp` | Free-roam and race UDP (probe only so far) |
 
 ## Credits and license

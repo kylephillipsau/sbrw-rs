@@ -35,7 +35,8 @@ enum Command {
 
 #[derive(Args)]
 struct ServeArgs {
-    /// Accept XMPP connections and log what clients send, without answering
+    /// Accept XMPP connections and log what clients send, without answering,
+    /// instead of running the XMPP server
     #[arg(long)]
     probe_xmpp: bool,
     /// Bind the free-roam and race UDP ports and log datagrams, without answering
@@ -95,16 +96,24 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         tracing::info!(dir = %dir.display(), streams = ?config.capture.streams, "capturing protocol traffic");
     }
 
+    // The core's pushes go straight to the XMPP hub, as upstream's went to Openfire.
+    let (pushes, mut push_queue) = tokio::sync::mpsc::unbounded_channel();
+    let mut openfire = sbrw_core::openfire::Openfire::default();
+    let xmpp_accounts = openfire.accounts();
+    if !args.probe_xmpp {
+        openfire.outbound = Some(pushes);
+    }
     let world = sbrw_core::World::boot(sbrw_core::WorldOptions {
         db_path: Some(config.server.data_dir.join("world.db")),
         parameters: config.upstream_parameters(),
         env: sbrw_common::Env::system(),
         effects: sbrw_common::EffectLog::disabled(),
-        openfire: Default::default(),
+        openfire,
         build_info: sbrw_core::BuildInfo::of_this_build(),
     })
     .context("starting the world")?;
     let world = sbrw_core::WorldHandle::spawn(world);
+    let rooms = world.call(|w| Ok(sbrw_core::dao::chat_room::find_all(w.db())?)).await.context("reading chat rooms")?;
 
     let config = Arc::new(config);
     let shutdown = CancellationToken::new();
@@ -126,6 +135,43 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
             .with_context(|| format!("binding XMPP to {}", config.xmpp.bind))?;
         tracing::info!(bind = %config.xmpp.bind, "XMPP probe listening");
         tasks.spawn(sbrw_xmpp::run_probe(xmpp, capture.clone(), shutdown.clone()));
+    } else {
+        let xmpp = TcpListener::bind(config.xmpp.bind)
+            .await
+            .with_context(|| format!("binding XMPP to {}", config.xmpp.bind))?;
+        let domain = &config.server.public_host;
+        let mut hub = sbrw_xmpp::hub::Hub::new(
+            domain,
+            Box::new(|| uuid::Uuid::new_v4().to_string()),
+            Box::new(time::OffsetDateTime::now_utc),
+        );
+        // As OpenFireRestApiCli.init creates them.
+        for room in rooms {
+            if let (Some(short_name), Some(amount)) = (room.short_name, room.amount) {
+                for n in 1..=amount {
+                    hub.create_public_room(&format!("channel.{short_name}__{n}"));
+                }
+            }
+        }
+        let identity = sbrw_xmpp::tls::self_signed(domain).context("making the XMPP certificate")?;
+        let acceptor =
+            sbrw_xmpp::tls::acceptor(&identity, sbrw_xmpp::tls::DEFAULT_CIPHERS).context("setting up TLS")?;
+        let server =
+            Arc::new(sbrw_xmpp::server::Server::new(domain, acceptor, Arc::new(WorldAccounts(xmpp_accounts)), hub));
+        tracing::info!(bind = %config.xmpp.bind, "XMPP listening");
+        tasks.spawn(sbrw_xmpp::server::run(xmpp, server.clone(), shutdown.clone()));
+        let stop = shutdown.clone();
+        tasks.spawn(async move {
+            loop {
+                tokio::select! {
+                    () = stop.cancelled() => return Ok(()),
+                    push = push_queue.recv() => match push {
+                        Some((to, body)) => server.with_hub(|hub| hub.push(to, &body)),
+                        None => return Ok(()),
+                    },
+                }
+            }
+        });
     }
     if args.probe_udp {
         for (stream, bind) in
@@ -154,6 +200,15 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
             anyhow::bail!("a listener stopped unexpectedly")
         }
         None => Ok(()),
+    }
+}
+
+/// XMPP logins check the accounts the core creates at `GetPermanentSession`.
+struct WorldAccounts(sbrw_core::openfire::Accounts);
+
+impl sbrw_xmpp::stream::Accounts for WorldAccounts {
+    fn password(&self, username: &str) -> Option<String> {
+        self.0.read().ok()?.get(username).cloned()
     }
 }
 

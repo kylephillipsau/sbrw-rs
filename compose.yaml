@@ -6,7 +6,7 @@ services:
     build: .
     image: sbrw-rs:dev
     # XMPP and UDP only record traffic until their real servers land.
-    command: ["serve", "--probe-xmpp", "--probe-udp"]
+    command: ["serve", "--probe-udp"]
     environment:
       SBRW__SERVER__PUBLIC_HOST: ${SBRW_PUBLIC_HOST:-127.0.0.1}
       SBRW_CAPTURE: ${SBRW_CAPTURE:-}

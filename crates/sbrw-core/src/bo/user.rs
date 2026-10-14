@@ -214,7 +214,7 @@ mod tests {
                 r#"["createUpdatePersona",[101,"00000000-0000-40"]]"#,
             ]
         );
-        assert_eq!(w.openfire.password("sbrw.101"), Some("00000000-0000-40"));
+        assert_eq!(w.openfire.password("sbrw.101").as_deref(), Some("00000000-0000-40"));
     }
 
     #[test]

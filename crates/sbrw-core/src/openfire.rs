@@ -8,15 +8,20 @@
 //! recorder captured the calls.
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 
 use sbrw_common::EffectLog;
 use sbrw_xml::{ToXml, XmlRoot};
 use serde_json::json;
 
+/// XMPP username -> password, shared with sbrw-xmpp's logins.
+pub type Accounts = Arc<RwLock<HashMap<String, String>>>;
+
 #[derive(Debug, Default)]
 pub struct Openfire {
-    /// XMPP username -> password.
-    accounts: HashMap<String, String>,
+    accounts: Accounts,
+    /// Where pushes go to be delivered: sbrw-xmpp's hub, when it runs.
+    pub outbound: Option<tokio::sync::mpsc::UnboundedSender<(i64, String)>>,
     /// Players connected to XMPP: a test scenario's simulated count until
     /// sbrw-xmpp serves clients and reports its own.
     pub online_users: i32,
@@ -40,7 +45,7 @@ impl Openfire {
     /// The account `sbrw.<personaId>` with this password, created or updated.
     pub fn create_update_persona(&mut self, persona_id: i64, password: &str, effects: &EffectLog) {
         effects.openfire("createUpdatePersona", vec![json!(persona_id), json!(password)]);
-        self.accounts.insert(format!("sbrw.{persona_id}"), password.to_owned());
+        self.accounts.write().expect("accounts lock").insert(format!("sbrw.{persona_id}"), password.to_owned());
     }
 
     // port: xmpp/OpenFireSoapBoxCli#send(Object,Long)
@@ -51,14 +56,21 @@ impl Openfire {
 
     // port: xmpp/OpenFireSoapBoxCli#send(String,Long)
     pub fn send_string(&self, msg: &str, to: i64, effects: &EffectLog) {
-        // Upstream's OpenFireConnector sends this as an XMPP message from the
-        // engine's account. sbrw-xmpp will deliver it; for now the effect log
-        // is its only record.
+        // Upstream's OpenFireConnector sends this at once as an XMPP message
+        // from the engine's account, whether or not the transaction commits.
         effects.xmpp(to, msg);
+        if let Some(outbound) = &self.outbound {
+            let _ = outbound.send((to, msg.to_owned()));
+        }
     }
 
     /// The password of an XMPP account, for sbrw-xmpp's logins.
-    pub fn password(&self, username: &str) -> Option<&str> {
-        self.accounts.get(username).map(String::as_str)
+    pub fn password(&self, username: &str) -> Option<String> {
+        self.accounts.read().expect("accounts lock").get(username).cloned()
+    }
+
+    /// The accounts, for sbrw-xmpp to check logins against while the world runs.
+    pub fn accounts(&self) -> Accounts {
+        self.accounts.clone()
     }
 }

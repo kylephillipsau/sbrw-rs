@@ -2,9 +2,9 @@
 //!
 //! The server (`server::run`) takes STARTTLS (`tls`), logs players in
 //! (`stream`) and routes rooms, chat and pushes (`hub`), each checked against
-//! a recorded Openfire. `sbrw serve` still runs only the probe, which accepts
-//! connections and records what the client sends without answering. The
-//! protocol is written up in `docs/protocol/xmpp.md`.
+//! a recorded Openfire. `sbrw serve --probe-xmpp` runs the probe instead,
+//! which accepts connections and records what the client sends without
+//! answering. The protocol is written up in `docs/protocol/xmpp.md`.
 
 pub mod element;
 pub mod framer;

@@ -44,6 +44,22 @@ pub fn self_signed(host: &str) -> Result<Identity, ErrorStack> {
     Ok(Identity { certificate: cert.build(), key })
 }
 
+/// The identity in `dir` (`cert.pem`, `key.pem`), made for `host` and saved
+/// there on first use.
+pub fn load_or_create(dir: &std::path::Path, host: &str) -> std::io::Result<Identity> {
+    let (cert_path, key_path) = (dir.join("cert.pem"), dir.join("key.pem"));
+    if cert_path.exists() && key_path.exists() {
+        let certificate = X509::from_pem(&std::fs::read(&cert_path)?).map_err(std::io::Error::other)?;
+        let key = PKey::private_key_from_pem(&std::fs::read(&key_path)?).map_err(std::io::Error::other)?;
+        return Ok(Identity { certificate, key });
+    }
+    let identity = self_signed(host).map_err(std::io::Error::other)?;
+    std::fs::create_dir_all(dir)?;
+    std::fs::write(&cert_path, identity.certificate.to_pem().map_err(std::io::Error::other)?)?;
+    std::fs::write(&key_path, identity.key.private_key_to_pem_pkcs8().map_err(std::io::Error::other)?)?;
+    Ok(identity)
+}
+
 /// The acceptor for STARTTLS: TLS 1.0 and up, `ciphers` at security level 0,
 /// no empty fragments before CBC records, no compression.
 pub fn acceptor(identity: &Identity, ciphers: &str) -> Result<SslAcceptor, ErrorStack> {
@@ -90,6 +106,17 @@ mod tests {
             got.extend_from_slice(&buf[..n]);
         }
         String::from_utf8(got).unwrap()
+    }
+
+    #[test]
+    fn the_identity_is_made_once_and_kept() {
+        let dir = tempfile::tempdir().unwrap();
+        let tls_dir = dir.path().join("tls");
+        let made = load_or_create(&tls_dir, "127.0.0.1").unwrap();
+        let loaded = load_or_create(&tls_dir, "127.0.0.1").unwrap();
+        assert_eq!(made.certificate.to_der().unwrap(), loaded.certificate.to_der().unwrap());
+        assert!(made.key.public_eq(&loaded.key));
+        acceptor(&loaded, DEFAULT_CIPHERS).unwrap();
     }
 
     #[tokio::test]

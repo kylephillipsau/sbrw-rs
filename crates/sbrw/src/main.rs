@@ -153,7 +153,9 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
                 }
             }
         }
-        let identity = sbrw_xmpp::tls::self_signed(domain).context("making the XMPP certificate")?;
+        let tls_dir = config.server.data_dir.join("tls");
+        let identity = sbrw_xmpp::tls::load_or_create(&tls_dir, domain)
+            .with_context(|| format!("loading or making the XMPP certificate in {}", tls_dir.display()))?;
         let acceptor =
             sbrw_xmpp::tls::acceptor(&identity, sbrw_xmpp::tls::DEFAULT_CIPHERS).context("setting up TLS")?;
         let server =

@@ -1,5 +1,7 @@
 package com.soapboxrace.reference;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,8 +32,31 @@ public final class Recording {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("bean", bean);
         m.put("delay_ms", delayMillis);
-        m.put("info", String.valueOf(info));
+        m.put("info", info(info));
         timers.add(m);
+    }
+
+    /**
+     * A timer's info by its fields, in declaration order. Its toString() is
+     * Object's, whose identity hash no other run reproduces.
+     */
+    private static Object info(Object info) {
+        if (info == null || info instanceof String || info instanceof Number || info instanceof Boolean) {
+            return info;
+        }
+        Map<String, Object> fields = new LinkedHashMap<>();
+        for (Field field : info.getClass().getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            try {
+                field.setAccessible(true);
+                fields.put(field.getName(), field.get(info));
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        return fields;
     }
 
     public void redis(String command, Object... args) {

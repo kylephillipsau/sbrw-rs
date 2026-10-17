@@ -1,0 +1,460 @@
+{
+  "description": "Single-player pursuits: escaping pays by cops, cost to state and heat; busted pays nothing; heat stays on the car.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ENABLE_DROP_ITEM": "false",
+    "STARTING_LEVEL_NUMBER": "1"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers, which logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100, level 1.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A starter car (75000), car 1, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Launching event 383: session 1.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/383",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 300000
+    },
+    {
+      "note": "Escaped, with heat 3.5: a random rank for the card deck.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>518</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>3.5</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Heat 3.5.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Session 2.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/384",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Busted, through /bust: no rewards, heat back to 1.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/bust",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>266</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>4.0</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Heat 1.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Launching event 385: session 3.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/385",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Busted, reported through /arbitration.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>266</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>2.0</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 386: session 4.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/386",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "More cops disabled than deployed: not legit.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>518</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>2</CopsDeployed><CopsDisabled>3</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>3.5</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 387: session 5.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/387",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No top speed but infractions: not legit.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>518</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>3.5</Heat><Infractions>3</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 388: session 6.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/388",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "6"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No top speed and no infractions: fine.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "6"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>518</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>1.5</Heat><Infractions>0</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 389: session 7.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/389",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Finish reason 8202 skips the cop checks, but only 518 pays.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>8202</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>2</CopsDeployed><CopsDisabled>3</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>3.5</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 383: session 8.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/383",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "8"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Hacked: reported.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "8"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>518</FinishReason><HacksDetected>1</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>250000</CostToState><Heat>3.5</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The car.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    }
+  ]
+}

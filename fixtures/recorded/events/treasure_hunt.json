@@ -1,0 +1,2226 @@
+{
+  "scenario": "events/treasure_hunt",
+  "description": "The daily treasure hunt: a seeded session, coins collected one at a time, the reward on the last, and the streak.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "User 1 registers, which logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100, level 1.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>1</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "A starter car (75000), car 1, class 872416321.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-02T11:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000020B</Description><Icon>ACH_OWN_DODGE</Icon><Name>GM_ACHIEVEMENT_000000A6</Name><AchievementDefinitionId>33</AchievementDefinitionId><AchievementRankId>161</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>1</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>15</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>33</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>19</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress></Progressed><Score>1</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Today's hunt, from when the driver was created.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<TreasureHuntEventSession><CoinsCollected>0</CoinsCollected><IsStreakBroken>false</IsStreakBroken><NumCoins>15</NumCoins><Seed>-1155869325</Seed><Streak>1</Streak></TreasureHuntEventSession>"
+      }
+    },
+    {
+      "note": "The first coin.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The second.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The third.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Losing one: a difference of -1 is refused.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "6"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-200000</ErrorCode><InnerException><ErrorCode>-200000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: Invalid coins\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:104)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: Invalid coins\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:104)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Two at once: refused.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-200000</ErrorCode><InnerException><ErrorCode>-200000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: Invalid coins\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:104)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: Invalid coins\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:104)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "The same count again: a difference of 0 passes.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Every coin at once: refused.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-200000</ErrorCode><InnerException><ErrorCode>-200000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: Invalid coins\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:104)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: Invalid coins\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:104)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Before the last coin: not ready.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-200000</ErrorCode><InnerException><ErrorCode>-200000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: TH is not ready\n\tat com.soapboxrace.core.bo.EventsBO.accolades(EventsBO.java:132)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.accolades(Unknown Source)\n\tat com.soapboxrace.core.api.Events.accolades(Events.java:121)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: TH is not ready\n\tat com.soapboxrace.core.bo.EventsBO.accolades(EventsBO.java:132)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.accolades(Unknown Source)\n\tat com.soapboxrace.core.api.Events.accolades(Events.java:121)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "31"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "63"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "127"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "255"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "511"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1023"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "2047"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "4095"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "8191"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "16383"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The last coin: the day's reward.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<Accolades><FinalRewards><Rep>1200</Rep><Tokens>1200</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><Boxes><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox></Boxes><CurrentStreak>1</CurrentStreak><IsStreakBroken>false</IsStreakBroken><Items><LuckyDrawItem><Description>RACE SUSPENSION x1</Description><Hash>260279097</Hash><Icon>r2_susp_spec</Icon><RemainingUseCount>1</RemainingUseCount><ResellPrice>7520.0</ResellPrice><VirtualItem>9c189b2dd58f1f776f58dc492c9f46d7</VirtualItem><VirtualItemType>PERFORMANCEPART</VirtualItemType><WasSold>false</WasSold></LuckyDrawItem></Items><NumBoxAnimations>180</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>1200</Rep><Tokens>1200</Tokens></OriginalRewards><RewardInfo><RewardPart><RepPart>1200</RepPart><RewardCategory>Base</RewardCategory><RewardType>None</RewardType><TokenPart>1200</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>SkillMod</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart></RewardInfo></Accolades>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-02T11:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>91</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-02T11:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_000000FF</Description><Icon>ACH_COMPLETE_TH</Icon><Name>GM_ACHIEVEMENT_00000002</Name><AchievementDefinitionId>64</AchievementDefinitionId><AchievementRankId>316</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-02T11:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_00000069</Description><Icon>ACH_WINSTREAK_TH</Icon><Name>GM_ACHIEVEMENT_00000068</Name><AchievementDefinitionId>65</AchievementDefinitionId><AchievementRankId>321</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>16</AchievementDefinitionId><CurrentValue>1200</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>19</AchievementDefinitionId><CurrentValue>5</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>5</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>64</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>65</AchievementDefinitionId><CurrentValue>2</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>13</CurrentValue></AchievementProgress></Progressed><Score>13</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Completed, streak 2.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<TreasureHuntEventSession><CoinsCollected>32767</CoinsCollected><IsStreakBroken>false</IsStreakBroken><NumCoins>15</NumCoins><Seed>1429008869</Seed><Streak>2</Streak></TreasureHuntEventSession>"
+      }
+    },
+    {
+      "note": "Collected already: not ready.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-200000</ErrorCode><InnerException><ErrorCode>-200000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: TH is not ready\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:97)\n\tat jdk.internal.reflect.GeneratedMethodAccessor167.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat jdk.internal.reflect.GeneratedMethodAccessor166.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: TH is not ready\n\tat com.soapboxrace.core.bo.EventsBO.notifyCoinCollected(EventsBO.java:97)\n\tat jdk.internal.reflect.GeneratedMethodAccessor167.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.notifyCoinCollected(Unknown Source)\n\tat com.soapboxrace.core.api.Events.notifyCoinCollected(Events.java:113)\n\tat jdk.internal.reflect.GeneratedMethodAccessor166.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Completed: not ready.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-200000</ErrorCode><InnerException><ErrorCode>-200000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: TH is not ready\n\tat com.soapboxrace.core.bo.EventsBO.accolades(EventsBO.java:132)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.accolades(Unknown Source)\n\tat com.soapboxrace.core.api.Events.accolades(Events.java:121)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: TH is not ready\n\tat com.soapboxrace.core.bo.EventsBO.accolades(EventsBO.java:132)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.accolades(Unknown Source)\n\tat com.soapboxrace.core.api.Events.accolades(Events.java:121)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Badges/><Boost>0.0</Boost><Cash>276200.0</Cash><IconIndex>5</IconIndex><Level>5</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>1200.0</Rep><RepAtCurrentLevel>983</RepAtCurrentLevel><Score>13</Score></ProfileData>"
+      }
+    },
+    {
+      "note": "Past midnight.",
+      "advance_ms": 7200000
+    },
+    {
+      "note": "A new day: a new seed, the streak intact.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<TreasureHuntEventSession><CoinsCollected>0</CoinsCollected><IsStreakBroken>false</IsStreakBroken><NumCoins>15</NumCoins><Seed>-1465154083</Seed><Streak>2</Streak></TreasureHuntEventSession>"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "31"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "63"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "127"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "255"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "511"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1023"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "2047"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "4095"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "8191"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "16383"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The last coin: day 2's reward.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<Accolades><FinalRewards><Rep>6000</Rep><Tokens>6000</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><Boxes><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox></Boxes><CurrentStreak>2</CurrentStreak><IsStreakBroken>false</IsStreakBroken><Items><LuckyDrawItem><Description>LB_CASH,45000</Description><Hash>-429893590</Hash><Icon>128_cash</Icon><RemainingUseCount>45000</RemainingUseCount><ResellPrice>0.0</ResellPrice><VirtualItem>TOKEN_REWARD</VirtualItem><VirtualItemType>REWARD</VirtualItemType><WasSold>false</WasSold></LuckyDrawItem></Items><NumBoxAnimations>180</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>6000</Rep><Tokens>6000</Tokens></OriginalRewards><RewardInfo><RewardPart><RepPart>6000</RepPart><RewardCategory>Base</RewardCategory><RewardType>None</RewardType><TokenPart>6000</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>SkillMod</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart></RewardInfo></Accolades>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>16</AchievementDefinitionId><CurrentValue>7200</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>19</AchievementDefinitionId><CurrentValue>9</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>64</AchievementDefinitionId><CurrentValue>2</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>65</AchievementDefinitionId><CurrentValue>3</CurrentValue></AchievementProgress></Progressed><Score>13</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "The last hunt was two days ago.",
+      "sql": [
+        "UPDATE treasure_hunt SET thDate = '2026-01-01' WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "A new day with the streak broken.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<TreasureHuntEventSession><CoinsCollected>0</CoinsCollected><IsStreakBroken>true</IsStreakBroken><NumCoins>15</NumCoins><Seed>655996946</Seed><Streak>3</Streak></TreasureHuntEventSession>"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "31"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "63"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "127"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "255"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "511"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1023"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "2047"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "4095"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "8191"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "16383"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "The last coin: the reward waits for a revive or a reset.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<Accolades><FinalRewards><Rep>0</Rep><Tokens>0</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><Boxes><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox></Boxes><CurrentStreak>3</CurrentStreak><IsStreakBroken>true</IsStreakBroken><Items/><NumBoxAnimations>180</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>0</Rep><Tokens>0</Tokens></OriginalRewards><RewardInfo/></Accolades>"
+      }
+    },
+    {
+      "note": "Not reviving: back to day 1, with its reward.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<Accolades><FinalRewards><Rep>10800</Rep><Tokens>10800</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><Boxes><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox><LuckyDrawBox><IsValid>true</IsValid><LocalizationString>LD_CARD_SILVER</LocalizationString><LuckyDrawSetCategoryId>1</LuckyDrawSetCategoryId></LuckyDrawBox></Boxes><CurrentStreak>1</CurrentStreak><IsStreakBroken>false</IsStreakBroken><Items><LuckyDrawItem><Description>LB_CASH,45000</Description><Hash>-429893590</Hash><Icon>128_cash</Icon><RemainingUseCount>45000</RemainingUseCount><ResellPrice>0.0</ResellPrice><VirtualItem>TOKEN_REWARD</VirtualItem><VirtualItemType>REWARD</VirtualItemType><WasSold>false</WasSold></LuckyDrawItem></Items><NumBoxAnimations>180</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>10800</Rep><Tokens>10800</Tokens></OriginalRewards><RewardInfo><RewardPart><RepPart>10800</RepPart><RewardCategory>Base</RewardCategory><RewardType>None</RewardType><TokenPart>10800</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>SkillMod</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart></RewardInfo></Accolades>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>64</AchievementDefinitionId><CurrentValue>3</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>65</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>16</AchievementDefinitionId><CurrentValue>18000</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>19</AchievementDefinitionId><CurrentValue>10</CurrentValue></AchievementProgress></Progressed><Score>13</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<TreasureHuntEventSession><CoinsCollected>32767</CoinsCollected><IsStreakBroken>false</IsStreakBroken><NumCoins>15</NumCoins><Seed>655996946</Seed><Streak>1</Streak></TreasureHuntEventSession>"
+      }
+    },
+    {
+      "note": "No hunt for the driver.",
+      "sql": [
+        "DELETE FROM treasure_hunt WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "A coin without a hunt: nothing.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Accolades without a hunt.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>8</ErrorCode><InnerException><ErrorCode>8</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: TreasureHunt does not exist for driver: 100\n\tat com.soapboxrace.core.bo.EventsBO.accolades(EventsBO.java:128)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.accolades(Unknown Source)\n\tat com.soapboxrace.core.api.Events.accolades(Events.java:121)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: TreasureHunt does not exist for driver: 100\n\tat com.soapboxrace.core.bo.EventsBO.accolades(EventsBO.java:128)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.EventsBO$ByteBuddy$0iGK28m5.accolades(Unknown Source)\n\tat com.soapboxrace.core.api.Events.accolades(Events.java:121)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "A hunt is created.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<TreasureHuntEventSession><CoinsCollected>0</CoinsCollected><IsStreakBroken>false</IsStreakBroken><NumCoins>15</NumCoins><Seed>-258276172</Seed><Streak>1</Streak></TreasureHuntEventSession>"
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Badges/><Boost>0.0</Boost><Cash>383000.0</Cash><IconIndex>5</IconIndex><Level>10</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>18000.0</Rep><RepAtCurrentLevel>695</RepAtCurrentLevel><Score>13</Score></ProfileData>"
+      }
+    }
+  ],
+  "db": {
+    "car": [
+      {
+        "id": 1,
+        "durability": 100,
+        "expirationDate": null,
+        "heat": 1.0,
+        "ownershipType": "CustomizedCar",
+        "personaId": 100,
+        "baseCar": 1008844988,
+        "carClassHash": 872416321,
+        "isPreset": true,
+        "level": 0,
+        "name": "challenger71",
+        "physicsProfileHash": -1550817422,
+        "rating": 175,
+        "resalePrice": 37500.0,
+        "rideHeightDrop": 0.0,
+        "skillModSlotCount": 5,
+        "version": 0
+      }
+    ],
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 1,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 1,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-09 23:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 12,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 7520,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-F838B39"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767394800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "paint": [
+      {
+        "id": 1,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 5,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 2,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 0,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 3,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 4,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 4,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 255,
+        "slot": 7,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 5,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 6,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 6,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 3,
+        "paintVar": 255,
+        "carId": 1
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 0.0,
+        "cash": 383000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 10,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 18000.0,
+        "repAtCurrentLevel": 695,
+        "score": 13,
+        "USERID": 1,
+        "created": "2026-01-02 23:00:00",
+        "badges": null,
+        "first_login": "2026-01-02 23:00:00",
+        "last_login": "2026-01-02 23:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "persona_achievement": [
+      {
+        "ID": 1,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 15,
+        "persona_id": 100
+      },
+      {
+        "ID": 2,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 33,
+        "persona_id": 100
+      },
+      {
+        "ID": 3,
+        "can_progress": true,
+        "current_value": 10,
+        "achievement_id": 19,
+        "persona_id": 100
+      },
+      {
+        "ID": 4,
+        "can_progress": true,
+        "current_value": 13,
+        "achievement_id": 20,
+        "persona_id": 100
+      },
+      {
+        "ID": 5,
+        "can_progress": true,
+        "current_value": 18000,
+        "achievement_id": 16,
+        "persona_id": 100
+      },
+      {
+        "ID": 6,
+        "can_progress": true,
+        "current_value": 3,
+        "achievement_id": 64,
+        "persona_id": 100
+      },
+      {
+        "ID": 7,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 65,
+        "persona_id": 100
+      }
+    ],
+    "persona_achievement_rank": [
+      {
+        "ID": 1,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 71,
+        "persona_achievement_id": 1
+      },
+      {
+        "ID": 2,
+        "achieved_on": "2026-01-02 23:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 161,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 3,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 162,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 4,
+        "achieved_on": "2026-01-02 23:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 91,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 5,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 96,
+        "persona_achievement_id": 4
+      },
+      {
+        "ID": 6,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 76,
+        "persona_achievement_id": 5
+      },
+      {
+        "ID": 7,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 92,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 8,
+        "achieved_on": "2026-01-02 23:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 316,
+        "persona_achievement_id": 6
+      },
+      {
+        "ID": 9,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 317,
+        "persona_achievement_id": 6
+      },
+      {
+        "ID": 10,
+        "achieved_on": "2026-01-02 23:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 321,
+        "persona_achievement_id": 7
+      },
+      {
+        "ID": 11,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 322,
+        "persona_achievement_id": 7
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -258276172,
+        "streak": 1,
+        "thDate": "2026-01-03",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-02 23:00:00",
+        "lastLogin": "2026-01-02 23:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ],
+    "vinyl": [
+      {
+        "id": 1,
+        "hash": 871751947,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 0,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 0,
+        "scaley": 0,
+        "shear": 0,
+        "tranx": 0,
+        "trany": 0,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 1
+      }
+    ]
+  }
+}

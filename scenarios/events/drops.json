@@ -1,0 +1,1093 @@
+{
+  "description": "Lucky draws: an item from the event's table for the rank, or a random droppable product, sold when there's no room.",
+  "seed": 7,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "User 1 registers, which logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100, with the starting cash, powerups and insurance.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A starter car (75000), car 1, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 1.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 1 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 2.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 2 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 3.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 3 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 4.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 4 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 5.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 5 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 6.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "6"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 6 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "6"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 7.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 7 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 8.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "8"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 8 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "8"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 9.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "9"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 9 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "9"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 10.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "10"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "First, draw 10 from the rank-1 table.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "10"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 11.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "11"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Second: the rank-2 table and the silver deck.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "11"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>2</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 499: session 12.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/499",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "12"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Fourth in a drag: the drag rank-4 table and the blue deck.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "12"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<DragArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>25000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>4</Rank><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>0</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>60.25</TopSpeed></DragArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 13.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "13"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Sixth.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "13"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>6</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "What the draws added.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "No table for rank 1. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE event_reward SET rewardTable_rank1_id = NULL WHERE ID = '22_generic'"
+      ]
+    },
+    {
+      "note": "Launching event 22: session 14.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "14"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No table: a random droppable product.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "14"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 15.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No table: a random droppable product.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 16.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "16"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No table: a random droppable product.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "16"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 17.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "17"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No table: a random droppable product.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "17"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "A full inventory: one slot of each kind, used. A capacity of 0 would mean no limit.",
+      "sql": [
+        "UPDATE inventory SET performancePartsCapacity = 1, performancePartsUsedSlotCount = 1, skillModPartsCapacity = 1, skillModPartsUsedSlotCount = 1, visualPartsCapacity = 1, visualPartsUsedSlotCount = 1 WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "Launching event 22: session 18.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "18"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No room: sold for its resale price, unless it's a powerup.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "18"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 19.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "19"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No room: sold for its resale price, unless it's a powerup.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "19"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 20.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "20"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No room: sold for its resale price, unless it's a powerup.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "20"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 21.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "21"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No room: sold for its resale price, unless it's a powerup.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "21"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 22.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "22"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No room: sold for its resale price, unless it's a powerup.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "22"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 22: session 23.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "23"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "No room: sold for its resale price, unless it's a powerup.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "23"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "The inventory.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE event_reward SET rewardTable_rank1_id = 1 WHERE ID = '22_generic'"
+      ]
+    }
+  ]
+}

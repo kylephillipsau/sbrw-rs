@@ -1,0 +1,905 @@
+{
+  "description": "The daily treasure hunt: a seeded session, coins collected one at a time, the reward on the last, and the streak.",
+  "seed": 1,
+  "clock": "2026-01-02T23:00:00Z",
+  "parameters": {
+    "ENABLE_DROP_ITEM": "false",
+    "STARTING_LEVEL_NUMBER": "1"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers, which logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100, level 1.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A starter car (75000), car 1, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Today's hunt, from when the driver was created.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The first coin.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The second.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The third.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Losing one: a difference of -1 is refused.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "6"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Two at once: refused.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The same count again: a difference of 0 passes.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Every coin at once: refused.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Before the last coin: not ready.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "31"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "63"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "127"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "255"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "511"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1023"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "2047"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "4095"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "8191"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "16383"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The last coin: the day's reward.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Completed, streak 2.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Collected already: not ready.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Completed: not ready.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 7200000,
+      "note": "Past midnight."
+    },
+    {
+      "note": "A new day: a new seed, the streak intact.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "31"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "63"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "127"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "255"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "511"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1023"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "2047"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "4095"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "8191"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "16383"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The last coin: day 2's reward.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The last hunt was two days ago.",
+      "sql": [
+        "UPDATE treasure_hunt SET thDate = '2026-01-01' WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "A new day with the streak broken.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "7"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "15"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "31"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "63"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "127"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "255"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "511"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1023"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "2047"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "4095"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "8191"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "16383"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The last coin: the reward waits for a revive or a reset.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Not reviving: back to day 1, with its reward.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "No hunt for the driver.",
+      "sql": [
+        "DELETE FROM treasure_hunt WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "A coin without a hunt: nothing.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Accolades without a hunt.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/accolades",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A hunt is created.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/gettreasurehunteventsession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    }
+  ]
+}

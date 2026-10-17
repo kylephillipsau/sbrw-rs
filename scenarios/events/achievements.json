@@ -1,0 +1,418 @@
+{
+  "description": "Event achievements, the achievement list, redeeming a reward, and the half-hourly rarity job.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ENABLE_DROP_ITEM": "false",
+    "STARTING_LEVEL_NUMBER": "1"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers, which logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100, level 1.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A starter car (75000), car 1, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "The list before anything.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/loadall",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Launching event 22: session 1.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Jumps complete three ranks at once; distance progresses.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>950000</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 383: session 2.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/383",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "A pursuit: cost to state and an escape.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<PursuitArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>300000</EventDurationInMilliseconds><FinishReason>518</FinishReason><HacksDetected>0</HacksDetected><Rank>0</Rank><CopsDeployed>12</CopsDeployed><CopsDisabled>5</CopsDisabled><CopsRammed>7</CopsRammed><CostToState>50000</CostToState><Heat>3.5</Heat><Infractions>4</Infractions><LongestJumpDurationInMilliseconds>900</LongestJumpDurationInMilliseconds><RoadBlocksDodged>2</RoadBlocksDodged><SpikeStripsDodged>1</SpikeStripsDodged><SumOfJumpsDurationInMilliseconds>1500</SumOfJumpsDurationInMilliseconds><TopSpeed>70.0</TopSpeed></PursuitArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Launching event 61: session 3.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/61",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Half a circuit counts half its length.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>0.5</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "With progress and a reward waiting.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/loadall",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Jumping's first reward: 10 nos shots.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "56"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Again: nothing waiting.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "56"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Jumping's third: a card pack.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "58"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Buying a Dodge: a random pursuit skill mod.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "161"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A rank in progress.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "91"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A rank the driver hasn't reached.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "92"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A rank that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "99999"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A waiting rank whose reward isn't defined. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE achievement_rank SET reward_description = 'NO_SUCH_REWARD' WHERE ID = 36"
+      ]
+    },
+    {
+      "note": "Its reward can't be found.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/redeemreward",
+        "query": {
+          "achievementRankId": "36"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The inventory.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "job": "AchievementBO#updateRankRarities",
+      "note": "The rarity job: one driver, so every rank anyone reached is 1.0."
+    },
+    {
+      "note": "Rarities as loaded at startup.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/loadall",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Launching event 22: session 4.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Another rank: its rarity as loaded too.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>900000</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>"
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE achievement_rank SET reward_description = 'GM_ACHIEVEMENT_0000018F' WHERE ID = 36",
+        "UPDATE achievement_rank SET rarity = 0"
+      ]
+    }
+  ]
+}

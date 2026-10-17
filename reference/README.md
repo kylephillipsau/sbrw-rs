@@ -64,7 +64,7 @@ A scenario (`scenarios/**/*.json`, see `Scenario.java`) contains:
 
 The recorded fixture (`fixtures/recorded/**/*.json`) contains:
 - every response (status, headers, body);
-- the side effects of each step: XMPP pushes, Openfire calls, timers, Redis writes;
+- the side effects of each step: XMPP pushes, Openfire calls, timers (with their info object's fields), Redis writes;
 - a snapshot of every runtime table at the end.
 
 sbrw-rs replays the same scenario with the same seed, clock and UUID counter, and must produce the same fixture.

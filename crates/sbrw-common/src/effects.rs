@@ -58,8 +58,8 @@ pub struct TimerScheduled {
     /// Upstream bean that owns the timer, e.g. `LobbyCountdownBO`.
     pub bean: String,
     pub delay_ms: i64,
-    /// `String.valueOf(info)` of the timer's info object.
-    pub info: String,
+    /// The timer's info object by its fields, in declaration order.
+    pub info: Value,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -92,8 +92,8 @@ impl EffectLog {
         self.with(|e| e.openfire.push(OpenfireCall { call: call.to_owned(), args }));
     }
 
-    pub fn timer(&self, bean: &str, delay_ms: i64, info: impl Into<String>) {
-        self.with(|e| e.timers.push(TimerScheduled { bean: bean.to_owned(), delay_ms, info: info.into() }));
+    pub fn timer(&self, bean: &str, delay_ms: i64, info: Value) {
+        self.with(|e| e.timers.push(TimerScheduled { bean: bean.to_owned(), delay_ms, info }));
     }
 
     pub fn redis(&self, command: &str, args: Vec<Value>) {
@@ -137,7 +137,7 @@ mod tests {
         let clone = log.clone();
         log.xmpp(101, "<a/>");
         clone.xmpp(102, "<b/>");
-        log.timer("DNFTimerBO", 60_000, "7");
+        log.timer("DNFTimerBO", 60_000, json!({ "eventSessionId": 7, "personaId": 101 }));
         let drained = log.drain();
         assert_eq!(drained.xmpp.iter().map(|p| p.to).collect::<Vec<_>>(), [101, 102]);
         assert_eq!(drained.timers[0].delay_ms, 60_000);

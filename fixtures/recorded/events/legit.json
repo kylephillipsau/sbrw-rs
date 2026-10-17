@@ -1,0 +1,1386 @@
+{
+  "scenario": "events/legit",
+  "description": "Races that aren't legit pay nothing and file a report: detected hacks, or a race faster than the event allows.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "User 1 registers, which logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100, with the starting cash, powerups and insurance.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "A starter car (75000), car 1, class 872416321.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000020B</Description><Icon>ACH_OWN_DODGE</Icon><Name>GM_ACHIEVEMENT_000000A6</Name><AchievementDefinitionId>33</AchievementDefinitionId><AchievementRankId>161</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>1</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>91</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>92</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>93</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>94</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>95</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>15</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>33</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>21</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Launching event 22: session 1.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SessionInfo><Challenge><ChallengeId>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</ChallengeId><LeftSize>14</LeftSize><Pattern>FFFFFFFFFFFFFFFF</Pattern><RightSize>50</RightSize></Challenge><EventId>22</EventId><SessionId>1</SessionId></SessionInfo>"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Modified files (32) are ignored.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>32</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<RouteEventResult><Accolades><FinalRewards><Rep>0</Rep><Tokens>12000</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><CurrentStreak>0</CurrentStreak><IsStreakBroken>false</IsStreakBroken><NumBoxAnimations>0</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>0</Rep><Tokens>12000</Tokens></OriginalRewards><RewardInfo><RewardPart><RepPart>0</RepPart><RewardCategory>Bonus</RewardCategory><RewardType>None</RewardType><TokenPart>12000</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Bonus</RewardCategory><RewardType>None</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>SkillMod</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Amplifier</RewardCategory><RewardType>RepAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Amplifier</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart></RewardInfo></Accolades><Durability>100</Durability><EventId>22</EventId><EventSessionId>1</EventSessionId><ExitPath>ExitToFreeroam</ExitPath><InviteLifetimeInMilliseconds>0</InviteLifetimeInMilliseconds><LobbyInviteId>0</LobbyInviteId><PersonaId>100</PersonaId><Entrants><RouteEntrantResult><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><EventSessionId>1</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteEntrantResult></Entrants></RouteEventResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>13</AchievementDefinitionId><CurrentValue>12875</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>16</AchievementDefinitionId><CurrentValue>12000</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Launching event 22: session 2.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SessionInfo><Challenge><ChallengeId>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</ChallengeId><LeftSize>14</LeftSize><Pattern>FFFFFFFFFFFFFFFF</Pattern><RightSize>50</RightSize></Challenge><EventId>22</EventId><SessionId>2</SessionId></SessionInfo>"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Another hack: reported, no rewards.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>33</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<RouteEventResult><Accolades><HasLeveledUp>false</HasLeveledUp></Accolades><Durability>100</Durability><EventId>22</EventId><EventSessionId>2</EventSessionId><ExitPath>ExitToFreeroam</ExitPath><InviteLifetimeInMilliseconds>0</InviteLifetimeInMilliseconds><LobbyInviteId>0</LobbyInviteId><PersonaId>100</PersonaId><Entrants><RouteEntrantResult><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><EventSessionId>2</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteEntrantResult></Entrants></RouteEventResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>13</AchievementDefinitionId><CurrentValue>25750</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "A minimum time for the sprint. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE event SET legitTime = 90000 WHERE ID = 22"
+      ]
+    },
+    {
+      "note": "Session 3.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SessionInfo><Challenge><ChallengeId>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</ChallengeId><LeftSize>14</LeftSize><Pattern>FFFFFFFFFFFFFFFF</Pattern><RightSize>50</RightSize></Challenge><EventId>22</EventId><SessionId>3</SessionId></SessionInfo>"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 60000
+    },
+    {
+      "note": "A minute: too fast, reported.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<RouteEventResult><Accolades><HasLeveledUp>false</HasLeveledUp></Accolades><Durability>100</Durability><EventId>22</EventId><EventSessionId>3</EventSessionId><ExitPath>ExitToFreeroam</ExitPath><InviteLifetimeInMilliseconds>0</InviteLifetimeInMilliseconds><LobbyInviteId>0</LobbyInviteId><PersonaId>100</PersonaId><Entrants><RouteEntrantResult><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><EventSessionId>3</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteEntrantResult></Entrants></RouteEventResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>13</AchievementDefinitionId><CurrentValue>38625</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Launching event 22: session 4.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SessionInfo><Challenge><ChallengeId>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</ChallengeId><LeftSize>14</LeftSize><Pattern>FFFFFFFFFFFFFFFF</Pattern><RightSize>50</RightSize></Challenge><EventId>22</EventId><SessionId>4</SessionId></SessionInfo>"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 120000
+    },
+    {
+      "note": "Two minutes: fine.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<RouteEventResult><Accolades><FinalRewards><Rep>0</Rep><Tokens>12000</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><CurrentStreak>0</CurrentStreak><IsStreakBroken>false</IsStreakBroken><NumBoxAnimations>0</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>0</Rep><Tokens>12000</Tokens></OriginalRewards><RewardInfo><RewardPart><RepPart>0</RepPart><RewardCategory>Bonus</RewardCategory><RewardType>None</RewardType><TokenPart>12000</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Bonus</RewardCategory><RewardType>None</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>SkillMod</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Amplifier</RewardCategory><RewardType>RepAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Amplifier</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart></RewardInfo></Accolades><Durability>100</Durability><EventId>22</EventId><EventSessionId>4</EventSessionId><ExitPath>ExitToFreeroam</ExitPath><InviteLifetimeInMilliseconds>0</InviteLifetimeInMilliseconds><LobbyInviteId>0</LobbyInviteId><PersonaId>100</PersonaId><Entrants><RouteEntrantResult><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><EventSessionId>4</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteEntrantResult></Entrants></RouteEventResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>13</AchievementDefinitionId><CurrentValue>51500</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>16</AchievementDefinitionId><CurrentValue>24000</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Launching event 22: session 5.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/22",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SessionInfo><Challenge><ChallengeId>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</ChallengeId><LeftSize>14</LeftSize><Pattern>FFFFFFFFFFFFFFFF</Pattern><RightSize>50</RightSize></Challenge><EventId>22</EventId><SessionId>5</SessionId></SessionInfo>"
+      }
+    },
+    {
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 60000
+    },
+    {
+      "note": "Too fast and hacked: the time is reported.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<RouteArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>4</HacksDetected><Rank>1</Rank><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>3</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteArbitrationPacket>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<RouteEventResult><Accolades><HasLeveledUp>false</HasLeveledUp></Accolades><Durability>100</Durability><EventId>22</EventId><EventSessionId>5</EventSessionId><ExitPath>ExitToFreeroam</ExitPath><InviteLifetimeInMilliseconds>0</InviteLifetimeInMilliseconds><LobbyInviteId>0</LobbyInviteId><PersonaId>100</PersonaId><Entrants><RouteEntrantResult><EventDurationInMilliseconds>100000</EventDurationInMilliseconds><EventSessionId>5</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><BestLapDurationInMilliseconds>0</BestLapDurationInMilliseconds><TopSpeed>50.5</TopSpeed></RouteEntrantResult></Entrants></RouteEventResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>13</AchievementDefinitionId><CurrentValue>64375</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Level, rep and cash.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Badges/><Boost>0.0</Boost><Cash>299000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>21</Score></ProfileData>"
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE event SET legitTime = 0 WHERE ID = 22"
+      ]
+    }
+  ],
+  "db": {
+    "car": [
+      {
+        "id": 1,
+        "durability": 100,
+        "expirationDate": null,
+        "heat": 1.0,
+        "ownershipType": "CustomizedCar",
+        "personaId": 100,
+        "baseCar": 1008844988,
+        "carClassHash": 872416321,
+        "isPreset": true,
+        "level": 0,
+        "name": "challenger71",
+        "physicsProfileHash": -1550817422,
+        "rating": 175,
+        "resalePrice": 37500.0,
+        "rideHeightDrop": 0.0,
+        "skillModSlotCount": 5,
+        "version": 0
+      }
+    ],
+    "event_data": [
+      {
+        "ID": 1,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 1,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 100000,
+        "eventModeId": 9,
+        "eventSessionId": 1,
+        "finishReason": 22,
+        "fractionCompleted": 1.0,
+        "hacksDetected": 0,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 3,
+        "perfectStart": 0,
+        "personaId": 100,
+        "rank": 1,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 50.5,
+        "EVENTID": 22,
+        "isLegit": true,
+        "serverTimeInMilliseconds": 120000,
+        "serverTimeStarted": 1767268800000,
+        "serverTimeEnded": 1767268920000,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      },
+      {
+        "ID": 2,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 1,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 100000,
+        "eventModeId": 9,
+        "eventSessionId": 2,
+        "finishReason": 22,
+        "fractionCompleted": 1.0,
+        "hacksDetected": 1,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 3,
+        "perfectStart": 0,
+        "personaId": 100,
+        "rank": 1,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 50.5,
+        "EVENTID": 22,
+        "isLegit": false,
+        "serverTimeInMilliseconds": 120000,
+        "serverTimeStarted": 1767268920000,
+        "serverTimeEnded": 1767269040000,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      },
+      {
+        "ID": 3,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 1,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 100000,
+        "eventModeId": 9,
+        "eventSessionId": 3,
+        "finishReason": 22,
+        "fractionCompleted": 1.0,
+        "hacksDetected": 0,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 3,
+        "perfectStart": 0,
+        "personaId": 100,
+        "rank": 1,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 50.5,
+        "EVENTID": 22,
+        "isLegit": false,
+        "serverTimeInMilliseconds": 60000,
+        "serverTimeStarted": 1767269040000,
+        "serverTimeEnded": 1767269100000,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      },
+      {
+        "ID": 4,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 1,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 100000,
+        "eventModeId": 9,
+        "eventSessionId": 4,
+        "finishReason": 22,
+        "fractionCompleted": 1.0,
+        "hacksDetected": 0,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 3,
+        "perfectStart": 0,
+        "personaId": 100,
+        "rank": 1,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 50.5,
+        "EVENTID": 22,
+        "isLegit": true,
+        "serverTimeInMilliseconds": 120000,
+        "serverTimeStarted": 1767269100000,
+        "serverTimeEnded": 1767269220000,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      },
+      {
+        "ID": 5,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 1,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 100000,
+        "eventModeId": 9,
+        "eventSessionId": 5,
+        "finishReason": 22,
+        "fractionCompleted": 1.0,
+        "hacksDetected": 4,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 3,
+        "perfectStart": 0,
+        "personaId": 100,
+        "rank": 1,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 50.5,
+        "EVENTID": 22,
+        "isLegit": false,
+        "serverTimeInMilliseconds": 60000,
+        "serverTimeStarted": 1767269220000,
+        "serverTimeEnded": 1767269280000,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      }
+    ],
+    "event_session": [
+      {
+        "ID": 1,
+        "EVENTID": 22,
+        "ENDED": 1767268920000,
+        "STARTED": 1767268800000,
+        "LOBBYID": null,
+        "NEXTLOBBYID": null
+      },
+      {
+        "ID": 2,
+        "EVENTID": 22,
+        "ENDED": 1767269040000,
+        "STARTED": 1767268920000,
+        "LOBBYID": null,
+        "NEXTLOBBYID": null
+      },
+      {
+        "ID": 3,
+        "EVENTID": 22,
+        "ENDED": 1767269100000,
+        "STARTED": 1767269040000,
+        "LOBBYID": null,
+        "NEXTLOBBYID": null
+      },
+      {
+        "ID": 4,
+        "EVENTID": 22,
+        "ENDED": 1767269220000,
+        "STARTED": 1767269100000,
+        "LOBBYID": null,
+        "NEXTLOBBYID": null
+      },
+      {
+        "ID": 5,
+        "EVENTID": 22,
+        "ENDED": 1767269280000,
+        "STARTED": 1767269220000,
+        "LOBBYID": null,
+        "NEXTLOBBYID": null
+      }
+    ],
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 1,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "paint": [
+      {
+        "id": 1,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 5,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 2,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 0,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 3,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 4,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 4,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 255,
+        "slot": 7,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 5,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 6,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 6,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 3,
+        "paintVar": 255,
+        "carId": 1
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 0.0,
+        "cash": 299000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 21,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "persona_achievement": [
+      {
+        "ID": 1,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 15,
+        "persona_id": 100
+      },
+      {
+        "ID": 2,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 33,
+        "persona_id": 100
+      },
+      {
+        "ID": 3,
+        "can_progress": false,
+        "current_value": 45,
+        "achievement_id": 19,
+        "persona_id": 100
+      },
+      {
+        "ID": 4,
+        "can_progress": true,
+        "current_value": 21,
+        "achievement_id": 20,
+        "persona_id": 100
+      },
+      {
+        "ID": 5,
+        "can_progress": true,
+        "current_value": 64375,
+        "achievement_id": 13,
+        "persona_id": 100
+      },
+      {
+        "ID": 6,
+        "can_progress": true,
+        "current_value": 24000,
+        "achievement_id": 16,
+        "persona_id": 100
+      }
+    ],
+    "persona_achievement_rank": [
+      {
+        "ID": 1,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 71,
+        "persona_achievement_id": 1
+      },
+      {
+        "ID": 2,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 161,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 3,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 162,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 4,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 91,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 5,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 92,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 6,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 93,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 7,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 94,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 8,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 95,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 9,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 96,
+        "persona_achievement_id": 4
+      },
+      {
+        "ID": 10,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 61,
+        "persona_achievement_id": 5
+      },
+      {
+        "ID": 11,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 76,
+        "persona_achievement_id": 6
+      }
+    ],
+    "report": [
+      {
+        "id": 1,
+        "abuserPersonaId": 100,
+        "chatMinutes": 0,
+        "customCarID": 1,
+        "description": "hacksDetected=1 (event 22; session 2)",
+        "hacksdetected": 1,
+        "personaId": 0,
+        "petitionType": 3
+      },
+      {
+        "id": 2,
+        "abuserPersonaId": 100,
+        "chatMinutes": 0,
+        "customCarID": 1,
+        "description": "Abnormal event time: 60000 (below minimum of 90000 on event 22; session 3)",
+        "hacksdetected": 0,
+        "personaId": 0,
+        "petitionType": 3
+      },
+      {
+        "id": 3,
+        "abuserPersonaId": 100,
+        "chatMinutes": 0,
+        "customCarID": 1,
+        "description": "Abnormal event time: 60000 (below minimum of 90000 on event 22; session 5)",
+        "hacksdetected": 4,
+        "personaId": 0,
+        "petitionType": 3
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -1155869325,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ],
+    "vinyl": [
+      {
+        "id": 1,
+        "hash": 871751947,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 0,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 0,
+        "scaley": 0,
+        "shear": 0,
+        "tranx": 0,
+        "trany": 0,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 1
+      }
+    ]
+  }
+}

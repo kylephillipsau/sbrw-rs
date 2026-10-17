@@ -4,7 +4,11 @@
   "clock": "2026-01-02T23:00:00Z",
   "parameters": {
     "ENABLE_DROP_ITEM": "false",
-    "STARTING_LEVEL_NUMBER": "1"
+    "STARTING_LEVEL_NUMBER": "1",
+    "TH_REP_MULTIPLIER": "1.5",
+    "TH_CASH_MULTIPLIER": "2",
+    "REWARD_REP_BASELINE_LEVEL": "1",
+    "REWARD_CASH_BASELINE_LEVEL": "3"
   },
   "steps": [
     {
@@ -72,6 +76,13 @@
         },
         "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
       }
+    },
+    {
+      "note": "A bonus for each day of the streak, and an explorer skill mod on the car. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE treasure_hunt_config SET rep_multiplier = 50, cash_multiplier = 20",
+        "INSERT INTO skillmodpart (carId, isFixed, skillModPartAttribHash) VALUES (1, 0, -1544986384)"
+      ]
     },
     {
       "note": "Today's hunt, from when the driver was created.",
@@ -825,6 +836,20 @@
       }
     },
     {
+      "note": "The last coin again: not ready.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/events/notifycoincollected",
+        "query": {
+          "coins": "32767"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
       "note": "Not reviving: back to day 1, with its reward.",
       "http": {
         "method": "GET",
@@ -900,6 +925,12 @@
           "securityToken": "00000000-0000-4000-8000-000000000002"
         }
       }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE treasure_hunt_config SET rep_multiplier = 0, cash_multiplier = 0"
+      ]
     }
   ]
 }

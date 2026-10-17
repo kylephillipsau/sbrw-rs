@@ -21,6 +21,7 @@ pub mod event_result_drag;
 pub mod event_result_pursuit;
 pub mod event_result_route;
 pub mod event_result_team_escape;
+pub mod events;
 pub mod get_server_information;
 pub mod hardware_info;
 pub mod inventory;

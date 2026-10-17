@@ -42,6 +42,7 @@ pub mod product;
 pub mod report;
 pub mod reward_table;
 pub mod treasure_hunt;
+pub mod treasure_hunt_config;
 pub mod used_powerup;
 pub mod user;
 pub mod vinyl_product;

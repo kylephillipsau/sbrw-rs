@@ -7,7 +7,8 @@
 use anyhow::anyhow;
 use sbrw_java::lang::math_min_float;
 use sbrw_xml::dto::http::{
-    Accolades, ArrayOfLuckyDrawItem, EnumRewardCategory, EnumRewardType, LuckyDrawInfo, LuckyDrawItem, Reward,
+    Accolades, ArrayOfLuckyDrawBox, ArrayOfLuckyDrawItem, EnumRewardCategory, EnumRewardType, LuckyDrawBox,
+    LuckyDrawInfo, LuckyDrawItem, Reward,
 };
 
 use crate::bo::achievement_transaction::{AchievementTransaction, Binding, Bindings};
@@ -26,6 +27,8 @@ use crate::dao::level_rep;
 use crate::dao::persona::{self as persona_dao, PersonaEntity};
 use crate::dao::product::{self, ProductEntity};
 use crate::dao::reward_table::{self, RewardTableEntity};
+use crate::dao::treasure_hunt::TreasureHuntEntity;
+use crate::dao::treasure_hunt_config::TreasureHuntConfigEntity;
 use crate::dao::user::{self, UserEntity};
 use crate::engine::EngineExceptionCode;
 use crate::{Fault, World};
@@ -300,6 +303,35 @@ pub fn get_accolades(
     })
 }
 
+// port: bo/RewardBO#getAccolades(PersonaEntity,TreasureHuntEntity,TreasureHuntConfigEntity,RewardVO,boolean)
+/// A treasure hunt's rewards, and its lucky draw: an item from the streak's
+/// table when the hunt gives a reward.
+pub fn get_treasure_hunt_accolades(
+    w: &mut World,
+    persona_entity: &mut PersonaEntity,
+    treasure_hunt_entity: &TreasureHuntEntity,
+    treasure_hunt_config_entity: Option<&TreasureHuntConfigEntity>,
+    reward_vo: &RewardVO,
+    give_reward: bool,
+) -> Result<Accolades, Fault> {
+    let final_rewards = get_final_reward(reward_vo.rep(), reward_vo.cash());
+    let has_leveled_up = is_leveled_up(w, persona_entity, reward_vo.rep())?;
+    let lucky_draw_info = get_treasure_hunt_lucky_draw(
+        w,
+        persona_entity,
+        treasure_hunt_entity,
+        treasure_hunt_config_entity,
+        give_reward,
+    )?;
+    Ok(Accolades {
+        final_rewards: Some(final_rewards),
+        has_leveled_up,
+        lucky_draw_info: Some(lucky_draw_info),
+        original_rewards: Some(get_final_reward(reward_vo.rep(), reward_vo.cash())),
+        reward_info: Some(reward_vo.array_of_reward_part().clone()),
+    })
+}
+
 // port: bo/RewardBO#setMultiplierReward(EventRewardEntity,RewardVO)
 pub fn set_multiplier_reward(event_reward_entity: &EventRewardEntity, reward_vo: &mut RewardVO) {
     let rep = reward_vo.rep() as f32;
@@ -423,6 +455,42 @@ fn process_amplifier(
     Ok(())
 }
 
+// port: bo/RewardBO#getTreasureHuntLuckyDraw(PersonaEntity,TreasureHuntEntity,TreasureHuntConfigEntity,boolean)
+/// Five silver boxes, the streak, and the item when there's a reward.
+fn get_treasure_hunt_lucky_draw(
+    w: &mut World,
+    persona_entity: &mut PersonaEntity,
+    treasure_hunt_entity: &TreasureHuntEntity,
+    treasure_hunt_config_entity: Option<&TreasureHuntConfigEntity>,
+    give_reward: bool,
+) -> Result<LuckyDrawInfo, Fault> {
+    let mut array_of_lucky_draw_item = ArrayOfLuckyDrawItem::default();
+    if give_reward {
+        // A reward that isn't a single item adds a null, which JAXB leaves out.
+        array_of_lucky_draw_item.lucky_draw_item.extend(get_treasure_hunt_reward_item(
+            w,
+            persona_entity,
+            treasure_hunt_config_entity,
+        )?);
+    }
+    let lucky_draw_box = LuckyDrawBox {
+        is_valid: true,
+        localization_string: Some("LD_CARD_SILVER".into()),
+        lucky_draw_set_category_id: 1,
+    };
+    let null = |what| move || Fault::null_pointer(what);
+    Ok(LuckyDrawInfo {
+        boxes: Some(ArrayOfLuckyDrawBox { lucky_draw_box: vec![lucky_draw_box; 5] }),
+        current_streak: treasure_hunt_entity.streak.ok_or_else(null("TreasureHuntEntity.streak"))?,
+        is_streak_broken: treasure_hunt_entity
+            .is_streak_broken
+            .ok_or_else(null("TreasureHuntEntity.isStreakBroken"))?,
+        items: Some(array_of_lucky_draw_item),
+        num_box_animations: 180,
+        ..Default::default()
+    })
+}
+
 // port: bo/RewardBO#getEventRewardItem(PersonaEntity,EventRewardEntity,Integer)
 /// An item from the rank's reward table, or a random droppable product when
 /// the rank has none. Ranks outside 1 to 8 fail.
@@ -480,6 +548,29 @@ fn get_event_lucky_draw(
     lucky_draw_info.card_deck = Some(card_decks::for_rank(rank).to_owned());
     lucky_draw_info.items = Some(ArrayOfLuckyDrawItem { lucky_draw_item: vec![item_from_product] });
     Ok(lucky_draw_info)
+}
+
+// port: bo/RewardBO#getTreasureHuntRewardItem(PersonaEntity,TreasureHuntConfigEntity)
+/// An item from the configuration's reward table, or a random droppable
+/// product without one.
+fn get_treasure_hunt_reward_item(
+    w: &mut World,
+    persona_entity: &mut PersonaEntity,
+    treasure_hunt_config_entity: Option<&TreasureHuntConfigEntity>,
+) -> Result<Option<LuckyDrawItem>, Fault> {
+    let Some(treasure_hunt_config_entity) = treasure_hunt_config_entity else {
+        return get_random_reward_item(w, persona_entity).map(Some);
+    };
+
+    let reward_table_entity = match treasure_hunt_config_entity.reward_table_id {
+        Some(id) => reward_table::find(w.db(), id)?,
+        None => None,
+    };
+
+    match reward_table_entity {
+        None => get_random_reward_item(w, persona_entity).map(Some),
+        Some(reward_table_entity) => get_random_reward_item_from_table(w, persona_entity, &reward_table_entity),
+    }
 }
 
 // port: bo/RewardBO#getRandomRewardItem(PersonaEntity)

@@ -5,10 +5,12 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use sbrw_core::Fault;
 use sbrw_core::bo::event::{self, OPEN_CLASS};
-use sbrw_core::bo::persona;
+use sbrw_core::bo::{events, persona};
 use sbrw_core::dao::event::EventEntity;
 use sbrw_xml::ToXml;
-use sbrw_xml::dto::http::{ArrayOfEventDefinition, ArrayOfInt, EventDefinition, EventsPacket, Vector3};
+use sbrw_xml::dto::http::{
+    ArrayOfEventDefinition, ArrayOfInt, EventDefinition, EventsPacket, TreasureHuntEventSession, Vector3,
+};
 
 use super::{Call, entity};
 use crate::AppState;
@@ -75,4 +77,34 @@ fn get_event_definition_with_id(event_entity: &EventEntity) -> EventDefinition {
 pub(super) fn instanced_accolades(call: &Call) -> Result<Response, Fault> {
     call.query_long("eventSessionId")?;
     Ok(entity(call, StatusCode::OK, String::new()))
+}
+
+// port: api/Events#getTreasureHuntEventSession()
+/// Today's treasure hunt, or an empty one with `ENABLE_TREASURE_HUNT` off.
+pub(super) async fn get_treasure_hunt_event_session(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let world = state.world();
+    let treasure_hunt_event_session = if world.call(|w| Ok(w.params.get_bool_param("ENABLE_TREASURE_HUNT"))).await? {
+        let active_persona_id = active_persona_id(call)?;
+        world.call(move |w| events::get_treasure_hunt_event_session(w, active_persona_id)).await?
+    } else {
+        TreasureHuntEventSession::default()
+    };
+    Ok(entity(call, StatusCode::OK, treasure_hunt_event_session.to_xml()))
+}
+
+// port: api/Events#notifyCoinCollected(Integer)
+/// A coin collected: the day's accolades with the last one, otherwise an
+/// empty body (`JAXBUtility.marshal(null)`).
+pub(super) async fn notify_coin_collected(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let coins = call.query_int("coins")?;
+    let active_persona_id = active_persona_id(call)?;
+    let accolades = state.world().call(move |w| events::notify_coin_collected(w, active_persona_id, coins)).await?;
+    Ok(entity(call, StatusCode::OK, accolades.map(|a| a.to_xml()).unwrap_or_default()))
+}
+
+// port: api/Events#accolades()
+pub(super) async fn accolades(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let active_persona_id = active_persona_id(call)?;
+    let accolades = state.world().call(move |w| events::accolades(w, active_persona_id, false)).await?;
+    Ok(entity(call, StatusCode::OK, accolades.to_xml()))
 }

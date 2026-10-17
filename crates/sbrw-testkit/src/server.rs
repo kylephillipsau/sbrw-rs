@@ -99,10 +99,15 @@ impl SbrwServer {
         self.env.advance(Duration::milliseconds(millis));
     }
 
-    /// Fire every timer due at the current time; returns how many fired.
+    /// Fire every timer due at the current time, earliest first, each in its
+    /// own transaction; returns how many fired.
     pub async fn fire_timers(&mut self) -> anyhow::Result<i64> {
-        // sbrw-rs schedules no timers yet, so none are ever due.
-        Ok(0)
+        let mut fired = 0;
+        while self.world.call(sbrw_core::timers::fire_due_timer).await.map_err(|fault| anyhow!("{fault}"))? {
+            fired += 1;
+            self.world.run_async_jobs().await;
+        }
+        Ok(fired)
     }
 
     /// Run a scheduled job named after upstream's `@Schedule` method.

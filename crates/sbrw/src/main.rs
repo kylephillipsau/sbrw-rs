@@ -128,6 +128,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         "HTTP listening; add launcher_url as a server in the SBRW launcher"
     );
     tasks.spawn(run_jobs(world.clone(), shutdown.clone()));
+    tasks.spawn(run_timers(world.clone(), shutdown.clone()));
     let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world);
     tasks.spawn(sbrw_http::serve(http, state, shutdown.clone()));
 
@@ -223,6 +224,25 @@ impl sbrw_xmpp::stream::Accounts for WorldAccounts {
 }
 
 /// Upstream's `@Schedule(minute = "*")` jobs, at the start of every minute.
+/// Fire upstream's single-action timers (the DNF countdown) when they're
+/// due, checking every second.
+async fn run_timers(world: sbrw_core::WorldHandle, shutdown: CancellationToken) -> std::io::Result<()> {
+    let mut seconds = tokio::time::interval(Duration::from_secs(1));
+    seconds.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        tokio::select! {
+            () = shutdown.cancelled() => return Ok(()),
+            _ = seconds.tick() => loop {
+                match world.call(sbrw_core::timers::fire_due_timer).await {
+                    Ok(true) => world.run_async_jobs().await,
+                    Ok(false) => break,
+                    Err(fault) => tracing::warn!("timer failed: {fault:#}"),
+                }
+            },
+        }
+    }
+}
+
 async fn run_jobs(world: sbrw_core::WorldHandle, shutdown: CancellationToken) -> std::io::Result<()> {
     let into_minute = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

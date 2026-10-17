@@ -169,7 +169,7 @@
           "Connection": "close",
           "Content-Type": "application/xml;charset=UTF-8"
         },
-        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
       },
       "effects": {
         "xmpp": [
@@ -334,7 +334,7 @@
           "Connection": "close",
           "Content-Type": "application/xml;charset=UTF-8"
         },
-        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
       },
       "effects": {
         "xmpp": [
@@ -871,7 +871,13 @@
       "advance_ms": 120000
     },
     {
-      "note": "Driver 100 escapes first (reason 518).",
+      "note": "A 30-second countdown for the team escape. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE event SET dnfTimerTime = 30000 WHERE ID = 392"
+      ]
+    },
+    {
+      "note": "Driver 100 escapes first (reason 518): a 30-second countdown.",
       "request": {
         "method": "POST",
         "path": "/Engine.svc/event/arbitration",
@@ -903,7 +909,7 @@
           },
           {
             "to": 101,
-            "body": "<response status=\"1\" ticket=\"0\"><EventTimingOut><EventSessionId>3</EventSessionId><TimeInMilliseconds>60000</TimeInMilliseconds></EventTimingOut></response>"
+            "body": "<response status=\"1\" ticket=\"0\"><EventTimingOut><EventSessionId>3</EventSessionId><TimeInMilliseconds>30000</TimeInMilliseconds></EventTimingOut></response>"
           },
           {
             "to": 100,
@@ -913,7 +919,7 @@
         "timers": [
           {
             "bean": "DNFTimerBO",
-            "delay_ms": 60000,
+            "delay_ms": 30000,
             "info": {
               "eventSessionId": 3,
               "personaId": 101
@@ -923,9 +929,24 @@
       }
     },
     {
-      "note": "No DNF for the sprint. Static data: restored in the last step.",
+      "advance_ms": 30000
+    },
+    {
+      "note": "Thirty seconds later it runs out.",
+      "timers_fired": 1,
+      "effects": {
+        "xmpp": [
+          {
+            "to": 101,
+            "body": "<response status=\"1\" ticket=\"0\"><EventTimedOut><EventSessionId>3</EventSessionId></EventTimedOut></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "No DNF for the sprint or the drag. Static data: restored in the last step.",
       "sql": [
-        "UPDATE event SET isDnfEnabled = 0 WHERE ID = 22"
+        "UPDATE event SET isDnfEnabled = 0 WHERE ID IN (22, 499)"
       ]
     },
     {
@@ -1070,23 +1091,158 @@
       }
     },
     {
-      "advance_ms": 60000
+      "note": "Session 5.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/499",
+        "query": null,
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<SessionInfo><Challenge><ChallengeId>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</ChallengeId><LeftSize>14</LeftSize><Pattern>FFFFFFFFFFFFFFFF</Pattern><RightSize>50</RightSize></Challenge><EventId>499</EventId><SessionId>5</SessionId></SessionInfo>"
+      }
     },
     {
-      "timers_fired": 1,
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
       "effects": {
-        "xmpp": [
+        "redis": [
           {
-            "to": 101,
-            "body": "<response status=\"1\" ticket=\"0\"><EventTimedOut><EventSessionId>3</EventSessionId></EventTimedOut></response>"
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "101"
+              ]
+            ]
           }
         ]
       }
     },
     {
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 30000
+    },
+    {
+      "note": "Driver 100 wins the drag: the other racer hears of it, no countdown.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<DragArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>25000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>0</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>60.25</TopSpeed></DragArbitrationPacket>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<DragEventResult><Accolades><FinalRewards><Rep>0</Rep><Tokens>3000</Tokens></FinalRewards><HasLeveledUp>false</HasLeveledUp><LuckyDrawInfo><CurrentStreak>0</CurrentStreak><IsStreakBroken>false</IsStreakBroken><NumBoxAnimations>0</NumBoxAnimations><NumCards>0</NumCards></LuckyDrawInfo><OriginalRewards><Rep>0</Rep><Tokens>3000</Tokens></OriginalRewards><RewardInfo><RewardPart><RepPart>0</RepPart><RewardCategory>Bonus</RewardCategory><RewardType>None</RewardType><TokenPart>3000</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Bonus</RewardCategory><RewardType>None</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>SkillMod</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Amplifier</RewardCategory><RewardType>RepAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart><RewardPart><RepPart>0</RepPart><RewardCategory>Amplifier</RewardCategory><RewardType>TokenAmplifier</RewardType><TokenPart>0</TokenPart></RewardPart></RewardInfo></Accolades><Durability>100</Durability><EventId>499</EventId><EventSessionId>5</EventSessionId><ExitPath>ExitToFreeroam</ExitPath><InviteLifetimeInMilliseconds>0</InviteLifetimeInMilliseconds><LobbyInviteId>0</LobbyInviteId><PersonaId>100</PersonaId><Entrants><DragEntrantResult><EventDurationInMilliseconds>25000</EventDurationInMilliseconds><EventSessionId>5</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><TopSpeed>60.25</TopSpeed></DragEntrantResult><DragEntrantResult><EventDurationInMilliseconds>0</EventDurationInMilliseconds><EventSessionId>5</EventSessionId><FinishReason>0</FinishReason><PersonaId>101</PersonaId><Ranking>0</Ranking><TopSpeed>0.0</TopSpeed></DragEntrantResult></Entrants></DragEventResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 101,
+            "body": "<response status=\"1\" ticket=\"0\"><DragEntrantResult><EventDurationInMilliseconds>25000</EventDurationInMilliseconds><EventSessionId>5</EventSessionId><FinishReason>22</FinishReason><PersonaId>100</PersonaId><Ranking>1</Ranking><TopSpeed>60.25</TopSpeed></DragEntrantResult></response>"
+          },
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-01T12:09:30</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_000001F3</Description><Icon>ACH_EARN_CASH_EVENT</Icon><Name>GM_ACHIEVEMENT_00000022</Name><AchievementDefinitionId>16</AchievementDefinitionId><AchievementRankId>76</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>1</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>13</AchievementDefinitionId><CurrentValue>43778</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>16</AchievementDefinitionId><CurrentValue>30000</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>22</CurrentValue></AchievementProgress></Progressed><Score>22</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "advance_ms": 60000
+    },
+    {
+      "note": "Nothing to fire.",
+      "timers_fired": 0
+    },
+    {
       "note": "Restoring the static data.",
       "sql": [
-        "UPDATE event SET isDnfEnabled = 1 WHERE ID = 22"
+        "UPDATE event SET isDnfEnabled = 1 WHERE ID IN (22, 499)",
+        "UPDATE event SET dnfTimerTime = 60000 WHERE ID = 392"
       ]
     }
   ],
@@ -1385,7 +1541,7 @@
         "EVENTID": 22,
         "isLegit": false,
         "serverTimeInMilliseconds": 0,
-        "serverTimeStarted": 1767269190000,
+        "serverTimeStarted": 1767269220000,
         "serverTimeEnded": 0,
         "carClassHash": 872416321,
         "carRating": 175,
@@ -1422,8 +1578,82 @@
         "EVENTID": 22,
         "isLegit": true,
         "serverTimeInMilliseconds": 120000,
-        "serverTimeStarted": 1767269190000,
-        "serverTimeEnded": 1767269310000,
+        "serverTimeStarted": 1767269220000,
+        "serverTimeEnded": 1767269340000,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      },
+      {
+        "ID": 9,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 0,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 0,
+        "eventModeId": 0,
+        "eventSessionId": 5,
+        "finishReason": 0,
+        "fractionCompleted": 0.0,
+        "hacksDetected": 0,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 0,
+        "perfectStart": 0,
+        "personaId": 101,
+        "rank": 0,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 0.0,
+        "EVENTID": 499,
+        "isLegit": false,
+        "serverTimeInMilliseconds": 0,
+        "serverTimeStarted": 1767269340000,
+        "serverTimeEnded": 0,
+        "carClassHash": 872416321,
+        "carRating": 175,
+        "global_rank": null
+      },
+      {
+        "ID": 10,
+        "alternateEventDurationInMilliseconds": 0,
+        "bestLapDurationInMilliseconds": 0,
+        "bustedCount": 0,
+        "carId": 1,
+        "copsDeployed": 0,
+        "copsDisabled": 0,
+        "copsRammed": 0,
+        "costToState": 0,
+        "distanceToFinish": 0.0,
+        "eventDurationInMilliseconds": 25000,
+        "eventModeId": 19,
+        "eventSessionId": 5,
+        "finishReason": 22,
+        "fractionCompleted": 1.0,
+        "hacksDetected": 0,
+        "heat": 0.0,
+        "infractions": 0,
+        "longestJumpDurationInMilliseconds": 0,
+        "numberOfCollisions": 0,
+        "perfectStart": 0,
+        "personaId": 100,
+        "rank": 1,
+        "roadBlocksDodged": 0,
+        "spikeStripsDodged": 0,
+        "sumOfJumpsDurationInMilliseconds": 0,
+        "topSpeed": 60.25,
+        "EVENTID": 499,
+        "isLegit": true,
+        "serverTimeInMilliseconds": 30000,
+        "serverTimeStarted": 1767269340000,
+        "serverTimeEnded": 1767269370000,
         "carClassHash": 872416321,
         "carRating": 175,
         "global_rank": null
@@ -1457,8 +1687,16 @@
       {
         "ID": 4,
         "EVENTID": 22,
-        "ENDED": 1767269310000,
-        "STARTED": 1767269190000,
+        "ENDED": 1767269340000,
+        "STARTED": 1767269220000,
+        "LOBBYID": null,
+        "NEXTLOBBYID": null
+      },
+      {
+        "ID": 5,
+        "EVENTID": 499,
+        "ENDED": 1767269370000,
+        "STARTED": 1767269340000,
         "LOBBYID": null,
         "NEXTLOBBYID": null
       }
@@ -1712,7 +1950,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 3,
+        "slot": 0,
         "paintVar": 255,
         "carId": 1
       },
@@ -1721,7 +1959,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 0,
+        "slot": 4,
         "paintVar": 255,
         "carId": 1
       },
@@ -1730,12 +1968,21 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 4,
+        "slot": 5,
         "paintVar": 255,
         "carId": 1
       },
       {
         "id": 4,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 6,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 5,
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 255,
@@ -1744,20 +1991,11 @@
         "carId": 1
       },
       {
-        "id": 5,
-        "paintGroup": 47885063,
-        "hue": 496032526,
-        "sat": 207,
-        "slot": 6,
-        "paintVar": 255,
-        "carId": 1
-      },
-      {
         "id": 6,
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 5,
+        "slot": 3,
         "paintVar": 255,
         "carId": 1
       },
@@ -1766,7 +2004,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 5,
+        "slot": 3,
         "paintVar": 255,
         "carId": 2
       },
@@ -1775,7 +2013,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 6,
+        "slot": 5,
         "paintVar": 255,
         "carId": 2
       },
@@ -1784,7 +2022,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 4,
+        "slot": 6,
         "paintVar": 255,
         "carId": 2
       },
@@ -1801,8 +2039,8 @@
         "id": 11,
         "paintGroup": 47885063,
         "hue": 496032526,
-        "sat": 255,
-        "slot": 7,
+        "sat": 207,
+        "slot": 4,
         "paintVar": 255,
         "carId": 2
       },
@@ -1810,8 +2048,8 @@
         "id": 12,
         "paintGroup": 47885063,
         "hue": 496032526,
-        "sat": 207,
-        "slot": 3,
+        "sat": 255,
+        "slot": 7,
         "paintVar": 255,
         "carId": 2
       }
@@ -1820,7 +2058,7 @@
       {
         "ID": 100,
         "boost": 0.0,
-        "cash": 302000.0,
+        "cash": 305000.0,
         "curCarIndex": 0,
         "iconIndex": 5,
         "level": 60,
@@ -1830,7 +2068,7 @@
         "rating": 0.0,
         "rep": 0.0,
         "repAtCurrentLevel": 0,
-        "score": 21,
+        "score": 22,
         "USERID": 1,
         "created": "2026-01-01 12:00:00",
         "badges": null,
@@ -1885,7 +2123,7 @@
       {
         "ID": 4,
         "can_progress": true,
-        "current_value": 21,
+        "current_value": 22,
         "achievement_id": 20,
         "persona_id": 100
       },
@@ -1920,14 +2158,14 @@
       {
         "ID": 9,
         "can_progress": true,
-        "current_value": 41334,
+        "current_value": 43778,
         "achievement_id": 13,
         "persona_id": 100
       },
       {
         "ID": 10,
         "can_progress": true,
-        "current_value": 27000,
+        "current_value": 30000,
         "achievement_id": 16,
         "persona_id": 100
       },
@@ -2103,8 +2341,8 @@
       },
       {
         "ID": 20,
-        "achieved_on": null,
-        "state": "InProgress",
+        "achieved_on": "2026-01-01 12:09:30",
+        "state": "RewardWaiting",
         "achievement_rank_id": 76,
         "persona_achievement_id": 10
       },
@@ -2142,6 +2380,13 @@
         "state": "InProgress",
         "achievement_rank_id": 56,
         "persona_achievement_id": 15
+      },
+      {
+        "ID": 26,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 77,
+        "persona_achievement_id": 10
       }
     ],
     "treasure_hunt": [

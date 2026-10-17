@@ -339,7 +339,13 @@
       "advance_ms": 120000
     },
     {
-      "note": "Driver 100 escapes first (reason 518).",
+      "note": "A 30-second countdown for the team escape. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE event SET dnfTimerTime = 30000 WHERE ID = 392"
+      ]
+    },
+    {
+      "note": "Driver 100 escapes first (reason 518): a 30-second countdown.",
       "http": {
         "method": "POST",
         "path": "/Engine.svc/event/arbitration",
@@ -354,9 +360,16 @@
       }
     },
     {
-      "note": "No DNF for the sprint. Static data: restored in the last step.",
+      "advance_ms": 30000
+    },
+    {
+      "note": "Thirty seconds later it runs out.",
+      "fire_timers": true
+    },
+    {
+      "note": "No DNF for the sprint or the drag. Static data: restored in the last step.",
       "sql": [
-        "UPDATE event SET isDnfEnabled = 0 WHERE ID = 22"
+        "UPDATE event SET isDnfEnabled = 0 WHERE ID IN (22, 499)"
       ]
     },
     {
@@ -415,15 +428,72 @@
       }
     },
     {
+      "note": "Session 5.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/matchmaking/launchevent/499",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/event/launched",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "advance_ms": 30000
+    },
+    {
+      "note": "Driver 100 wins the drag: the other racer hears of it, no countdown.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/event/arbitration",
+        "query": {
+          "eventSessionId": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<DragArbitrationPacket xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization.Event\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><AlternateEventDurationInMilliseconds>0</AlternateEventDurationInMilliseconds><CarId>1</CarId><EventDurationInMilliseconds>25000</EventDurationInMilliseconds><FinishReason>22</FinishReason><HacksDetected>0</HacksDetected><Rank>1</Rank><FractionCompleted>1.0</FractionCompleted><LongestJumpDurationInMilliseconds>0</LongestJumpDurationInMilliseconds><NumberOfCollisions>0</NumberOfCollisions><PerfectStart>0</PerfectStart><SumOfJumpsDurationInMilliseconds>0</SumOfJumpsDurationInMilliseconds><TopSpeed>60.25</TopSpeed></DragArbitrationPacket>"
+      }
+    },
+    {
       "advance_ms": 60000
     },
     {
+      "note": "Nothing to fire.",
       "fire_timers": true
     },
     {
       "note": "Restoring the static data.",
       "sql": [
-        "UPDATE event SET isDnfEnabled = 1 WHERE ID = 22"
+        "UPDATE event SET isDnfEnabled = 1 WHERE ID IN (22, 499)",
+        "UPDATE event SET dnfTimerTime = 60000 WHERE ID = 392"
       ]
     }
   ]

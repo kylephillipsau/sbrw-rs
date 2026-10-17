@@ -2,6 +2,9 @@
 //! work due at a time, kept in memory as the container kept non-persistent
 //! timers.
 
+use crate::bo::dnf_timer;
+use crate::{Fault, World, datetime};
+
 /// What a timer does when it fires.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TimerKind {
@@ -45,6 +48,17 @@ impl Timers {
     pub fn next_due_millis(&self) -> Option<i64> {
         self.pending.iter().map(|t| t.due_millis).min()
     }
+}
+
+/// Fire the earliest timer that is due, if any: its `@Timeout` method, in
+/// the caller's transaction. Returns whether one fired.
+pub fn fire_due_timer(w: &mut World) -> Result<bool, Fault> {
+    let now = datetime::current_time_millis(&w.env);
+    let Some(kind) = w.timers.take_due(now) else { return Ok(false) };
+    match kind {
+        TimerKind::Dnf { event_session_id, persona_id } => dnf_timer::on_timeout(w, event_session_id, persona_id)?,
+    }
+    Ok(true)
 }
 
 #[cfg(test)]

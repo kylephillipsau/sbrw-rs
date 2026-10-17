@@ -3,7 +3,6 @@
 # that it gets removed from here. This list only ever shrinks.
 pending = [
     "events/achievements",
-    "events/dnf",
     "events/rarity",
     "events/treasure_hunt",
     "events/treasure_hunt_missed",

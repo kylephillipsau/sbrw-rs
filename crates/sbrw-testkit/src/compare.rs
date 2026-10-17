@@ -12,7 +12,14 @@
 //!   then compared as a set). Upstream holds them in `HashSet`s of entities
 //!   with identity hash codes, so their order, and the order they are
 //!   inserted in, depends on the JVM's hash codes; no response shows a
-//!   part's id.
+//!   part's id;
+//! - an inventory's items, as `personas/inventory/objects` lists them,
+//!   compare as unordered. Upstream lists its EAGER bag, which has no order;
+//!   MySQL answers the load in item order or in product order depending on
+//!   its table statistics, which the rig doesn't hold still between scenarios
+//!   (`commerce/card_packs` recorded alone lists in product order, recorded
+//!   with the others in item order). Rewards list items in the order given,
+//!   and those still compare exactly.
 
 use std::fmt;
 
@@ -210,7 +217,8 @@ fn db(e: &Db, a: &Db, out: &mut Vec<Mismatch>) {
 }
 
 /// Replace the text of every `<StackTrace>` element (Java stack traces can't
-/// be reproduced), and sort the children of a car's unordered part lists.
+/// be reproduced), and sort the children of a car's unordered part lists and
+/// of an inventory listing's items.
 pub fn normalize_body(body: &str) -> String {
     const OPEN: &str = "<StackTrace>";
     const CLOSE: &str = "</StackTrace>";
@@ -224,9 +232,10 @@ pub fn normalize_body(body: &str) -> String {
         rest = &rest[after + len..];
     }
     out.push_str(rest);
-    ["Paints", "PerformanceParts", "SkillModParts", "Vinyls", "VisualParts"]
+    let out = ["Paints", "PerformanceParts", "SkillModParts", "Vinyls", "VisualParts"]
         .into_iter()
-        .fold(out, |body, list| sort_children(&body, list))
+        .fold(out, |body, list| sort_children(&body, list));
+    if out.starts_with("<InventoryTrans>") { sort_children(&out, "InventoryItems") } else { out }
 }
 
 /// Sort the child elements of every `<list>` element. The children are flat
@@ -454,6 +463,24 @@ mod tests {
         a.db.insert("car".into(), vec![row(1, 0), row(2, 5)]);
         e.db.insert("car".into(), vec![row(1, 5), row(2, 0)]);
         assert_eq!(compare(&e, &a).len(), 3, "other tables stay ordered");
+    }
+
+    #[test]
+    fn inventory_listings_compare_unordered_but_rewards_do_not() {
+        let (i1, i2) = (
+            "<InventoryItemTrans><Hash>1</Hash></InventoryItemTrans>",
+            "<InventoryItemTrans><Hash>2</Hash></InventoryItemTrans>",
+        );
+        let listing =
+            |items: &str| format!("<InventoryTrans><InventoryItems>{items}</InventoryItems></InventoryTrans>");
+        let e = fixture(response(200, "application/xml", &listing(&format!("{i1}{i2}"))));
+        assert!(compare(&e, &fixture(response(200, "application/xml", &listing(&format!("{i2}{i1}"))))).is_empty());
+        assert_eq!(compare(&e, &fixture(response(200, "application/xml", &listing(&format!("{i1}{i1}"))))).len(), 1);
+
+        let rewards =
+            |items: &str| format!("<AchievementRewards><InventoryItems>{items}</InventoryItems></AchievementRewards>");
+        let e = fixture(response(200, "application/xml", &rewards(&format!("{i1}{i2}"))));
+        assert_eq!(compare(&e, &fixture(response(200, "application/xml", &rewards(&format!("{i2}{i1}"))))).len(), 1);
     }
 
     #[test]

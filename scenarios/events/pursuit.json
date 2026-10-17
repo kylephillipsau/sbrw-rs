@@ -4,7 +4,16 @@
   "clock": "2026-01-01T12:00:00Z",
   "parameters": {
     "ENABLE_DROP_ITEM": "false",
-    "STARTING_LEVEL_NUMBER": "1"
+    "STARTING_LEVEL_NUMBER": "1",
+    "PURSUIT_COP_CARS_DEPLOYED_REP_MULTIPLIER": "0.03",
+    "PURSUIT_COP_CARS_DISABLED_CASH_MULTIPLIER": "0.15",
+    "PURSUIT_COP_CARS_RAMMED_REP_MULTIPLIER": "0.07",
+    "PURSUIT_COST_TO_STATE_CASH_MULTIPLIER": "0.0001",
+    "PURSUIT_HEAT_LEVEL_REP_MULTIPLIER": "0.25",
+    "PURSUIT_INFRACTIONS_CASH_MULTIPLIER": "0.002",
+    "PURSUIT_PURSUIT_LENGTH_REP_MULTIPLIER": "0.00001",
+    "PURSUIT_ROADBLOCKS_DODGED_CASH_MULTIPLIER": "0.3",
+    "PURSUIT_SPIKE_STRIPS_DODGED_REP_MULTIPLIER": "0.4"
   },
   "steps": [
     {
@@ -72,6 +81,12 @@
         },
         "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
       }
+    },
+    {
+      "note": "A different private reward configuration for the pursuit, which pursuits don't use. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE event SET private_reward_config_id = '22_generic' WHERE ID = 383"
+      ]
     },
     {
       "note": "Launching event 383: session 1.",
@@ -455,6 +470,12 @@
           "securityToken": "00000000-0000-4000-8000-000000000002"
         }
       }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE event SET private_reward_config_id = '383_generic' WHERE ID = 383"
+      ]
     }
   ]
 }

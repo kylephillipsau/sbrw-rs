@@ -3,18 +3,8 @@
 # that it gets removed from here. This list only ever shrinks.
 pending = [
     "events/achievements",
-    "events/amplifiers_and_skills",
-    "events/damage",
-    "events/damage_off",
     "events/dnf",
-    "events/drag",
-    "events/drops",
-    "events/legit",
-    "events/pursuit",
     "events/rarity",
-    "events/rewards_no_economy",
-    "events/route_rewards",
-    "events/team_escape",
     "events/treasure_hunt",
     "events/treasure_hunt_missed",
     "events/treasure_hunt_off",

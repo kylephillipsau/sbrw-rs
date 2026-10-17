@@ -302,6 +302,17 @@ pub fn math_min(a: f64, b: f64) -> f64 {
     if a <= b { a } else { b }
 }
 
+/// `Math.min(float, float)`: NaN if either is, and -0.0 below 0.0.
+pub fn math_min_float(a: f32, b: f32) -> f32 {
+    if a.is_nan() {
+        return a;
+    }
+    if a == 0.0 && b == 0.0 && b.is_sign_negative() {
+        return b;
+    }
+    if a <= b { a } else { b }
+}
+
 /// `Math.round(float)`: `floor(a + 0.5)` computed exactly, NaN to 0, and
 /// saturating at the `int` range.
 pub fn round_float(a: f32) -> i32 {
@@ -410,5 +421,9 @@ mod string_and_math_tests {
         assert!(math_max(0.0, f64::NAN).is_nan());
         assert!(math_max(f64::NAN, 0.0).is_nan());
         assert!(math_min(1.0, f64::NAN).is_nan());
+        assert_eq!(math_min_float(f32::INFINITY, 1.0), 1.0);
+        assert!(math_min_float(0.0, -0.0).is_sign_negative());
+        assert!(math_min_float(f32::NAN, 1.0).is_nan());
+        assert!(math_min_float(1.0, f32::NAN).is_nan());
     }
 }

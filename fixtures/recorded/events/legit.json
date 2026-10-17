@@ -169,7 +169,7 @@
           "Connection": "close",
           "Content-Type": "application/xml;charset=UTF-8"
         },
-        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
       },
       "effects": {
         "xmpp": [
@@ -484,6 +484,12 @@
       }
     },
     {
+      "note": "Exactly two minutes as the minimum.",
+      "sql": [
+        "UPDATE event SET legitTime = 120000 WHERE ID = 22"
+      ]
+    },
+    {
       "note": "Launching event 22: session 4.",
       "request": {
         "method": "GET",
@@ -549,7 +555,7 @@
       "advance_ms": 120000
     },
     {
-      "note": "Two minutes: fine.",
+      "note": "Two minutes: exactly the minimum is fine.",
       "request": {
         "method": "POST",
         "path": "/Engine.svc/event/arbitration",
@@ -1099,7 +1105,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 5,
+        "slot": 6,
         "paintVar": 255,
         "carId": 1
       },
@@ -1108,7 +1114,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 0,
+        "slot": 3,
         "paintVar": 255,
         "carId": 1
       },
@@ -1117,7 +1123,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 4,
+        "slot": 0,
         "paintVar": 255,
         "carId": 1
       },
@@ -1125,8 +1131,8 @@
         "id": 4,
         "paintGroup": 47885063,
         "hue": 496032526,
-        "sat": 255,
-        "slot": 7,
+        "sat": 207,
+        "slot": 4,
         "paintVar": 255,
         "carId": 1
       },
@@ -1135,7 +1141,7 @@
         "paintGroup": 47885063,
         "hue": 496032526,
         "sat": 207,
-        "slot": 6,
+        "slot": 5,
         "paintVar": 255,
         "carId": 1
       },
@@ -1143,8 +1149,8 @@
         "id": 6,
         "paintGroup": 47885063,
         "hue": 496032526,
-        "sat": 207,
-        "slot": 3,
+        "sat": 255,
+        "slot": 7,
         "paintVar": 255,
         "carId": 1
       }
@@ -1321,7 +1327,7 @@
         "abuserPersonaId": 100,
         "chatMinutes": 0,
         "customCarID": 1,
-        "description": "Abnormal event time: 60000 (below minimum of 90000 on event 22; session 5)",
+        "description": "Abnormal event time: 60000 (below minimum of 120000 on event 22; session 5)",
         "hacksdetected": 4,
         "personaId": 0,
         "petitionType": 3

@@ -440,6 +440,12 @@ fn weight_sum(rows: &[(i64, Option<f64>)]) -> f64 {
     double_stream_sum(hash_order(&hashes, DEFAULT_TABLE).into_iter().map(|i| weight(rows, i)))
 }
 
+/// `getGenerator().table().tableName(name).weighted(weighted).build()`, as
+/// Java code calls it.
+pub fn build_table(w: &mut World, table_name: Option<String>, weighted: bool) -> Result<ItemReward, Fault> {
+    build_table_selection(w, table_name, weighted, 0)
+}
+
 /// `TableSelectionBuilder.build`: a script drawn from the table, by drop
 /// weight or evenly, and the reward it builds.
 fn build_table_selection(

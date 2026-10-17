@@ -162,6 +162,19 @@ pub fn find_by_traits(
     .collect()
 }
 
+// port: dao/ProductDAO#findDropsByType(String)
+// port: jpa/ProductEntity@ProductEntity.findDropsByType
+/// The enabled, droppable products of a type with a positive drop weight,
+/// in key order.
+pub fn find_drops_by_type(db: &Connection, product_type: &str) -> rusqlite::Result<Vec<ProductEntity>> {
+    db.prepare_cached(
+        "SELECT * FROM product WHERE productType = ?1 AND isDropable = 1 AND enabled = 1 AND dropWeight IS NOT NULL
+         AND dropWeight > 0.0 ORDER BY id",
+    )?
+    .query_map([product_type], ProductEntity::from_row)?
+    .collect()
+}
+
 /// `ProductEntity.getBundleItems()`: the products whose parent this is. The
 /// set's order is Hibernate's; no product in the data has a parent.
 pub fn find_bundle_items(db: &Connection, parent_id: i64) -> rusqlite::Result<Vec<ProductEntity>> {

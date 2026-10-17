@@ -205,6 +205,12 @@
       }
     },
     {
+      "note": "Exactly two minutes as the minimum.",
+      "sql": [
+        "UPDATE event SET legitTime = 120000 WHERE ID = 22"
+      ]
+    },
+    {
       "note": "Launching event 22: session 4.",
       "http": {
         "method": "GET",
@@ -232,7 +238,7 @@
       "advance_ms": 120000
     },
     {
-      "note": "Two minutes: fine.",
+      "note": "Two minutes: exactly the minimum is fine.",
       "http": {
         "method": "POST",
         "path": "/Engine.svc/event/arbitration",

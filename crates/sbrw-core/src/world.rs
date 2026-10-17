@@ -23,6 +23,7 @@ use crate::bo::token_session::TokenSessions;
 use crate::openfire::Openfire;
 use crate::params::Parameters;
 use crate::redis::Redis;
+use crate::timers::Timers;
 use crate::{BuildInfo, Fault, store};
 
 pub struct World {
@@ -38,6 +39,8 @@ pub struct World {
     pub achievements: Achievements,
     pub login_announcements: LoginAnnouncements,
     pub build_info: BuildInfo,
+    /// Single-action timers waiting to fire.
+    pub timers: Timers,
     async_jobs: VecDeque<AsyncJob>,
     /// The container marked this transaction for rollback: a system exception
     /// crossed a bean's proxy, even if a caller caught it.
@@ -79,6 +82,7 @@ impl World {
             achievements,
             login_announcements: LoginAnnouncements::default(),
             build_info: options.build_info,
+            timers: Timers::default(),
             async_jobs: VecDeque::new(),
             rollback_only: false,
         };

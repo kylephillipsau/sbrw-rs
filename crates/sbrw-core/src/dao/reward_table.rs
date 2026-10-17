@@ -4,7 +4,7 @@
 // port: dao/RewardTableDAO#<init>()
 
 use anyhow::anyhow;
-use rusqlite::{Connection, Row};
+use rusqlite::{Connection, OptionalExtension, Row};
 
 use crate::Fault;
 
@@ -50,4 +50,20 @@ pub fn find_by_name(db: &Connection, name: &str) -> Result<RewardTableEntity, Fa
         .query_map([id], RewardTableItemEntity::from_row)?
         .collect::<rusqlite::Result<_>>()?;
     Ok(RewardTableEntity { id, name, items })
+}
+
+/// `RewardTableDAO.find` (`LongKeyedDAO.find`), with its items in key order.
+pub fn find(db: &Connection, id: i64) -> rusqlite::Result<Option<RewardTableEntity>> {
+    let Some(name) = db
+        .prepare_cached("SELECT name FROM reward_table WHERE ID = ?1")?
+        .query_row([id], |r| r.get::<_, Option<String>>(0))
+        .optional()?
+    else {
+        return Ok(None);
+    };
+    let items = db
+        .prepare_cached("SELECT * FROM reward_table_item WHERE rewardTableEntity_ID = ?1 ORDER BY ID")?
+        .query_map([id], RewardTableItemEntity::from_row)?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(Some(RewardTableEntity { id, name, items }))
 }

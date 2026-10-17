@@ -9,9 +9,13 @@ use sbrw_java::util::hash_map_order;
 use crate::Fault;
 use crate::bo::util::achievement_commerce_context::AchievementCommerceContext;
 use crate::bo::util::achievement_customization_context::AchievementCustomizationContext;
+use crate::bo::util::achievement_event_context::AchievementEventContext;
 use crate::bo::util::achievement_inventory_context::AchievementInventoryContext;
 use crate::bo::util::achievement_progression_context::AchievementProgressionContext;
 use crate::dao::car::CarEntity;
+use crate::dao::event::EventEntity;
+use crate::dao::event_data::EventDataEntity;
+use crate::dao::event_session::EventSessionEntity;
 use crate::dao::persona::PersonaEntity;
 use crate::dao::persona_achievement::PersonaAchievementEntity;
 
@@ -27,6 +31,10 @@ pub enum Binding {
     CommerceCtx(Box<AchievementCommerceContext>),
     CustomizationCtx(Box<AchievementCustomizationContext>),
     InventoryCtx(Box<AchievementInventoryContext>),
+    Event(Box<EventEntity>),
+    EventData(Box<EventDataEntity>),
+    EventSession(Box<EventSessionEntity>),
+    EventCtx(Box<AchievementEventContext>),
 }
 
 /// A script's globals by name.
@@ -64,10 +72,17 @@ impl AchievementTransaction {
     }
 
     // port: bo/AchievementTransaction#getEntries()
-    /// By category, in the order upstream's `HashMap` iterates them.
+    /// By category, in the order upstream's `HashMap` iterates them. `add`
+    /// creates a category with `computeIfAbsent`, which in JDK 11 puts a new
+    /// key at the head of its bucket (where `put` appends it), so categories
+    /// sharing a bucket come latest first.
     pub fn entries(&self) -> Vec<(&str, &[Bindings])> {
-        let categories: Vec<&str> = self.entries.iter().map(|(c, _)| c.as_str()).collect();
-        hash_map_order(&categories).into_iter().map(|i| (categories[i], self.entries[i].1.as_slice())).collect()
+        let latest_first: Vec<usize> = (0..self.entries.len()).rev().collect();
+        let categories: Vec<&str> = latest_first.iter().map(|&i| self.entries[i].0.as_str()).collect();
+        hash_map_order(&categories)
+            .into_iter()
+            .map(|i| (categories[i], self.entries[latest_first[i]].1.as_slice()))
+            .collect()
     }
 
     // port: bo/AchievementTransaction#isCommitted()
@@ -112,8 +127,9 @@ mod tests {
             t.add(category, persona(100)).unwrap();
         }
         let order: Vec<(&str, usize)> = t.entries().into_iter().map(|(c, list)| (c, list.len())).collect();
-        // JDK 11 iterates COMMERCE, LOGIN, then PROGRESSION and EVENT (one bucket, by insertion).
-        assert_eq!(order, [("COMMERCE", 1), ("LOGIN", 2), ("PROGRESSION", 1), ("EVENT", 1)]);
+        // JDK 11 iterates COMMERCE, LOGIN, then EVENT and PROGRESSION: one bucket, where
+        // `computeIfAbsent` put the later key first (`events/drag`).
+        assert_eq!(order, [("COMMERCE", 1), ("LOGIN", 2), ("EVENT", 1), ("PROGRESSION", 1)]);
     }
 
     #[test]

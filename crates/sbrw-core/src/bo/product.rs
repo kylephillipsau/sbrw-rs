@@ -1,6 +1,7 @@
-//! `ProductBO`: the shop catalogue. Ported so far: everything but the random
-//! drops events give, which come with event rewards.
+//! `ProductBO`: the shop catalogue, and the random drops events give.
 
+use anyhow::anyhow;
+use sbrw_java::util::double_stream_sum;
 use sbrw_xml::dto::http::{ArrayOfProductTrans, ProductTrans};
 
 use crate::dao::category::{self, CategoryEntity};
@@ -102,4 +103,45 @@ pub fn get_vinyl_by_category(
         });
     }
     Ok(array_of_product_trans)
+}
+
+// port: bo/ProductBO#getRandomDrop(String)
+/// A droppable product of the type, drawn by drop weight: `Math.random()`
+/// times the weights' sum (a `DoubleStream` sum in list order), less each
+/// product's weight in turn until it reaches 0.
+pub fn get_random_drop(w: &World, product_type: &str) -> Result<ProductEntity, Fault> {
+    let product_entities = product::find_drops_by_type(w.db(), product_type)?;
+
+    if product_entities.is_empty() {
+        return Err(anyhow!("No droppable products of type '{product_type}' to work with!").into());
+    }
+
+    let weight_sum = double_stream_sum(product_entities.iter().map(|p| get_drop_weight(p, &product_entities)));
+
+    let mut random_index = None;
+    let mut random = w.env.random(|r| r.next_double()) * weight_sum;
+
+    for (i, product_entity) in product_entities.iter().enumerate() {
+        random -= get_drop_weight(product_entity, &product_entities);
+
+        if random <= 0.0 {
+            random_index = Some(i);
+            break;
+        }
+    }
+
+    let random_index = random_index.ok_or_else(|| {
+        anyhow!(
+            "Random selection failed for products of type {product_type} (weightSum={})",
+            sbrw_java::lang::double_to_string(weight_sum)
+        )
+    })?;
+    Ok(product_entities.into_iter().nth(random_index).expect("an index into the list"))
+}
+
+// port: bo/ProductBO#getDropWeight(ProductEntity,List)
+/// The product's drop weight, or an even share without one (the query
+/// leaves out products without).
+fn get_drop_weight(p: &ProductEntity, product_entities: &[ProductEntity]) -> f64 {
+    p.drop_weight.unwrap_or(1.0 / product_entities.len() as f64)
 }

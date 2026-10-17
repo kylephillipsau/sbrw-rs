@@ -52,6 +52,24 @@ pub fn find_all_by_persona_id_and_entitlement_tag(
     .collect()
 }
 
+// port: dao/InventoryItemDAO#findAllByPersonaIdAndType(Long,String)
+// port: jpa/InventoryItemEntity@InventoryItemEntity.findAllByPersonaIdAndType
+/// The persona's items of products of this type (`AMPLIFIER`, say), in key
+/// order.
+pub fn find_all_by_persona_id_and_type(
+    db: &Connection,
+    persona_id: i64,
+    product_type: &str,
+) -> rusqlite::Result<Vec<InventoryItemEntity>> {
+    db.prepare_cached(
+        "SELECT ii.* FROM inventory_item ii JOIN inventory i ON i.id = ii.inventoryEntity_id
+         JOIN product p ON p.productId = ii.productId
+         WHERE i.personaId = ?1 AND p.productType = ?2 ORDER BY ii.id",
+    )?
+    .query_map(rusqlite::params![persona_id, product_type], InventoryItemEntity::from_row)?
+    .collect()
+}
+
 // port: dao/InventoryItemDAO#findByPersonaIdAndEntitlementTag(Long,String)
 /// The first of the persona's items with this entitlement tag.
 pub fn find_by_persona_id_and_entitlement_tag(

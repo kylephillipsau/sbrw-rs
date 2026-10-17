@@ -15,10 +15,16 @@ use crate::Fault;
 use crate::bo::achievement_transaction::{Binding, Bindings};
 use crate::bo::util::achievement_commerce_context::AchievementCommerceContext;
 use crate::bo::util::achievement_customization_context::AchievementCustomizationContext;
+use crate::bo::util::achievement_event_context::AchievementEventContext;
 use crate::bo::util::achievement_inventory_context::AchievementInventoryContext;
 use crate::bo::util::achievement_progression_context::AchievementProgressionContext;
+use crate::bo::util::arbitration::Packet;
 use crate::dao::car::CarEntity;
 use crate::dao::car_classes::CarClassesEntity;
+use crate::dao::event::EventEntity;
+use crate::dao::event_data::EventDataEntity;
+use crate::dao::event_session::EventSessionEntity;
+use crate::dao::lobby::LobbyEntity;
 use crate::dao::persona::PersonaEntity;
 use crate::dao::persona_achievement::PersonaAchievementEntity;
 use crate::dao::product::ProductEntity;
@@ -41,6 +47,10 @@ fn java(binding: &Binding) -> JavaValue {
         Binding::CommerceCtx(c) => commerce_context(c),
         Binding::CustomizationCtx(c) => customization_context(c),
         Binding::InventoryCtx(c) => inventory_context(c),
+        Binding::Event(e) => event(e),
+        Binding::EventData(d) => event_data(d),
+        Binding::EventSession(s) => event_session(s),
+        Binding::EventCtx(c) => event_context(c),
     }
 }
 
@@ -175,6 +185,173 @@ fn inventory_context(c: &AchievementInventoryContext) -> JavaValue {
             .get("event", JavaValue::Enum(c.event.name().to_owned()))
             .get("eventVal", JavaValue::Integer(c.event_val())),
     )
+}
+
+/// `EventEntity`, without its reward configurations.
+fn event(e: &EventEntity) -> JavaValue {
+    JavaValue::Bean(
+        Bean::new()
+            .get("id", JavaValue::Integer(e.id))
+            .get("eventModeId", JavaValue::Integer(e.event_mode_id))
+            .get("minLevel", JavaValue::Integer(e.min_level))
+            .get("maxLevel", JavaValue::Integer(e.max_level))
+            .get("minCarClassRating", JavaValue::Integer(e.min_car_class_rating))
+            .get("maxCarClassRating", JavaValue::Integer(e.max_car_class_rating))
+            .get("isEnabled", JavaValue::Boolean(e.is_enabled))
+            .get("isLocked", JavaValue::Boolean(e.is_locked))
+            .get("name", string(&e.name))
+            .get("maxPlayers", JavaValue::Integer(e.max_players))
+            .get("rewardsTimeLimit", JavaValue::Long(e.rewards_time_limit))
+            .get("carClassHash", JavaValue::Integer(e.car_class_hash))
+            .get("trackLength", JavaValue::Float(e.track_length))
+            .get("lobbyCountdownTime", JavaValue::Integer(e.lobby_countdown_time))
+            .get("dnfTimerTime", JavaValue::Integer(e.dnf_timer_time))
+            .is("rotationEnabled", e.is_rotation_enabled)
+            .is("dnfEnabled", e.is_dnf_enabled)
+            .is("raceAgainEnabled", e.is_race_again_enabled)
+            .get("legitTime", JavaValue::Long(e.legit_time)),
+    )
+}
+
+/// `EventDataEntity`.
+fn event_data(d: &EventDataEntity) -> JavaValue {
+    JavaValue::Bean(
+        Bean::new()
+            .get("id", JavaValue::Long(d.id))
+            .get("event", event(&d.event))
+            .get("personaId", opt(d.persona_id, JavaValue::Long))
+            .get("eventModeId", JavaValue::Integer(d.event_mode_id))
+            .get("eventSessionId", opt(d.event_session_id, JavaValue::Long))
+            .get("alternateEventDurationInMilliseconds", JavaValue::Long(d.alternate_event_duration_in_milliseconds))
+            .get("carId", JavaValue::Long(d.car_id))
+            .get("eventDurationInMilliseconds", JavaValue::Long(d.event_duration_in_milliseconds))
+            .get("finishReason", JavaValue::Integer(d.finish_reason))
+            .get("hacksDetected", JavaValue::Long(d.hacks_detected))
+            .get("rank", JavaValue::Integer(d.rank))
+            .get("longestJumpDurationInMilliseconds", JavaValue::Long(d.longest_jump_duration_in_milliseconds))
+            .get("sumOfJumpsDurationInMilliseconds", JavaValue::Long(d.sum_of_jumps_duration_in_milliseconds))
+            .get("topSpeed", JavaValue::Float(d.top_speed))
+            .get("bestLapDurationInMilliseconds", JavaValue::Long(d.best_lap_duration_in_milliseconds))
+            .get("fractionCompleted", JavaValue::Float(d.fraction_completed))
+            .get("numberOfCollisions", JavaValue::Integer(d.number_of_collisions))
+            .get("perfectStart", JavaValue::Integer(d.perfect_start))
+            .get("copsDeployed", JavaValue::Integer(d.cops_deployed))
+            .get("copsDisabled", JavaValue::Integer(d.cops_disabled))
+            .get("copsRammed", JavaValue::Integer(d.cops_rammed))
+            .get("costToState", JavaValue::Integer(d.cost_to_state))
+            .get("infractions", JavaValue::Integer(d.infractions))
+            .get("roadBlocksDodged", JavaValue::Integer(d.road_blocks_dodged))
+            .get("spikeStripsDodged", JavaValue::Integer(d.spike_strips_dodged))
+            .get("heat", JavaValue::Float(d.heat))
+            .get("bustedCount", JavaValue::Integer(d.busted_count))
+            .get("distanceToFinish", JavaValue::Float(d.distance_to_finish))
+            .is("legit", d.is_legit)
+            .get("serverTimeInMilliseconds", JavaValue::Long(d.server_time_in_milliseconds))
+            .get("serverTimeStarted", JavaValue::Long(d.server_time_started))
+            .get("serverTimeEnded", JavaValue::Long(d.server_time_ended))
+            .get("carClassHash", opt(d.car_class_hash, JavaValue::Integer))
+            .get("carRating", opt(d.car_rating, JavaValue::Integer)),
+    )
+}
+
+/// `EventSessionEntity`. The next lobby isn't shown: no script reads it.
+fn event_session(s: &EventSessionEntity) -> JavaValue {
+    JavaValue::Bean(
+        Bean::new()
+            .get("id", JavaValue::Long(s.id))
+            .get("event", event(&s.event))
+            .get("lobby", opt(s.lobby.as_ref(), lobby))
+            .get("ended", opt(s.ended, JavaValue::Long))
+            .get("started", opt(s.started, JavaValue::Long)),
+    )
+}
+
+/// `LobbyEntity`, without its event and entrants: no script reads them.
+fn lobby(l: &LobbyEntity) -> JavaValue {
+    JavaValue::Bean(
+        Bean::new()
+            .get("id", JavaValue::Long(l.id))
+            .get("startedTime", local_date_time(l.started_time))
+            .get("isPrivate", opt(l.is_private, JavaValue::Boolean))
+            .get("personaId", opt(l.persona_id, JavaValue::Long)),
+    )
+}
+
+/// `AchievementEventContext`.
+fn event_context(c: &AchievementEventContext) -> JavaValue {
+    JavaValue::Bean(
+        Bean::new()
+            .get("eventMode", JavaValue::Enum(c.event_mode().name().to_owned()))
+            .get("eventModeInt", JavaValue::Integer(c.event_mode_int()))
+            .get("arbitrationPacket", arbitration_packet(c.arbitration_packet()))
+            .get("eventSessionEntity", event_session(c.event_session_entity())),
+    )
+}
+
+/// An arbitration packet: the getters of its own class and the base's. The
+/// nested objects (fraud detection, physics, the security response) aren't
+/// shown: no script reads them.
+fn arbitration_packet(p: &Packet) -> JavaValue {
+    macro_rules! base {
+        ($p:expr) => {
+            Bean::new()
+                .get(
+                    "alternateEventDurationInMilliseconds",
+                    JavaValue::Long($p.alternate_event_duration_in_milliseconds),
+                )
+                .get("carId", JavaValue::Long($p.car_id))
+                .get("eventDurationInMilliseconds", JavaValue::Long($p.event_duration_in_milliseconds))
+                .get("finishReason", JavaValue::Integer($p.finish_reason))
+                .get("hacksDetected", JavaValue::Long($p.hacks_detected))
+                .get("rank", JavaValue::Integer($p.rank))
+        };
+    }
+    JavaValue::Bean(match p {
+        Packet::Base(p) => base!(p),
+        Packet::Route(p) => base!(p)
+            .get("bestLapDurationInMilliseconds", JavaValue::Long(p.best_lap_duration_in_milliseconds))
+            .get("fractionCompleted", JavaValue::Float(p.fraction_completed))
+            .get("longestJumpDurationInMilliseconds", JavaValue::Long(p.longest_jump_duration_in_milliseconds))
+            .get("numberOfCollisions", JavaValue::Integer(p.number_of_collisions))
+            .get("perfectStart", JavaValue::Integer(p.perfect_start))
+            .get("sumOfJumpsDurationInMilliseconds", JavaValue::Long(p.sum_of_jumps_duration_in_milliseconds))
+            .get("topSpeed", JavaValue::Float(p.top_speed)),
+        Packet::Drag(p) => base!(p)
+            .get("fractionCompleted", JavaValue::Float(p.fraction_completed))
+            .get("longestJumpDurationInMilliseconds", JavaValue::Long(p.longest_jump_duration_in_milliseconds))
+            .get("numberOfCollisions", JavaValue::Integer(p.number_of_collisions))
+            .get("perfectStart", JavaValue::Integer(p.perfect_start))
+            .get("sumOfJumpsDurationInMilliseconds", JavaValue::Long(p.sum_of_jumps_duration_in_milliseconds))
+            .get("topSpeed", JavaValue::Float(p.top_speed)),
+        Packet::Pursuit(p) => base!(p)
+            .get("copsDeployed", JavaValue::Integer(p.cops_deployed))
+            .get("copsDisabled", JavaValue::Integer(p.cops_disabled))
+            .get("copsRammed", JavaValue::Integer(p.cops_rammed))
+            .get("costToState", JavaValue::Integer(p.cost_to_state))
+            .get("heat", JavaValue::Float(p.heat))
+            .get("infractions", JavaValue::Integer(p.infractions))
+            .get("longestJumpDurationInMilliseconds", JavaValue::Long(p.longest_jump_duration_in_milliseconds))
+            .get("roadBlocksDodged", JavaValue::Integer(p.road_blocks_dodged))
+            .get("spikeStripsDodged", JavaValue::Integer(p.spike_strips_dodged))
+            .get("sumOfJumpsDurationInMilliseconds", JavaValue::Long(p.sum_of_jumps_duration_in_milliseconds))
+            .get("topSpeed", JavaValue::Float(p.top_speed)),
+        Packet::TeamEscape(p) => base!(p)
+            .get("bustedCount", JavaValue::Integer(p.busted_count))
+            .get("copsDeployed", JavaValue::Integer(p.cops_deployed))
+            .get("copsDisabled", JavaValue::Integer(p.cops_disabled))
+            .get("copsRammed", JavaValue::Integer(p.cops_rammed))
+            .get("costToState", JavaValue::Integer(p.cost_to_state))
+            .get("distanceToFinish", JavaValue::Float(p.distance_to_finish))
+            .get("fractionCompleted", JavaValue::Float(p.fraction_completed))
+            .get("infractions", JavaValue::Integer(p.infractions))
+            .get("longestJumpDurationInMilliseconds", JavaValue::Long(p.longest_jump_duration_in_milliseconds))
+            .get("numberOfCollisions", JavaValue::Integer(p.number_of_collisions))
+            .get("perfectStart", JavaValue::Integer(p.perfect_start))
+            .get("roadBlocksDodged", JavaValue::Integer(p.road_blocks_dodged))
+            .get("spikeStripsDodged", JavaValue::Integer(p.spike_strips_dodged))
+            .get("sumOfJumpsDurationInMilliseconds", JavaValue::Long(p.sum_of_jumps_duration_in_milliseconds))
+            .get("topSpeed", JavaValue::Float(p.top_speed)),
+    })
 }
 
 fn car_classes(c: &CarClassesEntity) -> JavaValue {

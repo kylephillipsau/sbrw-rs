@@ -380,6 +380,8 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/Events#instancedAccolades(Long)" => events::instanced_accolades(call),
         "api/Event#abort(Long)" => event::abort(state, call).await,
         "api/Event#launched(Long)" => event::launched(state, call).await,
+        "api/Event#arbitration(InputStream,Long)" => event::arbitration(state, call).await,
+        "api/Event#bust(InputStream,String,Long)" => event::bust(state, call).await,
         "api/MatchMaking#launchEvent(int)" => matchmaking::launch_event(state, call).await,
         "api/Catalog#productsInCategory(String,String,String)" => catalog::products_in_category(state, call).await,
         "api/Catalog#categories(String)" => catalog::categories(state, call).await,

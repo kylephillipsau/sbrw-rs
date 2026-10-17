@@ -1,17 +1,19 @@
 //! UDP free-roam and race relay servers for NFS World.
 //!
-//! So far: the free-roam server (`freeroam`, a port of the Go server, with its
-//! car-state decoder in `carstate`), and a probe that binds a port and records
-//! every datagram without answering, to collect real client packets for the
+//! The free-roam server (`freeroam`, a port of the Go server, with its
+//! car-state decoder in `carstate`), the race relay (`race`, written from
+//! `docs/protocol/race.md`), and a probe that binds a port and records every
+//! datagram without answering, to collect real client packets for the
 //! protocol notes.
 
 pub mod carstate;
 pub mod freeroam;
+pub mod race;
 
 use std::collections::HashSet;
 use std::io;
 
-use sbrw_common::{CaptureSink, CaptureStream, Direction};
+use sbrw_common::{CaptureSink, CaptureStream, Direction, RelayRegistry};
 use tokio::net::UdpSocket;
 use tokio_util::sync::CancellationToken;
 
@@ -64,6 +66,44 @@ pub async fn run_freeroam(
         capture.udp(CaptureStream::UdpFreeroam, Direction::Out, local, peer, &reply);
         if let Err(err) = socket.send_to(&reply, peer).await {
             tracing::warn!(%peer, %err, "free-roam: send failed");
+        }
+    }
+}
+
+/// Relay races on `socket` until shutdown, taking the racers `registry`
+/// expects and recording traffic under `udp-race` when capture is on.
+pub async fn run_race(
+    socket: UdpSocket,
+    settings: race::Settings,
+    registry: RelayRegistry,
+    capture: CaptureSink,
+    shutdown: CancellationToken,
+) -> io::Result<()> {
+    let local = socket.local_addr()?;
+    let mut relay = race::RaceRelay::new(settings, registry);
+    let mut sweep = tokio::time::interval(std::time::Duration::from_secs(1));
+    // What Netty reads of a datagram, as the original relay ran.
+    let mut buf = vec![0u8; 2048];
+    loop {
+        let out = tokio::select! {
+            () = shutdown.cancelled() => return Ok(()),
+            _ = sweep.tick() => relay.sweep(server_tick(), std::time::Instant::now()),
+            received = socket.recv_from(&mut buf) => match received {
+                Ok((n, peer)) => {
+                    capture.udp(CaptureStream::UdpRace, Direction::In, peer, local, &buf[..n]);
+                    relay.handle(peer, &buf[..n], server_tick(), std::time::Instant::now())
+                }
+                Err(err) => {
+                    tracing::warn!(%err, "race: receive failed");
+                    continue;
+                }
+            },
+        };
+        for (peer, datagram) in out {
+            capture.udp(CaptureStream::UdpRace, Direction::Out, local, peer, &datagram);
+            if let Err(err) = socket.send_to(&datagram, peer).await {
+                tracing::warn!(%peer, %err, "race: send failed");
+            }
         }
     }
 }

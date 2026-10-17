@@ -193,8 +193,10 @@ the `[udp.race_relay]` section.
     asks whether every racer has sent a sync hello, or is ready. It's still
     sent to, and counts again as soon as it sends anything. Nothing would make
     the game say hello again, so the racer isn't dropped.
-  - A session with no datagrams for `session_idle_secs` (default 30) is dropped,
-    and the registry forgets it.
+  - A session with no datagrams for `session_idle_secs` (default 30) since it
+    started (its hello replies went out) is dropped, and the registry forgets
+    it. A session still waiting for everyone doesn't idle; one waiting forever
+    is dropped when the registry forgets it, an hour after the launch.
 - **The acknowledgement byte** is kept, since nobody knows whether the game
   needs it. `legacy_ack_byte = false` turns it off.
 - **Short or malformed datagrams** are dropped after the acknowledgement, as

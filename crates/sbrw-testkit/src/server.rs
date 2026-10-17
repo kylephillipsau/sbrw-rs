@@ -11,7 +11,7 @@ use axum::http::Request;
 use axum::http::header::CONTENT_TYPE;
 use http_body_util::BodyExt;
 use indexmap::IndexMap;
-use sbrw_common::{CaptureSink, Config, EffectLog, Effects, Env};
+use sbrw_common::{CaptureSink, Config, EffectLog, Effects, Env, RelayRegistry};
 use sbrw_core::openfire::Openfire;
 use sbrw_core::{BuildInfo, World, WorldHandle, WorldOptions};
 use serde_json::Value;
@@ -29,6 +29,7 @@ pub struct SbrwServer {
     env: Env,
     effects: EffectLog,
     world: WorldHandle,
+    relay: RelayRegistry,
     _data_dir: tempfile::TempDir,
 }
 
@@ -42,6 +43,7 @@ impl SbrwServer {
 
         let env = Env::deterministic(scenario.seed, scenario.clock);
         let effects = EffectLog::recording();
+        let relay = RelayRegistry::default();
         let mut openfire = Openfire::default();
         openfire.online_users = scenario.openfire.as_ref().map_or(0, |o| o.online_users);
         if let Some(state) = &scenario.openfire {
@@ -58,13 +60,13 @@ impl SbrwServer {
             openfire,
             // The reference build has no git.properties either.
             build_info: BuildInfo::unknown(),
-            relay: sbrw_common::RelayRegistry::default(),
+            relay: relay.clone(),
         })?;
         let world = WorldHandle::spawn(world);
         let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), world.clone());
         let router = sbrw_http::router(state);
         let boot = effects.drain();
-        Ok((Self { router, env, effects, world, _data_dir: data_dir }, boot))
+        Ok((Self { router, env, effects, world, relay, _data_dir: data_dir }, boot))
     }
 
     pub async fn http(&mut self, r: &HttpRequest) -> anyhow::Result<HttpResponse> {
@@ -100,6 +102,11 @@ impl SbrwServer {
         }
         let body = response.into_body().collect().await.context("reading the response body")?.to_bytes();
         Ok(HttpResponse { status, headers, body: String::from_utf8_lossy(&body).into_owned() })
+    }
+
+    /// The races the world has launched, for a race relay to check tickets against.
+    pub fn relay(&self) -> RelayRegistry {
+        self.relay.clone()
     }
 
     pub fn advance(&self, millis: i64) {

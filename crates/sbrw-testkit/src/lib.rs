@@ -10,10 +10,11 @@
 //! port doesn't reproduce yet are listed in `port/replay-pending.toml`.
 //!
 //! `freeroam` has a fake free-roam client and a ghost driving a real player's
-//! captured car states.
+//! captured car states; `race` has a fake racer for the race relay.
 
 pub mod compare;
 pub mod freeroam;
+pub mod race;
 pub mod scenario;
 pub mod server;
 pub mod snapshot;

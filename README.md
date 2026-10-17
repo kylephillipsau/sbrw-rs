@@ -102,6 +102,12 @@ visibility_radius = 300.0     # how far apart players see each other
 max_visible_players = 14
 player_spawn_delay_ms = 200   # one more player comes into view this often
 
+[udp.race_relay]              # see docs/protocol/race.md, "sbrw-rs differs"
+wait_for_all_secs = 60        # then a race starts with the racers there; 0 waits forever
+racer_idle_secs = 10          # a silent racer stops holding the others up
+session_idle_secs = 30        # a started race with no traffic this long is over
+legacy_ack_byte = true        # answer every datagram with "1", as the original relay
+
 [launcher]
 server_name = "My Server"
 discord_url = "https://discord.gg/..."

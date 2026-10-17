@@ -148,6 +148,28 @@ pub struct UdpConfig {
     /// Free-roam: every player sees every other, however far
     /// (`DisableRadiusSync`).
     pub disable_radius_sync: bool,
+    /// The race relay's limits (`docs/protocol/race.md`, "sbrw-rs differs").
+    pub race_relay: RaceRelayConfig,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct RaceRelayConfig {
+    /// How long a race waits for all its racers to say hello before it goes
+    /// on with those there; 0 waits forever, as the original relay does.
+    pub wait_for_all_secs: u64,
+    /// A racer silent this long no longer holds the others up.
+    pub racer_idle_secs: u64,
+    /// A race with no traffic this long is over.
+    pub session_idle_secs: u64,
+    /// Answer every datagram with the byte `1`, as the original relay does.
+    pub legacy_ack_byte: bool,
+}
+
+impl Default for RaceRelayConfig {
+    fn default() -> Self {
+        Self { wait_for_all_secs: 60, racer_idle_secs: 10, session_idle_secs: 30, legacy_ack_byte: true }
+    }
 }
 
 impl Default for UdpConfig {
@@ -159,6 +181,7 @@ impl Default for UdpConfig {
             max_visible_players: 14,
             player_spawn_delay_ms: 200,
             disable_radius_sync: false,
+            race_relay: RaceRelayConfig::default(),
         }
     }
 }
@@ -423,6 +446,7 @@ mod tests {
             jail.set_env("SBRW__LAUNCHER__SERVER_NAME", "From env");
             jail.set_env("SBRW__UDP__RACE__BIND", "0.0.0.0:7000");
             jail.set_env("SBRW__UDP__MAX_VISIBLE_PLAYERS", "8");
+            jail.set_env("SBRW__UDP__RACE_RELAY__WAIT_FOR_ALL_SECS", "0");
             jail.set_env("SBRW_CAPTURE", "http, udp-race");
             jail.set_env("SBRW_PARAMETER_TICKET_TOKEN", "secret");
             let config = load_in_jail()?;
@@ -434,6 +458,8 @@ mod tests {
             assert_eq!(config.udp.freeroam.bind.port(), 9999);
             assert_eq!(config.udp.max_visible_players, 8);
             assert_eq!(config.udp.visibility_radius, 300.0);
+            assert_eq!(config.udp.race_relay.wait_for_all_secs, 0);
+            assert_eq!(config.udp.race_relay.racer_idle_secs, 10);
             assert_eq!(config.capture.streams, [CaptureStream::Http, CaptureStream::UdpRace]);
             assert_eq!(config.parameters["TICKET_TOKEN"], "secret");
             assert_eq!(config.parameters["SESSION_LENGTH_MINUTES"], "60");

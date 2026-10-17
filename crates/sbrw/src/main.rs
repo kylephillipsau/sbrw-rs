@@ -196,6 +196,12 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         tracing::info!(%bind, "free-roam listening");
         let settings = sbrw_udp::freeroam::Settings::from_config(&config.udp);
         tasks.spawn(sbrw_udp::run_freeroam(socket, settings, capture.clone(), shutdown.clone()));
+
+        let bind = config.udp.race.bind;
+        let socket = UdpSocket::bind(bind).await.with_context(|| format!("binding the race relay to {bind}"))?;
+        tracing::info!(%bind, "race relay listening");
+        let settings = sbrw_udp::race::Settings::from_config(&config.udp.race_relay);
+        tasks.spawn(sbrw_udp::run_race(socket, settings, relay.clone(), capture.clone(), shutdown.clone()));
     }
 
     let early_exit = tokio::select! {

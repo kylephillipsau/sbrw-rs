@@ -10,6 +10,8 @@
 //! - an EAGER relationship is loaded with its owner.
 
 pub mod achievement;
+pub mod achievement_rank;
+pub mod achievement_reward;
 pub mod amplifier;
 pub mod badge_definition;
 pub mod ban;

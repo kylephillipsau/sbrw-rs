@@ -144,3 +144,10 @@ pub fn update(db: &Connection, p: &PersonaEntity) -> rusqlite::Result<()> {
     ])?;
     Ok(())
 }
+
+// port: dao/PersonaDAO#countPersonas()
+// port: jpa/PersonaEntity@PersonaEntity.countPersonas
+/// How many personas there are.
+pub fn count_personas(db: &Connection) -> rusqlite::Result<i64> {
+    db.prepare_cached("SELECT count(*) FROM persona")?.query_row([], |r| r.get(0))
+}

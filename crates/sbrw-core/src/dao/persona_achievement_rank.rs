@@ -98,3 +98,36 @@ pub fn find_highest_completed_rank_of_achievement_by_persona(
     })
     .optional()
 }
+
+// port: dao/PersonaAchievementRankDAO#findByPersonaIdAndAchievementRankId(Long,Long)
+// port: jpa/PersonaAchievementRankEntity@PersonaAchievementRankEntity.findByPersonaIdAndAchievementRankId
+/// The persona's row for an achievement rank, with that rank.
+pub fn find_by_persona_id_and_achievement_rank_id(
+    db: &Connection,
+    persona_id: i64,
+    achievement_rank_id: i64,
+) -> rusqlite::Result<Option<(PersonaAchievementRankEntity, AchievementRankEntity)>> {
+    db.prepare_cached(
+        "SELECT r.*, ar.ID AS ar_ID, ar.achievement_id AS ar_achievement_id, ar.points AS ar_points,
+         ar.rank AS ar_rank, ar.rarity AS ar_rarity, ar.reward_description AS ar_reward_description,
+         ar.reward_type AS ar_reward_type, ar.reward_visual_style AS ar_reward_visual_style,
+         ar.threshold_value AS ar_threshold_value
+         FROM persona_achievement_rank r JOIN persona_achievement pa ON pa.ID = r.persona_achievement_id
+         JOIN achievement_rank ar ON ar.ID = r.achievement_rank_id
+         WHERE r.achievement_rank_id = ?1 AND pa.persona_id = ?2 ORDER BY r.ID LIMIT 1",
+    )?
+    .query_row(rusqlite::params![achievement_rank_id, persona_id], |row| {
+        Ok((PersonaAchievementRankEntity::from_row(row)?, AchievementRankEntity::from_row(row, "ar_")?))
+    })
+    .optional()
+}
+
+// port: dao/PersonaAchievementRankDAO#countPersonasWithRank(Long)
+// port: jpa/PersonaAchievementRankEntity@PersonaAchievementRankEntity.countPersonasWithRank
+/// How many personas have reached the rank.
+pub fn count_personas_with_rank(db: &Connection, achievement_rank_id: i64) -> rusqlite::Result<i64> {
+    db.prepare_cached(
+        "SELECT count(*) FROM persona_achievement_rank WHERE achievement_rank_id = ?1 AND achieved_on IS NOT NULL",
+    )?
+    .query_row([achievement_rank_id], |r| r.get(0))
+}

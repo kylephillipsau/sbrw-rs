@@ -9,24 +9,30 @@ use std::collections::HashMap;
 use anyhow::anyhow;
 use rusqlite::Connection;
 use sbrw_java::lang::{round_double, round_float, trim};
-use sbrw_xml::dto::http::BadgePacket;
+use sbrw_xml::XmlValue;
+use sbrw_xml::dto::http::{
+    AchievementDefinitionPacket, AchievementRankPacket, AchievementRewards, AchievementState, AchievementsPacket,
+    ArrayOfAchievementDefinitionPacket, ArrayOfAchievementRankPacket, ArrayOfBadgeDefinitionPacket, ArrayOfWalletTrans,
+    BadgeDefinitionPacket, BadgePacket, CommerceResultStatus, StatConversion, WalletTrans,
+};
 use sbrw_xml::dto::xmpp::{
     AchievementAwarded, AchievementProgress, AchievementsAwarded, XMPP_ResponseTypeAchievementsAwarded,
 };
 use time::PrimitiveDateTime;
 
 use crate::bo::achievement_transaction::{AchievementTransaction, Binding, Bindings};
-use crate::bo::driver_persona;
 use crate::bo::scripting::{self, ScriptValue};
 use crate::bo::util::achievement_progression_context::AchievementProgressionContext;
 use crate::bo::util::achievement_update_info::{
     AchievementUpdateInfo, CompletedAchievementRank, ProgressedAchievement,
 };
+use crate::bo::{driver_persona, item_reward};
 use crate::dao::achievement::{self, AchievementEntity, AchievementRankEntity};
 use crate::dao::badge_definition::{self, BadgeDefinitionEntity};
 use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::persona_achievement::{self, PersonaAchievementEntity};
 use crate::dao::persona_achievement_rank::{self, PersonaAchievementRankEntity};
+use crate::dao::{achievement_rank, achievement_reward};
 use crate::engine::EngineExceptionCode;
 use crate::{Fault, World, datetime};
 
@@ -60,6 +66,28 @@ pub fn load_data(db: &Connection) -> rusqlite::Result<Achievements> {
         achievement_entities: achievement::find_all(db)?,
         badge_definition_entities: badge_definition::find_all(db)?,
     })
+}
+
+// port: bo/AchievementBO#updateRankRarities()
+/// The half-hourly job: each rank's rarity is the share of drivers who have
+/// reached it. Only the database changes; the achievements loaded at startup
+/// keep the rarities they were loaded with.
+pub fn update_rank_rarities(w: &mut World) -> Result<(), Fault> {
+    let count_personas = persona::count_personas(w.db())?;
+
+    if count_personas > 0 {
+        for achievement_entity in &w.achievements.achievement_entities {
+            for achievement_rank_entity in &achievement_entity.ranks {
+                let with_rank = persona_achievement_rank::count_personas_with_rank(w.db(), achievement_rank_entity.id)?;
+                achievement_rank::update_rank_rarity(
+                    w.db(),
+                    achievement_rank_entity.id,
+                    with_rank as f32 / count_personas as f32,
+                )?;
+            }
+        }
+    }
+    Ok(())
 }
 
 // port: bo/AchievementBO#createTransaction(Long)
@@ -96,6 +124,167 @@ pub fn commit_transaction(
     transaction.mark_committed()?;
     transaction.clear()?;
     Ok(())
+}
+
+/// `StatConversion.fromValue`: an exact match of a constant's value.
+fn stat_conversion_from_value(v: Option<&str>) -> Result<StatConversion, Fault> {
+    [
+        StatConversion::NONE,
+        StatConversion::FROM_MILLISECONDS_TO_MINUTES,
+        StatConversion::FROM_SECONDS_TO_MINUTES,
+        StatConversion::FROM_CENTIMETERS_PER_SECOND_TO_SPEED,
+        StatConversion::FROM_METERS_TO_DISTANCE,
+        StatConversion::FROM_NUMBER_TO_CURRENCY,
+    ]
+    .into_iter()
+    .find(|c| Some(c.print().as_str()) == v)
+    .ok_or_else(|| anyhow!("IllegalArgumentException: {}", v.unwrap_or("null")).into())
+}
+
+/// `AchievementState.fromValue`: an exact match of a constant's value.
+fn achievement_state_from_value(v: Option<&str>) -> Result<AchievementState, Fault> {
+    [
+        AchievementState::LOCKED,
+        AchievementState::IN_PROGRESS,
+        AchievementState::REWARD_WAITING,
+        AchievementState::COMPLETED,
+    ]
+    .into_iter()
+    .find(|c| Some(c.print().as_str()) == v)
+    .ok_or_else(|| anyhow!("IllegalArgumentException: {}", v.unwrap_or("null")).into())
+}
+
+// port: bo/AchievementBO#loadAll(Long)
+/// Every achievement as loaded at startup, with the persona's progress and
+/// each rank's state, and every badge.
+pub fn load_all(w: &World, persona_id: i64) -> Result<AchievementsPacket, Fault> {
+    if persona_id == 0 {
+        return Err(Fault::engine(EngineExceptionCode::FailedSessionSecurityPolicy, true));
+    }
+    let null = |what| move || Fault::null_pointer(what);
+
+    let mut definitions = ArrayOfAchievementDefinitionPacket::default();
+    let persona_achievement_entity_map = get_persona_achievement_entity_map(w.db(), persona_id)?;
+    for achievement_entity in &w.achievements.achievement_entities {
+        let mut achievement_definition_packet = AchievementDefinitionPacket {
+            achievement_definition_id: achievement_entity.id as i32,
+            achievement_ranks: Some(ArrayOfAchievementRankPacket::default()),
+            badge_definition_id: achievement_entity.badge_definition_id as i32,
+            is_visible: achievement_entity.visible.ok_or_else(null("AchievementEntity.visible"))?,
+            progress_text: achievement_entity.progress_text.clone(),
+            stat_conversion: Some(stat_conversion_from_value(achievement_entity.stat_conversion.as_deref())?),
+            can_progress: true,
+            ..Default::default()
+        };
+
+        let persona_achievement_entity = persona_achievement_entity_map.get(&achievement_entity.id);
+
+        if let Some(persona_achievement_entity) = persona_achievement_entity {
+            achievement_definition_packet.can_progress = persona_achievement_entity.can_progress;
+            achievement_definition_packet.current_value =
+                persona_achievement_entity.current_value.ok_or_else(null("PersonaAchievementEntity.currentValue"))?;
+        }
+
+        for achievement_rank_entity in &achievement_entity.ranks {
+            let rank = achievement_rank_entity.rank.ok_or_else(null("AchievementRankEntity.rank"))?;
+            let mut rank_packet = AchievementRankPacket {
+                achieved_on: Some("0001-01-01T00:00:00".into()),
+                is_rare: achievement_rank_entity.is_rare().ok_or_else(null("AchievementRankEntity.rarity"))?,
+                rarity: achievement_rank_entity.rarity.ok_or_else(null("AchievementRankEntity.rarity"))?,
+                rank: rank as i16,
+                reward_description: achievement_rank_entity.reward_description.clone(),
+                reward_type: achievement_rank_entity.reward_type.clone(),
+                reward_visual_style: achievement_rank_entity.reward_visual_style.clone(),
+                points: achievement_rank_entity.points.ok_or_else(null("AchievementRankEntity.points"))? as i16,
+                achievement_rank_id: achievement_rank_entity.id as i32,
+                // NOTE 17.05.2020: this is apparently necessary, game ignores updates otherwise
+                state: Some(if rank == 1 { AchievementState::IN_PROGRESS } else { AchievementState::LOCKED }),
+                threshold_value: i64::from(
+                    achievement_rank_entity.threshold_value.ok_or_else(null("AchievementRankEntity.thresholdValue"))?,
+                ),
+            };
+
+            if let Some(persona_achievement_entity) = persona_achievement_entity
+                && persona_achievement_entity.ranks.len() as i64 >= i64::from(rank)
+            {
+                let persona_achievement_rank_entity = usize::try_from(rank - 1)
+                    .ok()
+                    .and_then(|i| persona_achievement_entity.ranks.get(i))
+                    .ok_or_else(|| anyhow!("Index {} out of bounds", rank - 1))?;
+                rank_packet.state =
+                    Some(achievement_state_from_value(persona_achievement_rank_entity.state.as_deref())?);
+
+                if let Some(achieved_on) = persona_achievement_rank_entity.achieved_on {
+                    rank_packet.achieved_on = Some(rank_completed_at(achieved_on));
+                }
+            }
+
+            if let Some(ranks) = &mut achievement_definition_packet.achievement_ranks {
+                ranks.achievement_rank_packet.push(rank_packet);
+            }
+        }
+
+        definitions.achievement_definition_packet.push(achievement_definition_packet);
+    }
+
+    let mut badges = ArrayOfBadgeDefinitionPacket::default();
+    for badge_definition_entity in &w.achievements.badge_definition_entities {
+        badges.badge_definition_packet.push(BadgeDefinitionPacket {
+            background: badge_definition_entity.background.clone(),
+            border: badge_definition_entity.border.clone(),
+            description: badge_definition_entity.description.clone(),
+            icon: badge_definition_entity.icon.clone(),
+            name: badge_definition_entity.name.clone(),
+            badge_definition_id: badge_definition_entity.id as i32,
+        });
+    }
+
+    Ok(AchievementsPacket { persona_id, badges: Some(badges), definitions: Some(definitions) })
+}
+
+// port: bo/AchievementBO#redeemReward(Long,Long)
+/// Give the persona a rank's reward, which must be waiting, by its reward
+/// script; the rank is then Completed.
+pub fn redeem_reward(
+    w: &mut World,
+    persona_id: i64,
+    achievement_rank_id: Option<i64>,
+) -> Result<AchievementRewards, Fault> {
+    let mut persona_entity = persona::find(w.db(), persona_id)?;
+    let achievement_rank_id =
+        achievement_rank_id.ok_or_else(|| anyhow!("IllegalArgumentException: {persona_id} does not have null"))?;
+    let Some((mut persona_achievement_rank_entity, achievement_rank_entity)) =
+        persona_achievement_rank::find_by_persona_id_and_achievement_rank_id(w.db(), persona_id, achievement_rank_id)?
+    else {
+        return Err(anyhow!("IllegalArgumentException: {persona_id} does not have {achievement_rank_id}").into());
+    };
+
+    if persona_achievement_rank_entity.state.as_deref() != Some("RewardWaiting") {
+        return Err(anyhow!("IllegalArgumentException: {persona_id} has no reward for {achievement_rank_id}").into());
+    }
+
+    let mut achievement_rewards = AchievementRewards {
+        achievement_rank_id: Some(achievement_rank_id),
+        visual_style: achievement_rank_entity.reward_visual_style.clone(),
+        status: Some(CommerceResultStatus::SUCCESS),
+        ..Default::default()
+    };
+    let reward_script = w
+        .ejb(|w| {
+            achievement_reward::find_by_description(w.db(), achievement_rank_entity.reward_description.as_deref())
+        })?
+        .reward_script;
+    let persona_entity_ref = persona_entity.as_mut().ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    let rewards = item_reward::get_rewards(w, persona_entity_ref, Some(&reward_script))?;
+    item_reward::convert_rewards(w, &rewards, &mut achievement_rewards)?;
+    achievement_rewards.wallets = Some(ArrayOfWalletTrans {
+        wallet_trans: vec![WalletTrans { balance: persona_entity_ref.cash, currency: Some("CASH".into()) }],
+    });
+
+    persona_achievement_rank_entity.state = Some("Completed".into());
+    persona_achievement_rank::update(w.db(), &persona_achievement_rank_entity)?;
+
+    Ok(achievement_rewards)
 }
 
 // port: bo/AchievementBO#sendUpdateMessage(PersonaEntity,List,List)

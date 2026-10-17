@@ -16,7 +16,10 @@ use rusqlite::{Connection, MAIN_DB, params};
 const STATIC_SQL: &str = include_str!("../../../assets/static.sql");
 
 /// Schema migrations for `main`, applied in order and tracked in `user_version`.
-const MIGRATIONS: &[&str] = &[include_str!("../migrations/0001_upstream_schema.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("../migrations/0001_upstream_schema.sql"),
+    include_str!("../migrations/0002_achievement_rank_rarity.sql"),
+];
 
 static TEMPLATE: LazyLock<Mutex<Connection>> = LazyLock::new(|| {
     let conn = Connection::open_in_memory().expect("in-memory SQLite");
@@ -46,6 +49,13 @@ pub fn open(path: Option<&Path>, parameters: &BTreeMap<String, String>) -> anyho
         );
     }
     migrate(&mut conn)?;
+    // The rarity job's last results, which MySQL would have kept in the
+    // static table.
+    conn.execute_batch(
+        "UPDATE static.achievement_rank SET rarity = (SELECT r.rarity FROM main.achievement_rank_rarity r
+         WHERE r.achievement_rank_id = static.achievement_rank.ID)
+         WHERE ID IN (SELECT achievement_rank_id FROM main.achievement_rank_rarity)",
+    )?;
     for (name, value) in parameters {
         conn.execute("INSERT OR REPLACE INTO static.parameter (name, value) VALUES (?1, ?2)", params![name, value])?;
     }

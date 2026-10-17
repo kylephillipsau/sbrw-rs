@@ -140,7 +140,8 @@ impl SbrwServer {
     /// Every runtime table with rows, in the recorder's format.
     pub async fn snapshot(&self) -> anyhow::Result<Db> {
         self.world
-            .call(|w| crate::snapshot::sqlite(w.db(), &[]).map_err(|e| anyhow!(e).into()))
+            // sbrw-rs's copy of what MySQL kept in the static `achievement_rank`.
+            .call(|w| crate::snapshot::sqlite(w.db(), &["achievement_rank_rarity"]).map_err(|e| anyhow!(e).into()))
             .await
             .map_err(|fault| anyhow!("{fault}"))
     }

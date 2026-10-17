@@ -223,7 +223,6 @@ impl sbrw_xmpp::stream::Accounts for WorldAccounts {
     }
 }
 
-/// Upstream's `@Schedule(minute = "*")` jobs, at the start of every minute.
 /// Fire upstream's single-action timers (the DNF countdown) when they're
 /// due, checking every second.
 async fn run_timers(world: sbrw_core::WorldHandle, shutdown: CancellationToken) -> std::io::Result<()> {
@@ -243,6 +242,8 @@ async fn run_timers(world: sbrw_core::WorldHandle, shutdown: CancellationToken) 
     }
 }
 
+/// Upstream's `@Schedule` jobs at the start of every minute: the
+/// every-minute ones, and on the hour and half hour the half-hourly ones.
 async fn run_jobs(world: sbrw_core::WorldHandle, shutdown: CancellationToken) -> std::io::Result<()> {
     let into_minute = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -254,7 +255,11 @@ async fn run_jobs(world: sbrw_core::WorldHandle, shutdown: CancellationToken) ->
         tokio::select! {
             () = shutdown.cancelled() => return Ok(()),
             _ = minutes.tick() => {
-                for &job in sbrw_core::jobs::EVERY_MINUTE {
+                let minute = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| (d.as_secs() + 30) / 60 % 60);
+                let half_hourly = if minute.is_multiple_of(30) { sbrw_core::jobs::EVERY_HALF_HOUR } else { &[] };
+                for &job in sbrw_core::jobs::EVERY_MINUTE.iter().chain(half_hourly) {
                     if let Err(fault) = world.call(move |w| sbrw_core::jobs::run(w, job)).await {
                         tracing::warn!(job, "scheduled job failed: {fault:#}");
                     }

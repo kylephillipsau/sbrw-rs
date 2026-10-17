@@ -2,8 +2,6 @@
 # these to differ from its recording, and fails once one replays exactly so
 # that it gets removed from here. This list only ever shrinks.
 pending = [
-    "events/achievements",
-    "events/rarity",
     "events/treasure_hunt",
     "events/treasure_hunt_missed",
     "events/treasure_hunt_off",

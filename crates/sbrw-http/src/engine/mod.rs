@@ -14,6 +14,7 @@
 //! ported yet still gets upstream's routing and filters, then answers like the
 //! catch-all.
 
+mod achievements;
 mod boot;
 mod catalog;
 mod driver_persona;
@@ -376,6 +377,9 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/DriverPersona#updateStatusMessage(InputStream)" => {
             driver_persona::update_status_message(state, call).await
         }
+        "api/Achievements#loadall()" => achievements::loadall(state, call).await,
+        "api/Achievements#redeemreward(Long)" => achievements::redeemreward(state, call).await,
+        "api/ReloadAchievements#reloadAchievements(String)" => achievements::reload_achievements(state, call).await,
         "api/Events#availableAtLevel()" => events::available_at_level(state, call).await,
         "api/Events#instancedAccolades(Long)" => events::instanced_accolades(call),
         "api/Event#abort(Long)" => event::abort(state, call).await,

@@ -1,5 +1,5 @@
 {
-  "description": "The rarity job with no drivers, then with two.",
+  "description": "The rarity job: the share of drivers who reached each rank, which the game sees once the achievements are reloaded.",
   "seed": 1,
   "clock": "2026-01-01T12:00:00Z",
   "parameters": {
@@ -175,13 +175,65 @@
     },
     {
       "job": "AchievementBO#updateRankRarities",
-      "note": "Two drivers, one with ranks: 0.5."
+      "note": "Two drivers, one with ranks: 0.5 for those, 0 for the rest."
+    },
+    {
+      "note": "Rarities as loaded at startup: all 0, so all rare.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/loadall",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Reloading needs the admin token.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadAchievements",
+        "form": {
+          "adminAuth": "not the token"
+        }
+      }
+    },
+    {
+      "note": "Reloaded.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadAchievements",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "The job's rarities: 0.5 isn't rare.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/achievements/loadall",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
     },
     {
       "note": "Restoring the static data.",
       "sql": [
         "UPDATE achievement_rank SET rarity = 0"
       ]
+    },
+    {
+      "note": "Reloaded as it was.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadAchievements",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
     }
   ]
 }

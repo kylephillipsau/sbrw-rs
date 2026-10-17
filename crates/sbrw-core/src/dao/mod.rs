@@ -34,5 +34,6 @@ pub mod persona_badge;
 pub mod product;
 pub mod reward_table;
 pub mod treasure_hunt;
+pub mod used_powerup;
 pub mod user;
 pub mod vinyl_product;

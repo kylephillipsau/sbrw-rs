@@ -8,9 +8,9 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M5 done; M6 (lobbies and the race relay) is next. Everything the
+**Status:** M6 done; M7 (social and moderation) is next. Everything the
 launcher and the game do up to driving around the world with other players,
-shopping, and single-player events is in place:
+shopping, single-player events and racing other players is in place:
 - Every HTTP call up to and including creating, selecting and deleting a
   driver, the starter car, the garage and the inventory is ported, and
   replays recordings of the original exactly.
@@ -32,6 +32,14 @@ shopping, and single-player events is in place:
   redeeming rewards; the DNF countdown when two drivers share a session;
   and the daily treasure hunt. The reward arithmetic and every achievement
   script in the game data give what the original gives.
+- Lobbies replay recordings of the original exactly: race now and its
+  queue, joining an event's lobby, invitations, accepting, declining and
+  leaving, private lobbies for a chat group, the countdown's launch with
+  each racer's relay ticket, and Race Again after a race.
+- The race relay on UDP 9998 is written from protocol notes
+  ([docs/protocol/race.md](docs/protocol/race.md)) and checks each racer's
+  ticket against the lobby that launched. Two fake racers race through it
+  with the tickets from a real launch and both appear in the results.
 
 Milestones are verified against recordings of the original and of these
 reference servers, not with the real game, so nothing here has been run
@@ -47,7 +55,7 @@ against the game itself yet. See
 | M3 Free-roam multiplayer | done |
 | M4 Garage and economy | done |
 | M5 Single-player events, rewards, achievements | done |
-| M6 Lobbies and race relay | |
+| M6 Lobbies and race relay | done |
 | M7 Social and moderation | |
 | M8 Operations and real multiplayer | |
 | M9 Unpatched client (optional) | |
@@ -78,8 +86,8 @@ they can reach (see below).
 | 9999 | UDP | Free-roam |
 | 9998 | UDP | Race relay |
 
-`serve` runs the XMPP server on 5222 and the free-roam server on 9999; the
-race relay comes with M6. `--probe-xmpp` and `--probe-udp` replace them with
+`serve` runs the XMPP server on 5222, the free-roam server on 9999 and the
+race relay on 9998. `--probe-xmpp` and `--probe-udp` replace them with
 probes that record what the game sends without ever answering.
 
 ## Configuration

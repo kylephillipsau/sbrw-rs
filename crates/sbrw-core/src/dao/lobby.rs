@@ -48,6 +48,7 @@ impl LobbyEntrantEntity {
 }
 
 impl LobbyEntity {
+    // port: jpa/LobbyEntity#getLobbyCountdownInMilliseconds(int)
     /// `getLobbyCountdownInMilliseconds(baseTime)`: how long is left of a
     /// countdown of `base_time` from the lobby's start, which counts from its
     /// whole second.

@@ -84,3 +84,21 @@ reason = "Call::session().active_persona_id."
 ["bo/RequestSessionInfo#getRelayCryptoTicket()"]
 status = "replaced"
 reason = "Call::session().relay_crypto_ticket."
+
+["dao/LobbyEntrantDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/LobbyEntrantEntity@LobbyEntrantEntity.deleteByPersona"]
+status = "dropped"
+reason = "Only LobbyEntrantDAO.deleteByPersona runs it, and nothing calls that."
+
+["jpa/LobbyEntity@LobbyEntity.findAllOpen"]
+status = "dropped"
+reason = "Unused upstream: LobbyDAO.findAllOpen runs LobbyEntity.findAllOpenByCarClass."
+
+["jpa/LobbyEntrantEntity#compareTo(LobbyEntrantEntity)"]
+status = "dropped"
+reason = """
+Unused upstream: nothing sorts entrants by their natural order. LobbyCountdownBO.onTimeout
+sorts with its own comparator, by persona id highest first."""

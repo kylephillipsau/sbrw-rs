@@ -1,0 +1,86 @@
+{
+  "scenario": "social/announce",
+  "description": "An announcement to every player, with the right token and the wrong one.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "The wrong token.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/SendAnnouncement",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "Server restarting in 5 minutes",
+          "announcementAuth": "wrong"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token"
+      }
+    },
+    {
+      "note": "The right one: the announcement goes out.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/SendAnnouncement",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "Server restarting in 5 minutes",
+          "announcementAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! sent announcement"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "sendChatAnnouncement",
+            "args": [
+              "Server restarting in 5 minutes"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "db": {
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ]
+  }
+}

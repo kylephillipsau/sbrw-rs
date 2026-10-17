@@ -1,0 +1,487 @@
+{
+  "description": "Blocking a stranger and a friend, the blocked list for a user with two drivers, who has blocked whom, unblocking, and what blocking does to friend requests and presence.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ENABLE_REDIS": "true"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "User 3 registers: launcher token ...0005.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player3@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-3"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0006.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000005"
+        }
+      }
+    },
+    {
+      "note": "Driver 102.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER3",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "102"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 101's user has a second driver, 103.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2B",
+          "iconIndex": "7"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "A persona that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "999"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 blocks driver 101, a stranger: driver 101 comes back.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's blocked list: both of driver 101's user's drivers.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockeduserlist",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Who has blocked driver 101's user: driver 100's.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Nobody has blocked driver 100's user.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 can't ask driver 100, who blocked them.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 asking driver 101: their block counts as already friends.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Blocking driver 103 too: the same user, so the row is updated, not added.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "103"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Unblocking.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Not blocked any more.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A persona that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "999"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Nothing blocked.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockeduserlist",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 and 102 become friends.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Accepted.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "100",
+          "resolution": "1"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 blocks their friend: driver 102's side goes, and they're told driver 100 is offline.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 102's list.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's list: a block isn't listed.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 comes online: driver 102, whom they blocked, still hears of it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "100",
+          "presence": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 can't remove driver 100: their side is gone.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "100"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Nor can driver 100 remove driver 102.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 blocks back: that deletes driver 100's block of them, and driver 100 is told they're offline.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "100"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "So nobody has blocked driver 102's user.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 102's user has blocked driver 100's.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    }
+  ]
+}

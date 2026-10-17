@@ -1,0 +1,642 @@
+{
+  "description": "Friend requests, accepting, rejecting, cancelling and removing; the friends list with presence; presence pushes to friends; a user's second driver.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ENABLE_REDIS": "true"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "User 3 registers: launcher token ...0005.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player3@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-3"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0006.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000005"
+        }
+      }
+    },
+    {
+      "note": "Driver 102.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER3",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "102"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "No such driver.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "NOBODY"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 can't add themselves.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A request to driver 101: two relationship rows, and driver 101 hears of it.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Again: driver 100's own row isn't a friendship (status 3), but driver 101's is pending.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 asks back: their pending row counts as already friends.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's list: a sent request isn't listed.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 101's list: the pending request, with presence 3.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 comes online: everyone they have a row for hears of it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "101",
+          "presence": "1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "An unknown resolution.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "100",
+          "resolution": "2"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Persona 0.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "0",
+          "resolution": "1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "A persona that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "999",
+          "resolution": "1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 has nothing to resolve with driver 100.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "100",
+          "resolution": "1"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 accepts: driver 100 hears their presence, and gets driver 100's persona back.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "100",
+          "resolution": "1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's list: driver 101 with their presence.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 101's list: driver 100, offline.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's presence changes: driver 101 hears of it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "100",
+          "presence": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A request to driver 102.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 rejects it: both rows go, and driver 100 is told they're offline.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "100",
+          "resolution": "0"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Nothing left.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Asking again.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 cancels the request: both rows go; driver 100's own persona comes back.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Nothing to remove now.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A persona that doesn't exist.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "999"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 101's user has a second driver, 103.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2B",
+          "iconIndex": "7"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's list shows each of driver 101's user's drivers.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 103 comes online.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "103",
+          "presence": "1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "With their presences.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 removes driver 100: both rows go.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "100"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Empty.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 asks driver 102 again.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 deletes their driver.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": {
+          "personaId": "102"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's list after that.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "And driver 102's user's.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 logs out of their driver.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogoutPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Without a driver selected.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    }
+  ]
+}

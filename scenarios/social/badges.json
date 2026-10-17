@@ -1,0 +1,257 @@
+{
+  "description": "Setting a driver's badges: new slots, changing a slot, a slot past 3, an unknown badge, and no driver selected.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "No badges yet.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Badges in slots 0 and 1.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/badges/set",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BadgeBundle xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Badges><BadgeInput><BadgeDefinitionId>1</BadgeDefinitionId><SlotId>0</SlotId></BadgeInput><BadgeInput><BadgeDefinitionId>2</BadgeDefinitionId><SlotId>1</SlotId></BadgeInput></Badges></BadgeBundle>"
+      }
+    },
+    {
+      "note": "Not shown: a badge only shows once its achievement has a completed rank.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Slot 0 changes; slot 3 is the last.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/badges/set",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BadgeBundle xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Badges><BadgeInput><BadgeDefinitionId>3</BadgeDefinitionId><SlotId>0</SlotId></BadgeInput><BadgeInput><BadgeDefinitionId>4</BadgeDefinitionId><SlotId>3</SlotId></BadgeInput></Badges></BadgeBundle>"
+      }
+    },
+    {
+      "note": "Slot 4: an error, and slot 2 isn't set either.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/badges/set",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BadgeBundle xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Badges><BadgeInput><BadgeDefinitionId>5</BadgeDefinitionId><SlotId>2</SlotId></BadgeInput><BadgeInput><BadgeDefinitionId>6</BadgeDefinitionId><SlotId>4</SlotId></BadgeInput></Badges></BadgeBundle>"
+      }
+    },
+    {
+      "note": "An unknown badge: an error, and slot 2 isn't set either.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/badges/set",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BadgeBundle xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Badges><BadgeInput><BadgeDefinitionId>5</BadgeDefinitionId><SlotId>2</SlotId></BadgeInput><BadgeInput><BadgeDefinitionId>999</BadgeDefinitionId><SlotId>1</SlotId></BadgeInput></Badges></BadgeBundle>"
+      }
+    },
+    {
+      "note": "An empty bundle.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/badges/set",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BadgeBundle xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Badges></Badges></BadgeBundle>"
+      }
+    },
+    {
+      "note": "The badges as they stand.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "As another driver sees them.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 logs out of their driver.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLogoutPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Without a driver selected.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/badges/set",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BadgeBundle xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Badges><BadgeInput><BadgeDefinitionId>1</BadgeDefinitionId><SlotId>0</SlotId></BadgeInput></Badges></BadgeBundle>"
+      }
+    }
+  ]
+}

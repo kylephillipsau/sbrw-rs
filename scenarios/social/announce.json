@@ -1,0 +1,32 @@
+{
+  "description": "An announcement to every player, with the right token and the wrong one.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ANNOUNCEMENT_AUTH": "secret"
+  },
+  "steps": [
+    {
+      "note": "The wrong token.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/SendAnnouncement",
+        "form": {
+          "message": "Server restarting in 5 minutes",
+          "announcementAuth": "wrong"
+        }
+      }
+    },
+    {
+      "note": "The right one: the announcement goes out.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/SendAnnouncement",
+        "form": {
+          "message": "Server restarting in 5 minutes",
+          "announcementAuth": "secret"
+        }
+      }
+    }
+  ]
+}

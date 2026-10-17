@@ -1,0 +1,1755 @@
+{
+  "scenario": "social/blocks",
+  "description": "Blocking a stranger and a friend, the blocked list for a user with two drivers, who has blocked whom, unblocking, and what blocking does to friend requests and presence.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>2</UserId><LoginToken>00000000-0000-4000-8000-000000000003</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000004</securityToken><subscribeMsg>false</subscribeMsg><userId>2</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER2</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>101</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              101,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 101,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>101</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "101"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "User 3 registers: launcher token ...0005.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player3@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-3"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>3</UserId><LoginToken>00000000-0000-4000-8000-000000000005</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0006.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000005"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000006</securityToken><subscribeMsg>false</subscribeMsg><userId>3</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 102.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER3",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER3</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>102</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              102,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "102"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 102,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>102</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "102"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 101's user has a second driver, 103.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2B",
+          "iconIndex": "7"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>7</IconIndex><Level>60</Level><Name>DRIVER2B</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>103</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              103,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "A persona that doesn't exist.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "999"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-1646</ErrorCode><InnerException><ErrorCode>-1646</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.blockPlayer(SocialRelationshipBO.java:282)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.blockPlayer(Unknown Source)\n\tat com.soapboxrace.core.api.BlockPlayer.blockPlayer(BlockPlayer.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.blockPlayer(SocialRelationshipBO.java:282)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.blockPlayer(Unknown Source)\n\tat com.soapboxrace.core.api.BlockPlayer.blockPlayer(BlockPlayer.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Driver 100 blocks driver 101, a stranger: driver 101 comes back.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER2</Name><PersonaId>101</PersonaId><Presence>0</Presence><Score>0</Score><UserId>2</UserId></PersonaBase>"
+      }
+    },
+    {
+      "note": "Driver 100's blocked list: both of driver 101's user's drivers.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockeduserlist",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfBasicBlockPlayerInfo><BasicBlockPlayerInfo><personaId>101</personaId><userId>2</userId></BasicBlockPlayerInfo><BasicBlockPlayerInfo><personaId>103</personaId><userId>2</userId></BasicBlockPlayerInfo></ArrayOfBasicBlockPlayerInfo>"
+      }
+    },
+    {
+      "note": "Who has blocked driver 101's user: driver 100's.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "query": null,
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfLong><long>1</long></ArrayOfLong>"
+      }
+    },
+    {
+      "note": "Nobody has blocked driver 100's user.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfLong/>"
+      }
+    },
+    {
+      "note": "Driver 101 can't ask driver 100, who blocked them.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-10000</ErrorCode><InnerException><ErrorCode>-10000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.addFriend(SocialRelationshipBO.java:160)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.addFriend(Unknown Source)\n\tat com.soapboxrace.core.api.AddFriendRequest.addFriendRequest(AddFriendRequest.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.addFriend(SocialRelationshipBO.java:160)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.addFriend(Unknown Source)\n\tat com.soapboxrace.core.api.AddFriendRequest.addFriendRequest(AddFriendRequest.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Driver 100 asking driver 101: their block counts as already friends.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<FriendResult><result>2</result></FriendResult>"
+      }
+    },
+    {
+      "note": "Blocking driver 103 too: the same user, so the row is updated, not added.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "103"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaBase><Badges/><IconIndex>7</IconIndex><Level>60</Level><Name>DRIVER2B</Name><PersonaId>103</PersonaId><Presence>0</Presence><Score>0</Score><UserId>2</UserId></PersonaBase>"
+      }
+    },
+    {
+      "note": "Unblocking.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER2</Name><PersonaId>101</PersonaId><Presence>0</Presence><Score>0</Score><UserId>2</UserId></PersonaBase>"
+      }
+    },
+    {
+      "note": "Not blocked any more.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "101"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-10000</ErrorCode><InnerException><ErrorCode>-10000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.unblockPlayer(SocialRelationshipBO.java:319)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.unblockPlayer(Unknown Source)\n\tat com.soapboxrace.core.api.UnblockPlayer.unblockPlayer(UnblockPlayer.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.unblockPlayer(SocialRelationshipBO.java:319)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.unblockPlayer(Unknown Source)\n\tat com.soapboxrace.core.api.UnblockPlayer.unblockPlayer(UnblockPlayer.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "A persona that doesn't exist.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "999"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-1646</ErrorCode><InnerException><ErrorCode>-1646</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.unblockPlayer(SocialRelationshipBO.java:310)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.unblockPlayer(Unknown Source)\n\tat com.soapboxrace.core.api.UnblockPlayer.unblockPlayer(UnblockPlayer.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.unblockPlayer(SocialRelationshipBO.java:310)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.unblockPlayer(Unknown Source)\n\tat com.soapboxrace.core.api.UnblockPlayer.unblockPlayer(UnblockPlayer.java:33)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Nothing blocked.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockeduserlist",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfBasicBlockPlayerInfo/>"
+      }
+    },
+    {
+      "note": "Driver 100 and 102 become friends.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<FriendResult><persona><iconIndex>5</iconIndex><level>60</level><name>DRIVER3</name><originalName>test</originalName><personaId>102</personaId><socialNetwork>0</socialNetwork><userId>3</userId></persona><result>0</result></FriendResult>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 102,
+            "body": "<FriendPersona><iconIndex>5</iconIndex><level>60</level><name>DRIVER1</name><originalName>test</originalName><personaId>100</personaId><presence>3</presence><socialNetwork>0</socialNetwork><userId>1</userId></FriendPersona>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Accepted.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/resolvefriendsrequest",
+        "query": {
+          "friendPersonaId": "100",
+          "resolution": "1"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PersonaId>100</PersonaId><Presence>0</Presence><Score>0</Score><UserId>1</UserId></PersonaBase>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER3</Name><PersonaId>102</PersonaId><Presence>0</Presence><Score>0</Score><UserId>3</UserId></PersonaBase></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 100 blocks their friend: driver 102's side goes, and they're told driver 100 is offline.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER3</Name><PersonaId>102</PersonaId><Presence>0</Presence><Score>0</Score><UserId>3</UserId></PersonaBase>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 102,
+            "body": "<response status=\"1\" ticket=\"0\"><PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PersonaId>100</PersonaId><Presence>0</Presence><Score>0</Score><UserId>1</UserId></PersonaBase></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 102's list.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "query": null,
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaFriendsList><friendPersona/></PersonaFriendsList>"
+      }
+    },
+    {
+      "note": "Driver 100's list: a block isn't listed.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaFriendsList><friendPersona/></PersonaFriendsList>"
+      }
+    },
+    {
+      "note": "Driver 100 comes online: driver 102, whom they blocked, still hears of it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/UpdatePersonaPresence",
+        "query": {
+          "personaId": "100",
+          "presence": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 102,
+            "body": "<response status=\"1\" ticket=\"0\"><PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PersonaId>100</PersonaId><Presence>1</Presence><Score>0</Score><UserId>1</UserId></PersonaBase></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "SET",
+            "args": [
+              "game_presence.100",
+              "1"
+            ]
+          },
+          {
+            "command": "PUBLISH",
+            "args": [
+              "game_presence_updates",
+              "100|1"
+            ]
+          },
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Driver 102 can't remove driver 100: their side is gone.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "100"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-10000</ErrorCode><InnerException><ErrorCode>-10000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.removeFriend(SocialRelationshipBO.java:258)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.removeFriend(Unknown Source)\n\tat com.soapboxrace.core.api.RemoveFriend.removefriend(RemoveFriend.java:32)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.removeFriend(SocialRelationshipBO.java:258)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.removeFriend(Unknown Source)\n\tat com.soapboxrace.core.api.RemoveFriend.removefriend(RemoveFriend.java:32)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Nor can driver 100 remove driver 102.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/removefriend",
+        "query": {
+          "friendPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-10000</ErrorCode><InnerException><ErrorCode>-10000</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.removeFriend(SocialRelationshipBO.java:258)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.removeFriend(Unknown Source)\n\tat com.soapboxrace.core.api.RemoveFriend.removefriend(RemoveFriend.java:32)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.SocialRelationshipBO.removeFriend(SocialRelationshipBO.java:258)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.SocialRelationshipBO$ByteBuddy$UHdLwxka.removeFriend(Unknown Source)\n\tat com.soapboxrace.core.api.RemoveFriend.removefriend(RemoveFriend.java:32)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Driver 102 blocks back: that deletes driver 100's block of them, and driver 100 is told they're offline.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/blockplayer",
+        "query": {
+          "otherPersonaId": "100"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PersonaId>100</PersonaId><Presence>1</Presence><Score>0</Score><UserId>1</UserId></PersonaBase>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><PersonaBase><Badges/><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER3</Name><PersonaId>102</PersonaId><Presence>0</Presence><Score>0</Score><UserId>3</UserId></PersonaBase></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "So nobody has blocked driver 102's user.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "query": null,
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfLong/>"
+      }
+    },
+    {
+      "note": "Driver 102's user has blocked driver 100's.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/getblockersbyusers",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ArrayOfLong><long>3</long></ArrayOfLong>"
+      }
+    }
+  ],
+  "db": {
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      },
+      {
+        "id": 2,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 101
+      },
+      {
+        "id": 3,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 102
+      },
+      {
+        "id": 4,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 103
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 1,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 12,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 13,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 14,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 15,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 16,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 17,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 18,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 19,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 20,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 21,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 22,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 2,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 23,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 24,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 25,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 26,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 27,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 28,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 29,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 30,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 31,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 32,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 33,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 3,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 34,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 35,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 36,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 37,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 38,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 39,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 40,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 41,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 42,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 43,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 44,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 4,
+        "productId": "SRV-AMP-INSURANCE"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      },
+      {
+        "ID": 2,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 2
+      },
+      {
+        "ID": 3,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 3
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 0.0,
+        "cash": 350000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      },
+      {
+        "ID": 101,
+        "boost": 0.0,
+        "cash": 350000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER2",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 2,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      },
+      {
+        "ID": 102,
+        "boost": 0.0,
+        "cash": 350000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER3",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 3,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      },
+      {
+        "ID": 103,
+        "boost": 0.0,
+        "cash": 350000.0,
+        "curCarIndex": 0,
+        "iconIndex": 7,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER2B",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 2,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "social_relationship": [
+      {
+        "ID": 4,
+        "remotePersonaId": 100,
+        "status": 2,
+        "fromUserId": 1,
+        "userId": 3
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -1155869325,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      },
+      {
+        "personaId": 101,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": 431529176,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      },
+      {
+        "personaId": 102,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": 1761283695,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      },
+      {
+        "personaId": 103,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": 1749940626,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player1@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      },
+      {
+        "ID": 2,
+        "EMAIL": "player2@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      },
+      {
+        "ID": 3,
+        "EMAIL": "player3@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

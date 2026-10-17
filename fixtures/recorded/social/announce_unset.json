@@ -1,0 +1,52 @@
+{
+  "scenario": "social/announce_unset",
+  "description": "An announcement when no token is set.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "No ANNOUNCEMENT_AUTH: no token is right.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/SendAnnouncement",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "Hello",
+          "announcementAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token"
+      }
+    }
+  ],
+  "db": {
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ]
+  }
+}

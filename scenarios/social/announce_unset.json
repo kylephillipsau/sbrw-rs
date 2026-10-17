@@ -1,0 +1,18 @@
+{
+  "description": "An announcement when no token is set.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "No ANNOUNCEMENT_AUTH: no token is right.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/SendAnnouncement",
+        "form": {
+          "message": "Hello",
+          "announcementAuth": "secret"
+        }
+      }
+    }
+  ]
+}

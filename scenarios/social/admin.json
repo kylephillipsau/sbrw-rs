@@ -1,0 +1,463 @@
+{
+  "description": "Reports, and an admin's commands through them: kick, ban for a time or for good, unban, and what they don't do; the expired-ban job.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "User 3 registers: launcher token ...0005.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player3@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-3"
+        }
+      }
+    },
+    {
+      "note": "User 3 is an admin.",
+      "sql": [
+        "UPDATE user SET isAdmin = 1 WHERE ID = 3"
+      ]
+    },
+    {
+      "note": "Logging in again, so the session's user is an admin: launcher token ...0006.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player3@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-3"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0007.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 102.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER3",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "102"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Driver 100's hardware is recorded.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.21GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "So is driver 101's.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Reporting/SendHardwareInfo",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "body": "<HardwareInfo xmlns=\"http://schemas.datacontract.org/2004/07/Victory.DataLayer.Serialization\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><availableMem>4194304</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.22GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>591594</cpuid1_0><cpuid1_1>1050624</cpuid1_1><cpuid1_2>2147154943</cpuid1_2><cpuid1_3>-1075053569</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack/><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>1</userID><vendorID>4318</vendorID></HardwareInfo>"
+      }
+    },
+    {
+      "note": "Driver 100 isn't an admin: their /kick is a report.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "100",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "/kick",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "An admin's report that isn't a command is a report.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "Driving badly",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "A command against a driver who doesn't exist: nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "999",
+          "petitionType": "1",
+          "description": "/kick",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "An unknown command: nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "/dance",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 kicks driver 101: told to go, and their session ends.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "/KICK",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Driver 101's session is gone.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "A day's ban for driver 100: the ban, their hardware flagged, and a kick.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "100",
+          "petitionType": "1",
+          "description": "/ban 1d Being rude",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 tries to log in.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        }
+      }
+    },
+    {
+      "note": "Already banned.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "100",
+          "petitionType": "1",
+          "description": "/ban",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 banned for good: no time given, so it's all reason.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "/ban Cheating badly",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Unbanned: the ban ends and their hardware is cleared.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "/unban",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "Not banned any more.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "101",
+          "petitionType": "1",
+          "description": "/unban",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "note": "The admin bans themselves for two and a half hours, without a reason.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/Social/petition",
+        "query": {
+          "personaId": "102",
+          "abuserPersonaId": "102",
+          "petitionType": "1",
+          "description": "/ban 2h30m",
+          "customCarID": "0",
+          "chatMinutes": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000007"
+        }
+      }
+    },
+    {
+      "advance_ms": 9000000,
+      "note": "The shorter ban's end."
+    },
+    {
+      "job": "BanBO#checkExpiredBans",
+      "note": "It has expired, and driver 100's day ban hasn't."
+    },
+    {
+      "note": "Driver 100 is still banned.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        }
+      }
+    }
+  ]
+}

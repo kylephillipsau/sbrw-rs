@@ -1,0 +1,185 @@
+{
+  "description": "Joining what can't be joined: an event that doesn't exist, one of another class, racing now without a car.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ENABLE_DROP_ITEM": "false"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "A starter car, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/101/baskets",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Driver 100 has no car.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "An event that doesn't exist.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/99999",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "A class 1866825865 event: not driver 101's class.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/357",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "An open event without a car: a lobby all the same.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A class event without a car.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/357",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    }
+  ]
+}

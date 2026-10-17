@@ -1,0 +1,356 @@
+{
+  "description": "Race now finds lobbies started in the last 35 seconds, of the driver's class or open, for their level, and picks one at random.",
+  "seed": 5,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "ENABLE_DROP_ITEM": "false"
+  },
+  "steps": [
+    {
+      "note": "User 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A starter car, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "User 2 registers: launcher token ...0003.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0004.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000003"
+        }
+      }
+    },
+    {
+      "note": "Driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER2",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "A starter car, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/101/baskets",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "User 3 registers: launcher token ...0005.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player3@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-3"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0006.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000005"
+        }
+      }
+    },
+    {
+      "note": "Driver 102.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER3",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "102"
+        },
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "A starter car, class 872416321.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/102/baskets",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "advance_ms": 600,
+      "note": "Six tenths of a second in: MySQL rounds the lobbies' start to the next second."
+    },
+    {
+      "note": "Lobby 1: a sprint, from level 10.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/22",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Lobby 2: a circuit, from level 2.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/61",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Lobby 3: a class 872416321 team escape, from level 10.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/377",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Lobby 4: a class 1866825865 team escape: not driver 102's class.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueevent/357",
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "The lobbies are stored as starting a second from now: none is found, so the queue.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "advance_ms": 400,
+      "note": "Their stored start."
+    },
+    {
+      "note": "Driver 102 at level 5.",
+      "sql": [
+        "UPDATE persona SET level = 5 WHERE ID = 102"
+      ]
+    },
+    {
+      "note": "Level 5: only lobby 2 is for that level.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Driver 102 at level 60.",
+      "sql": [
+        "UPDATE persona SET level = 60 WHERE ID = 102"
+      ]
+    },
+    {
+      "note": "Level 60: lobbies 1, 2 and 3, shuffled; the first is offered.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "Again: another shuffle.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "note": "And again.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "advance_ms": 35000,
+      "note": "Exactly 35 seconds after the stored start."
+    },
+    {
+      "note": "Still in the window.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    },
+    {
+      "advance_ms": 1
+    },
+    {
+      "note": "A millisecond more: no lobby, so the queue.",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/matchmaking/joinqueueracenow",
+        "headers": {
+          "userId": "3",
+          "securityToken": "00000000-0000-4000-8000-000000000006"
+        }
+      }
+    }
+  ]
+}

@@ -364,3 +364,11 @@ pub fn update(db: &Connection, car: &CarEntity) -> rusqlite::Result<()> {
     ])?;
     Ok(())
 }
+
+/// `CarDAO.delete` (`remove(merge(car))`). The part collections have
+/// `orphanRemoval`, so Hibernate removes the parts with the car; the foreign
+/// keys' `ON DELETE CASCADE` does the same here.
+pub fn delete(db: &Connection, car: &CarEntity) -> rusqlite::Result<()> {
+    db.prepare_cached("DELETE FROM car WHERE id = ?1")?.execute([car.id])?;
+    Ok(())
+}

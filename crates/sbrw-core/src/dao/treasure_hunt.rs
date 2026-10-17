@@ -2,7 +2,7 @@
 
 // port: dao/TreasureHuntDAO#<init>()
 
-use rusqlite::{Connection, params};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 use time::Date;
 
 use crate::datetime;
@@ -33,6 +33,47 @@ impl Default for TreasureHuntEntity {
             th_date: None,
         }
     }
+}
+
+impl TreasureHuntEntity {
+    fn from_row(row: &Row<'_>) -> rusqlite::Result<Self> {
+        Ok(Self {
+            persona_id: row.get("personaId")?,
+            coins_collected: row.get("coinsCollected")?,
+            is_streak_broken: row.get("isStreakBroken")?,
+            is_completed: row.get("isCompleted")?,
+            num_coins: row.get("numCoins")?,
+            seed: row.get("seed")?,
+            streak: row.get("streak")?,
+            th_date: datetime::date_column(row, "thDate")?,
+        })
+    }
+}
+
+/// `TreasureHuntDAO.find` (`LongKeyedDAO.find`).
+pub fn find(db: &Connection, persona_id: i64) -> rusqlite::Result<Option<TreasureHuntEntity>> {
+    db.prepare_cached("SELECT * FROM treasure_hunt WHERE personaId = ?1")?
+        .query_row([persona_id], TreasureHuntEntity::from_row)
+        .optional()
+}
+
+/// `TreasureHuntDAO.update` (`merge`): every mapped column, from this copy.
+pub fn update(db: &Connection, th: &TreasureHuntEntity) -> rusqlite::Result<()> {
+    db.prepare_cached(
+        "UPDATE treasure_hunt SET coinsCollected = ?2, isStreakBroken = ?3, numCoins = ?4, seed = ?5, streak = ?6,
+         thDate = ?7, isCompleted = ?8 WHERE personaId = ?1",
+    )?
+    .execute(params![
+        th.persona_id,
+        th.coins_collected,
+        th.is_streak_broken,
+        th.num_coins,
+        th.seed,
+        th.streak,
+        th.th_date.map(datetime::date_to_sql),
+        th.is_completed,
+    ])?;
+    Ok(())
 }
 
 /// `TreasureHuntDAO.insert` (`persist`).

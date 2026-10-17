@@ -280,6 +280,28 @@ pub fn split(s: &str, sep: char) -> Vec<String> {
     parts
 }
 
+/// `Math.max(double, double)`: NaN if either is, and 0.0 above -0.0.
+pub fn math_max(a: f64, b: f64) -> f64 {
+    if a.is_nan() {
+        return a;
+    }
+    if a == 0.0 && b == 0.0 && a.is_sign_negative() {
+        return b;
+    }
+    if a >= b { a } else { b }
+}
+
+/// `Math.min(double, double)`: NaN if either is, and -0.0 below 0.0.
+pub fn math_min(a: f64, b: f64) -> f64 {
+    if a.is_nan() {
+        return a;
+    }
+    if a == 0.0 && b == 0.0 && b.is_sign_negative() {
+        return b;
+    }
+    if a <= b { a } else { b }
+}
+
 /// `Math.round(float)`: `floor(a + 0.5)` computed exactly, NaN to 0, and
 /// saturating at the `int` range.
 pub fn round_float(a: f32) -> i32 {
@@ -375,5 +397,18 @@ mod string_and_math_tests {
         assert_eq!(round_float(f32::NAN), 0);
         assert_eq!(round_float(3e9), i32::MAX);
         assert_eq!(round_float(-3e9), i32::MIN);
+    }
+
+    #[test]
+    fn min_and_max_like_math() {
+        assert_eq!(math_max(0.0, 5.0), 5.0);
+        assert_eq!(math_min(1e8, 3.5), 3.5);
+        assert!(math_max(0.0, -0.0).is_sign_positive());
+        assert!(math_max(-0.0, 0.0).is_sign_positive());
+        assert!(math_min(0.0, -0.0).is_sign_negative());
+        assert!(math_min(-0.0, 0.0).is_sign_negative());
+        assert!(math_max(0.0, f64::NAN).is_nan());
+        assert!(math_max(f64::NAN, 0.0).is_nan());
+        assert!(math_min(1.0, f64::NAN).is_nan());
     }
 }

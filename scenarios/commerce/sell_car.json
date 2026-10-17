@@ -230,6 +230,54 @@
       }
     },
     {
+      "note": "Car 5, selected (index 2).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Selecting the rental, car 4 (index 1).",
+      "http": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/4",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selling car 5, after the selected one: the index still goes down, so car 3 is selected now.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Car 3.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
       "note": "Cash and boost.",
       "http": {
         "method": "GET",

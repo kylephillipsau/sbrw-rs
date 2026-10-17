@@ -1,11 +1,12 @@
-//! `api/Personas`: a driver's garage and inventory. As upstream, each call
-//! into a BO is its own world call.
+//! `api/Personas`: a driver's garage, inventory and shopping. As upstream,
+//! each call into a BO is its own world call.
 
 use axum::http::StatusCode;
 use axum::response::Response;
-use sbrw_core::Fault;
 use sbrw_core::bo::util::owned_car_converter;
 use sbrw_core::bo::{basket, car_slot, inventory, persona, token_session};
+use sbrw_core::dao::persona::PersonaEntity;
+use sbrw_core::{Fault, World};
 use sbrw_xml::ToXml;
 use sbrw_xml::dto::http::{
     ArrayOfCommerceItemTrans, ArrayOfInventoryItemTrans, ArrayOfOwnedCarTrans, ArrayOfProductTrans, ArrayOfWalletTrans,
@@ -22,8 +23,9 @@ fn path_id(call: &Call, name: &str) -> Result<i64, Fault> {
 }
 
 // port: api/Personas#baskets(InputStream,Long)
-/// Buying the first item of a basket. Ported so far: cars. Every answer has
-/// one empty inventory item and the persona's wallets as they end up.
+/// Buying the first item of a basket. Ported so far: everything but card
+/// packs. Every answer has one empty inventory item and the persona's
+/// wallets as they end up.
 pub(super) async fn baskets(state: &AppState, call: &Call) -> Result<Response, Fault> {
     let persona_id = path_id(call, "personaId")?;
     let session = call.session();
@@ -45,14 +47,31 @@ pub(super) async fn baskets(state: &AppState, call: &Call) -> Result<Response, F
     let product_id = item.product_id.ok_or_else(|| Fault::null_pointer("BasketItemTrans.productId"))?;
 
     let mut persona_entity = persona_entity;
+    // A BO call that buys with the persona and gives it back as it ends up.
+    type Buy = fn(&mut World, &str, &mut PersonaEntity) -> Result<CommerceResultStatus, Fault>;
+    let buy_with = async |buy: Buy, persona_entity: Option<PersonaEntity>, product_id: String| {
+        world
+            .call(move |w| {
+                let mut persona = persona_entity.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+                let status = buy(w, &product_id, &mut persona)?;
+                Ok((status, persona))
+            })
+            .await
+    };
     if product_id == "-1" || product_id == "SRV-GARAGESLOT" {
         commerce_result_trans.status = Some(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS);
     } else if product_id.contains("SRV-POWERUP") {
-        return Err(Fault::unported("bo/BasketBO#buyPowerups(String,PersonaEntity)"));
+        let (status, persona) = buy_with(basket::buy_powerups, persona_entity, product_id).await?;
+        persona_entity = Some(persona);
+        commerce_result_trans.status = Some(status);
     } else if product_id == "SRV-REPAIR" {
-        return Err(Fault::unported("bo/BasketBO#repairCar(String,PersonaEntity)"));
+        let (status, persona) = buy_with(basket::repair_car, persona_entity, product_id).await?;
+        persona_entity = Some(persona);
+        commerce_result_trans.status = Some(status);
     } else if product_id == "SRV-THREVIVE" {
-        return Err(Fault::unported("bo/BasketBO#reviveTreasureHunt(String,PersonaEntity)"));
+        let (status, persona) = buy_with(basket::revive_treasure_hunt, persona_entity, product_id).await?;
+        persona_entity = Some(persona);
+        commerce_result_trans.status = Some(status);
     } else {
         let product_entity = {
             let product_id = product_id.clone();
@@ -74,7 +93,16 @@ pub(super) async fn baskets(state: &AppState, call: &Call) -> Result<Response, F
                 commerce_result_trans.status = Some(status);
             }
             "BUNDLE" => return Err(Fault::unported("bo/BasketBO#buyBundle(String,PersonaEntity,CommerceResultTrans)")),
-            "AMPLIFIER" => return Err(Fault::unported("bo/BasketBO#buyAmplifier(PersonaEntity,String)")),
+            "AMPLIFIER" => {
+                let (status, persona) = buy_with(
+                    |w, product_id, persona| basket::buy_amplifier(w, persona, product_id),
+                    persona_entity,
+                    product_id,
+                )
+                .await?;
+                persona_entity = Some(persona);
+                commerce_result_trans.status = Some(status);
+            }
             _ => {}
         }
     }
@@ -156,6 +184,38 @@ pub(super) async fn inventory_objects(state: &AppState, call: &Call) -> Result<R
         .await?;
     let inventory_trans = world.call(move |w| inventory::get_client_inventory(w, &inventory_entity)).await?;
     Ok(entity(call, StatusCode::OK, inventory_trans.to_xml()))
+}
+
+// port: api/Personas#sellInventoryItem(String,String)
+/// Sell the selected driver's whole stack of an item for its resell price.
+pub(super) async fn sell_inventory_item(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let entitlement_tag = call.path_param("entitlementTag").unwrap_or_default().to_owned();
+    let active_persona_id = call.session().active_persona_id;
+    state
+        .world()
+        .call(move |w| {
+            // `personaDAO.find(null)`: Hibernate refuses a null id.
+            let id = active_persona_id.ok_or_else(|| anyhow::anyhow!("id to load is required for loading"))?;
+            inventory::remove_item_of(w, id, &entitlement_tag, -1)
+        })
+        .await?;
+    Ok(entity(call, StatusCode::OK, String::new()))
+}
+
+// port: api/Personas#carsPost(Long,Long)
+/// Sell a car (`serialNumber`); the answer is the selected car afterwards,
+/// or nothing when the car isn't sold.
+pub(super) async fn cars_post(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id = path_id(call, "personaId")?;
+    let serial_number = call.query_long("serialNumber")?;
+    let session = call.session().clone();
+    token_session::verify_persona_ownership(&session, persona_id)?;
+    let world = state.world();
+    if world.call(move |w| basket::sell_car(w, &session, persona_id, serial_number)).await? {
+        let owned_car_trans = world.call(move |w| persona::get_default_car(w, persona_id)).await?;
+        return Ok(entity(call, StatusCode::OK, owned_car_trans.to_xml()));
+    }
+    Ok(entity(call, StatusCode::OK, String::new()))
 }
 
 // port: api/Personas#carsGet(Long)

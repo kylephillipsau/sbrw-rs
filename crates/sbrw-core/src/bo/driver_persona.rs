@@ -6,6 +6,8 @@ use sbrw_xml::dto::http::{
     ProfileData,
 };
 
+use sbrw_java::lang::{math_max, math_min};
+
 use crate::bo::{inventory, presence};
 use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::treasure_hunt::{self, TreasureHuntEntity};
@@ -178,6 +180,18 @@ pub fn reserve_name(w: &World, name: Option<&str>) -> Result<ArrayOfString, Faul
         array.string.push("NONE".into());
     }
     Ok(array)
+}
+
+// port: bo/DriverPersonaBO#updateCash(PersonaEntity,Double)
+/// Set the persona's cash, kept between 0 and the user's maximum.
+pub fn update_cash(w: &World, persona_entity: &mut PersonaEntity, new_cash: f64) -> Result<(), Fault> {
+    // The persona's LAZY user.
+    let user_id = persona_entity.user_id.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?;
+    let user_entity = user::find(w.db(), user_id)?.ok_or_else(|| Fault::null_pointer("PersonaEntity.user"))?;
+    let max_cash = f64::from(w.params.get_max_cash(&user_entity)?);
+    persona_entity.cash = math_max(0.0, math_min(max_cash, new_cash));
+    persona::update(w.db(), persona_entity)?;
+    Ok(())
 }
 
 // port: bo/DriverPersonaBO#createThInformation(PersonaEntity)

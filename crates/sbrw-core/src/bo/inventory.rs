@@ -1,15 +1,15 @@
 //! `InventoryBO`: the items a persona owns and the slots they take. Ported so
-//! far: creating a new persona's inventory with its starting items, and the
-//! inventory the game reads.
+//! far: everything but the job that deletes expired items.
 
 use anyhow::anyhow;
 use sbrw_java::lang::{round_float, split, trim};
 use sbrw_xml::dto::http::{ArrayOfInventoryItemTrans, InventoryItemTrans, InventoryTrans};
 use time::{Duration, PrimitiveDateTime};
 
+use crate::bo::driver_persona;
 use crate::dao::inventory::{self, InventoryEntity};
 use crate::dao::inventory_item::{self, InventoryItemEntity};
-use crate::dao::persona::PersonaEntity;
+use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::product::{self, ProductEntity};
 use crate::engine::{EngineException, EngineExceptionCode};
 use crate::{Fault, World, datetime};
@@ -137,6 +137,180 @@ pub fn add_inventory_item(
     inventory_item::insert(w.db(), &mut item)?;
     inventory.inventory_items.push(item.clone());
     Ok(item)
+}
+
+// port: bo/InventoryBO#addStackedInventoryItem(InventoryEntity,String,int)
+// port: bo/InventoryBO#addStackedInventoryItem(InventoryEntity,String,int,boolean)
+/// Add `quantity` uses of a product (-1: its use count) to the inventory's
+/// stack of it, or start a stack; upstream's shorter overload doesn't
+/// `ignore_limits`.
+pub fn add_stacked_inventory_item(
+    w: &mut World,
+    inventory: &mut InventoryEntity,
+    product_id: &str,
+    quantity: i32,
+    ignore_limits: bool,
+) -> Result<InventoryItemEntity, Fault> {
+    // Throws for an unknown product, so upstream's null check after it never fires.
+    let product = product::find_by_product_id(w.db(), product_id)?;
+    if quantity < -1 {
+        return Err(Fault::Engine(EngineException::with_message(
+            format!("Invalid product quantity for addStackedInventoryItem: {quantity}"),
+            EngineExceptionCode::EntitlementInvalidCount,
+            true,
+        )));
+    }
+    let quantity = if quantity == -1 { product.use_count } else { quantity };
+    let existing_item = inventory_item::find_by_inventory_id_and_entitlement_tag(
+        w.db(),
+        inventory.id,
+        product.entitlement_tag.as_deref(),
+    )?;
+    match existing_item {
+        Some(mut existing_item) => {
+            existing_item.remaining_use_count = existing_item.remaining_use_count.wrapping_add(quantity);
+            inventory_item::update(w.db(), &existing_item)?;
+            // The inventory's collection holds the same managed item.
+            if let Some(held) = inventory.inventory_items.iter_mut().find(|i| i.id == existing_item.id) {
+                held.remaining_use_count = existing_item.remaining_use_count;
+            }
+            Ok(existing_item)
+        }
+        None => add_inventory_item(w, inventory, product_id, quantity, None, ignore_limits),
+    }
+}
+
+// port: bo/InventoryBO#decreaseItemCount(InventoryEntity,Integer)
+/// Use one of the stack of the product with this hash. An unknown hash throws.
+pub fn decrease_item_count_by_hash(
+    w: &mut World,
+    inventory: &mut InventoryEntity,
+    hash: i32,
+) -> Result<InventoryItemEntity, Fault> {
+    let entitlement_tag = product::find_by_hash(w.db(), hash)?.entitlement_tag;
+    decrease_item_count_by_tag(w, inventory, entitlement_tag.as_deref())
+}
+
+// port: bo/InventoryBO#decreaseItemCount(InventoryEntity,String)
+/// Use one of the stack with this entitlement tag, which must exist.
+pub fn decrease_item_count_by_tag(
+    w: &mut World,
+    inventory: &mut InventoryEntity,
+    entitlement_tag: Option<&str>,
+) -> Result<InventoryItemEntity, Fault> {
+    let Some(existing_item) =
+        inventory_item::find_by_inventory_id_and_entitlement_tag(w.db(), inventory.id, entitlement_tag)?
+    else {
+        return Err(Fault::Engine(EngineException::with_message(
+            format!("Could not find entitlement '{}' in IID {}", entitlement_tag.unwrap_or("null"), inventory.id),
+            EngineExceptionCode::NoSuchEntitlementExists,
+            true,
+        )));
+    };
+    decrease_item_count(w, inventory, existing_item)
+}
+
+// port: bo/InventoryBO#decreaseItemCount(InventoryEntity,InventoryItemEntity)
+/// Use one of the item's stack; the last use removes the item and frees its slot.
+pub fn decrease_item_count(
+    w: &mut World,
+    inventory: &mut InventoryEntity,
+    mut existing_item: InventoryItemEntity,
+) -> Result<InventoryItemEntity, Fault> {
+    existing_item.remaining_use_count = existing_item.remaining_use_count.wrapping_sub(1);
+    if existing_item.remaining_use_count <= 0 {
+        let product = product::find_by_product_id(w.db(), &existing_item.product_id)?;
+        update_inventory_slots(w, inventory, &product, false)?;
+        inventory.inventory_items.retain(|i| i.id != existing_item.id);
+        inventory_item::delete(w.db(), &existing_item)?;
+        inventory::update(w.db(), inventory)?;
+    } else {
+        // The item is managed: Hibernate flushes the new count.
+        inventory_item::update(w.db(), &existing_item)?;
+        if let Some(held) = inventory.inventory_items.iter_mut().find(|i| i.id == existing_item.id) {
+            held.remaining_use_count = existing_item.remaining_use_count;
+        }
+    }
+    Ok(existing_item)
+}
+
+// port: bo/InventoryBO#removeItem(Long,String)
+// port: bo/InventoryBO#removeItem(Long,String,Integer)
+/// Remove `quantity` uses (-1: the whole stack) of the first item with this
+/// entitlement tag from the persona's inventory.
+pub fn remove_item_of(w: &mut World, persona_id: i64, entitlement_tag: &str, quantity: i32) -> Result<(), Fault> {
+    let mut persona_entity = persona::find(w.db(), persona_id)?;
+    let inventory_entity = inventory::find_by_persona_id(w.db(), persona_id)?;
+    remove(w, persona_entity.as_mut(), inventory_entity, entitlement_tag, quantity)
+}
+
+// port: bo/InventoryBO#removeItem(PersonaEntity,String,Integer)
+pub fn remove_item(
+    w: &mut World,
+    persona_entity: &mut PersonaEntity,
+    entitlement_tag: &str,
+    quantity: i32,
+) -> Result<(), Fault> {
+    let inventory_entity = inventory::find_by_persona_id(w.db(), persona_entity.persona_id)?;
+    remove(w, Some(persona_entity), inventory_entity, entitlement_tag, quantity)
+}
+
+// port: bo/InventoryBO#removeItem(PersonaEntity,InventoryEntity,String)
+// port: bo/InventoryBO#removeItem(PersonaEntity,InventoryEntity,String,Integer)
+/// The whole stack (`quantity` -1 or the stack's size) goes, and its resell
+/// price is paid; otherwise `quantity` uses come off it, for nothing.
+fn remove(
+    w: &mut World,
+    persona_entity: Option<&mut PersonaEntity>,
+    inventory_entity: Option<InventoryEntity>,
+    entitlement_tag: &str,
+    quantity: i32,
+) -> Result<(), Fault> {
+    let mut inventory_entity = inventory_entity.ok_or_else(|| Fault::null_pointer("InventoryEntity"))?;
+    let Some(mut inventory_item_entity) =
+        inventory_item::find_by_inventory_id_and_entitlement_tag(w.db(), inventory_entity.id, Some(entitlement_tag))?
+    else {
+        return Err(Fault::Engine(EngineException::with_message(
+            format!(
+                "An item stack with the entitlement tag '{entitlement_tag}' could not be found. IID: {}",
+                inventory_entity.id
+            ),
+            EngineExceptionCode::EntitlementNoSuchGroup,
+            true,
+        )));
+    };
+
+    if quantity == -1 || quantity == inventory_item_entity.remaining_use_count {
+        let product = product::find_by_product_id(w.db(), &inventory_item_entity.product_id)?;
+        update_inventory_slots(w, &mut inventory_entity, &product, false)?;
+        inventory_entity.inventory_items.retain(|i| i.id != inventory_item_entity.id);
+        inventory_item::delete(w.db(), &inventory_item_entity)?;
+        inventory::update(w.db(), &inventory_entity)?;
+        let persona_entity = persona_entity.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+        let cash = persona_entity.cash + f64::from(inventory_item_entity.resell_price);
+        driver_persona::update_cash(w, persona_entity, cash)?;
+    } else {
+        if quantity < 1 {
+            return Err(Fault::Engine(EngineException::with_message(
+                format!("An invalid removal operation was requested. Cannot remove {quantity} items from a stack."),
+                EngineExceptionCode::EntitlementInvalidCount,
+                true,
+            )));
+        }
+        if quantity > inventory_item_entity.remaining_use_count {
+            return Err(Fault::Engine(EngineException::with_message(
+                format!(
+                    "An invalid removal operation was requested. Cannot remove {quantity} items from the stack, as there are only {}",
+                    inventory_item_entity.remaining_use_count
+                ),
+                EngineExceptionCode::EntitlementInvalidCount,
+                true,
+            )));
+        }
+        inventory_item_entity.remaining_use_count -= quantity;
+        inventory_item::update(w.db(), &inventory_item_entity)?;
+    }
+    Ok(())
 }
 
 // port: bo/InventoryBO#createInventory(PersonaEntity)

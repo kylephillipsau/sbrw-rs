@@ -1,19 +1,22 @@
-//! `BasketBO`: buying from the shops. Ported so far: cars, starter and rental
-//! alike, with the insurance a rental brings.
+//! `BasketBO`: buying from the shops and selling cars back. Ported so far:
+//! everything but card packs.
 
 use sbrw_xml::dto::http::{ArrayOfOwnedCarTrans, CommerceResultStatus, CommerceResultTrans, OwnedCarTrans};
 use time::Duration;
 
+use crate::bo::token_session::{self, TokenSession};
 use crate::bo::util::achievement_commerce_context::{AchievementCommerceContext, CommerceType};
 use crate::bo::util::owned_car_converter;
 use crate::bo::{
-    achievement, achievement_transaction::Binding, car_slot, inventory, performance, persona as persona_bo,
+    achievement, achievement_transaction::Binding, car_damage, car_slot, driver_persona, inventory, performance,
+    persona as persona_bo,
 };
 use crate::dao::car::{self, CarEntity};
+use crate::dao::inventory as inventory_dao;
 use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::product::{self, ProductEntity};
 use crate::dao::user::{self, UserEntity};
-use crate::dao::{amplifier, basket_definition, car_classes, inventory_item};
+use crate::dao::{amplifier, basket_definition, car_classes, inventory_item, treasure_hunt};
 use crate::engine::{EngineException, EngineExceptionCode};
 use crate::{Fault, World, datetime};
 
@@ -21,6 +24,103 @@ use crate::{Fault, World, datetime};
 /// A missing product throws.
 pub fn find_product(w: &World, product_id: &str) -> Result<ProductEntity, Fault> {
     product::find_by_product_id(w.db(), product_id)
+}
+
+// port: bo/BasketBO#repairCar(String,PersonaEntity)
+/// Repair the selected car to full durability, at the product's price for
+/// each point missing (truncated to an `int`).
+pub fn repair_car(
+    w: &mut World,
+    product_id: &str,
+    persona_entity: &mut PersonaEntity,
+) -> Result<CommerceResultStatus, Fault> {
+    let mut default_car_entity = persona_bo::get_default_car_entity(w, persona_entity.persona_id)?
+        .ok_or_else(|| Fault::null_pointer("CarEntity"))?;
+    let price = (product::find_by_product_id(w.db(), product_id)?.price
+        * 100i32.wrapping_sub(default_car_entity.durability) as f32) as i32;
+    // Throws for an unknown product, so upstream's null check after it never fires.
+    let repair_product = product::find_by_product_id(w.db(), product_id)?;
+
+    if can_purchase_product(w, persona_entity, &repair_product, price as f32)? {
+        persona::update(w.db(), persona_entity)?;
+        car_damage::update_durability(w, &mut default_car_entity, 100)?;
+        car::update(w.db(), &default_car_entity)?;
+        perform_persona_transaction(w, persona_entity, &repair_product, price as f32)?;
+        return Ok(CommerceResultStatus::SUCCESS);
+    }
+
+    Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS)
+}
+
+// port: bo/BasketBO#buyPowerups(String,PersonaEntity)
+/// Add a powerup product's uses to the persona's stack of it, if the economy
+/// is on and the persona can pay.
+pub fn buy_powerups(
+    w: &mut World,
+    product_id: &str,
+    persona_entity: &mut PersonaEntity,
+) -> Result<CommerceResultStatus, Fault> {
+    if !w.params.get_bool_param("ENABLE_ECONOMY") {
+        return Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS);
+    }
+    // Throws for an unknown product, so upstream's null check after it never fires.
+    let powerup_product = product::find_by_product_id(w.db(), product_id)?;
+
+    if can_purchase_product(w, persona_entity, &powerup_product, -1.0)? {
+        let mut inventory_entity = inventory_dao::find_by_persona_id(w.db(), persona_entity.persona_id)?
+            .ok_or_else(|| Fault::null_pointer("InventoryEntity"))?;
+        inventory::add_stacked_inventory_item(w, &mut inventory_entity, product_id, powerup_product.use_count, false)?;
+        inventory_dao::update(w.db(), &inventory_entity)?;
+        perform_persona_transaction(w, persona_entity, &powerup_product, -1.0)?;
+        return Ok(CommerceResultStatus::SUCCESS);
+    }
+
+    Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS)
+}
+
+// port: bo/BasketBO#reviveTreasureHunt(String,PersonaEntity)
+/// Mend a broken treasure-hunt streak.
+pub fn revive_treasure_hunt(
+    w: &mut World,
+    product_id: &str,
+    persona_entity: &mut PersonaEntity,
+) -> Result<CommerceResultStatus, Fault> {
+    let product_entity = product::find_by_product_id(w.db(), product_id)?;
+
+    if can_purchase_product(w, persona_entity, &product_entity, -1.0)? {
+        let mut treasure_hunt_entity = treasure_hunt::find(w.db(), persona_entity.persona_id)?
+            .ok_or_else(|| Fault::null_pointer("TreasureHuntEntity"))?;
+        treasure_hunt_entity.is_streak_broken = Some(false);
+        perform_persona_transaction(w, persona_entity, &product_entity, -1.0)?;
+
+        treasure_hunt::update(w.db(), &treasure_hunt_entity)?;
+
+        return Ok(CommerceResultStatus::SUCCESS);
+    }
+
+    Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS)
+}
+
+// port: bo/BasketBO#buyAmplifier(PersonaEntity,String)
+/// An amplifier, if the persona has none of it yet and can pay.
+pub fn buy_amplifier(
+    w: &mut World,
+    persona_entity: &mut PersonaEntity,
+    product_id: &str,
+) -> Result<CommerceResultStatus, Fault> {
+    let product_entity = product::find_by_product_id(w.db(), product_id)?;
+
+    if !can_add_amplifier(w, persona_entity.persona_id, product_entity.entitlement_tag.as_deref())? {
+        return Ok(CommerceResultStatus::FAIL_MAX_ALLOWED_PURCHASES_FOR_THIS_PRODUCT);
+    }
+
+    if can_purchase_product(w, persona_entity, &product_entity, -1.0)? {
+        add_amplifier(w, persona_entity, &product_entity)?;
+        perform_persona_transaction(w, persona_entity, &product_entity, -1.0)?;
+        return Ok(CommerceResultStatus::SUCCESS);
+    }
+
+    Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS)
 }
 
 // port: bo/BasketBO#buyCar(ProductEntity,PersonaEntity,TokenSessionEntity,CommerceResultTrans)
@@ -102,7 +202,7 @@ pub fn add_car(
     // The car is managed: Hibernate flushes the new class and rating.
     car::update(w.db(), &car_entity)?;
 
-    if is_rental && can_add_amplifier(w, persona_entity.persona_id, "INSURANCE_AMPLIFIER")? {
+    if is_rental && can_add_amplifier(w, persona_entity.persona_id, Some("INSURANCE_AMPLIFIER"))? {
         let insurance = product::find_by_entitlement_tag(w.db(), "INSURANCE_AMPLIFIER")?;
         add_amplifier(w, persona_entity, &insurance)?;
     }
@@ -130,9 +230,82 @@ pub fn add_car(
     Ok(car_entity)
 }
 
+// port: bo/BasketBO#sellCar(TokenSessionEntity,Long,Long)
+/// Sell one of the persona's cars for its resale price. Never a rental, and
+/// never the persona's last car of its own (see `remove_car`).
+pub fn sell_car(
+    w: &mut World,
+    session: &TokenSession,
+    persona_id: i64,
+    serial_number: Option<i64>,
+) -> Result<bool, Fault> {
+    token_session::verify_persona_ownership(session, persona_id)?;
+
+    // `find(null)`: Hibernate refuses a null id.
+    let serial_number = serial_number.ok_or_else(|| anyhow::anyhow!("id to load is required for loading"))?;
+    let Some(car_entity) = car::find(w.db(), serial_number)? else { return Ok(false) };
+
+    if car_entity.ownership_type.as_deref().is_some_and(|t| t.eq_ignore_ascii_case("RentalCar")) {
+        return Ok(false);
+    }
+
+    let mut persona_entity = persona::find(w.db(), persona_id)?;
+
+    if !remove_car(w, persona_entity.as_mut(), serial_number)? {
+        return Ok(false);
+    }
+
+    let persona_entity = persona_entity.as_mut().ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    let cash_total = persona_entity.cash + f64::from(car_entity.resale_price);
+    driver_persona::update_cash(w, persona_entity, cash_total)?;
+
+    Ok(true)
+}
+
+// port: bo/BasketBO#removeCar(PersonaEntity,Long)
+/// Remove a car the persona owns, unless it is its only car that isn't a
+/// rental (rentals are kept apart: one needs a car of one's own). The
+/// selected index moves down one, or to the last car from the first.
+pub fn remove_car(
+    w: &mut World,
+    persona_entity: Option<&mut PersonaEntity>,
+    serial_number: i64,
+) -> Result<bool, Fault> {
+    let Some(car_entity) = car::find(w.db(), serial_number)? else { return Ok(false) };
+    let persona_entity = persona_entity.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+    if car_entity.persona_id != persona_entity.persona_id {
+        return Err(Fault::engine(EngineExceptionCode::CarNotOwnedByDriver, false));
+    }
+    let non_rental_car_count = car::find_num_non_rentals_by_persona_id(w.db(), persona_entity.persona_id)?;
+
+    if !car_entity.ownership_type.as_deref().is_some_and(|t| t.eq_ignore_ascii_case("RentalCar")) {
+        if non_rental_car_count <= 1 {
+            return Ok(false);
+        }
+    } else if non_rental_car_count == 0 {
+        return Ok(false);
+    }
+
+    car::delete(w.db(), &car_entity)?;
+
+    let cur_car_index = persona_entity.cur_car_index;
+
+    if cur_car_index > 0 {
+        persona_entity.cur_car_index = cur_car_index - 1;
+    } else {
+        persona_entity.cur_car_index = car::find_num_by_persona_id(w.db(), persona_entity.persona_id)?.wrapping_sub(1);
+    }
+
+    persona::update(w.db(), persona_entity)?;
+
+    Ok(true)
+}
+
 // port: bo/BasketBO#canAddAmplifier(Long,String)
-/// Whether the persona has no item with this entitlement tag.
-fn can_add_amplifier(w: &World, persona_id: i64, entitlement_tag: &str) -> Result<bool, Fault> {
+/// Whether the persona has no item with this entitlement tag; a null tag
+/// matches no item.
+fn can_add_amplifier(w: &World, persona_id: i64, entitlement_tag: Option<&str>) -> Result<bool, Fault> {
+    let Some(entitlement_tag) = entitlement_tag else { return Ok(true) };
     Ok(inventory_item::find_all_by_persona_id_and_entitlement_tag(w.db(), persona_id, entitlement_tag)?.is_empty())
 }
 

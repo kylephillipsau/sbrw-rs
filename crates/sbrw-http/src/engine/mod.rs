@@ -364,6 +364,8 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/Personas#baskets(InputStream,Long)" => personas::baskets(state, call).await,
         "api/Personas#carslots(Long)" => personas::carslots(state, call).await,
         "api/Personas#inventoryObjects(String)" => personas::inventory_objects(state, call).await,
+        "api/Personas#sellInventoryItem(String,String)" => personas::sell_inventory_item(state, call).await,
+        "api/Personas#carsPost(Long,Long)" => personas::cars_post(state, call).await,
         "api/Personas#carsGet(Long)" => personas::cars_get(state, call).await,
         "api/Personas#carsGet(Long,Long)" => personas::car_get(state, call).await,
         "api/Personas#carsPut(Long,InputStream)" => personas::cars_put(state, call).await,

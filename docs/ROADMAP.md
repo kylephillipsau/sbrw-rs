@@ -117,7 +117,7 @@ one process `sbrw serve`
   - The protocol, with a source for each fact, is in `docs/protocol/xmpp.md`.
 - **UDP:**
   - Each server has one socket and one task that owns its state. The `PacketCodec` seam handles whole datagrams.
-  - **Free-roam:** a faithful port of the Go constants and slot logic, plus a rate limit, a client cap, and logging of unknown TLVs.
+  - **Free-roam:** a faithful port of the Go constants and slot logic (M3, `docs/protocol/freeroam.md`). A rate limit, a client cap and logging of unknown TLVs come with M8.
   - **Race:**
     - Implemented from `docs/protocol/race.md`, written before the code.
     - Each hello's ticket is checked against the in-process `RelayRegistry` (live session, matching grid slot and persona). That replaces the old keys and 0x99 mechanism and stops forged sessions.
@@ -148,7 +148,7 @@ Each milestone has automated tests and is verified against a reference implement
 | **M5** SP events | Event list and launch; arbitration (route, drag, pursuit, team escape); legit-race checks; reward math (int truncation at every step, transcribed line by line from `RewardBO`); level-up; item rewards; DNF; durability; achievements push; treasure hunt. | Sprint, circuit, drag and pursuit each pay out; level up; achievement toast; collect treasure-hunt gems. | Table tests transcribed from the Java; all 67 achievement triggers evaluated against fixture contexts |
 | **M6** Lobbies and race | Race-now queue, lobbies, invites, private lobbies (via group rooms), countdown → 48-byte tickets → `RelayRegistry` → `LobbyLaunched`, race relay, MP results pushes, EventTimingOut/TimedOut. | The real client plus one FakeRacer fill a lobby, race, and both appear on the results screen. | In-process 2-racer scenario; tests for the wait-for-all timeout, ticket rejection and rebinding |
 | **M7** Social and moderation | Friends, block, presence pushes, parties, whispers, reports, motto, badges, news, admin broadcast, kick. | Friend request and presence with a fake client; party invite; broadcast; kick. | Scenario tests |
-| **M8** Ops and real MP | Admin CLI (`docker exec … sbrw admin`, via a localhost-only token API), bans, backups, `/health`, auth rate limits, invite tickets, multi-arch image, VPS runbook. Mirror the ModNet modules with sha256s into `assets/mirrors/modnet`. | Run on a VPS from the published image; race a friend on another network. | Docker smoke test in CI |
+| **M8** Ops and real MP | Admin CLI (`docker exec … sbrw admin`, via a localhost-only token API), bans, backups, `/health`, auth rate limits, free-roam rate limit and client cap, invite tickets, multi-arch image, VPS runbook. Mirror the ModNet modules with sha256s into `assets/mirrors/modnet`. | Run on a VPS from the published image; race a friend on another network. | Docker smoke test in CI |
 | **M9** (optional) Stock client | `GetModInfo` → 404; try plaintext first (nfswo replays plaintext free-roam to the stock client); then wire up `NfswCrypto` (ported `session_key.go`, tested against `crypto_test.go` vectors). | An unpatched client spawns and races. | Crypto vectors |
 
 Milestone status is tracked in the README.
@@ -159,7 +159,7 @@ Milestone status is tracked in the README.
   - HTTP and game logic: recordings of the original core from the `reference/` rig, replayed by `sbrw-testkit`.
   - Script semantics: Nashorn results recorded by the rig as `fixtures/vectors/`.
   - XMPP: an Openfire 4.5.0 container (`reference/xmpp/`), which is what SBRW's fork is apart from the SASL mechanisms it hides, driven by a scripted client pinned to TLS 1.0 into `fixtures/xmpp/openfire.txt`. NFS-World-Offline supplies the subject-hash vectors. Whether the real client completes the TLS handshake stays unverified until a client is available (top risk 1).
-  - UDP free-roam: a differential test against the Go `freeroamd` in a container.
+  - UDP free-roam: differential tests against the Go `freeroamd` in a container (linux/amd64, with the scripted players on the same Docker network), and a ghost driving a real player's captured car states past a fake player (`docs/protocol/freeroam.md`).
 - **Real client (not run; kept for when one is available):** `cargo run -- serve` natively with `SBRW_CAPTURE=…`, then the SBRW launcher under CrossOver pointed at `http://127.0.0.1:8680/Engine.svc`. Captures from each session are redacted and committed as regression fixtures.
 - **Packaging:** `docker compose up` on the Mac, then the same checklist. The final check is on a Linux VPS with a second player.
 - **Only one real client:** testkit fakes replay *captured real traffic* (ghost driver, FakeRacer) until a friend joins at M8. One attempt at a second CrossOver bottle in M3.

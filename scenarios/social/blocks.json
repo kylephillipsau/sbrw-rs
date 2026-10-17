@@ -369,6 +369,20 @@
       }
     },
     {
+      "note": "Driver 102 is a friend, not blocked: nothing to unblock.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/unblockplayer",
+        "query": {
+          "otherPersonaId": "102"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
       "note": "Driver 100 blocks their friend: driver 102's side goes, and they're told driver 100 is offline.",
       "http": {
         "method": "GET",

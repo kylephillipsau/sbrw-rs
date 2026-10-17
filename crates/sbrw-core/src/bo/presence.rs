@@ -3,7 +3,7 @@
 
 use anyhow::anyhow;
 
-use crate::bo::matchmaking;
+use crate::bo::{matchmaking, social_relationship};
 use crate::{Fault, World};
 
 // port: bo/PresenceBO#getPresenceKey(Long)
@@ -25,9 +25,7 @@ pub fn update_presence(w: &mut World, persona_id: i64, presence: i64) -> Result<
         redis.publish("game_presence_updates", &format!("{persona_id}|{presence}"));
         // PersonaPresenceUpdated: its observers are asynchronous beans.
         w.queue_async(move |w| matchmaking::handle_persona_presence_updated(w, persona_id));
-        w.queue_async(move |_| {
-            Err(Fault::unported("bo/SocialRelationshipBO#handlePersonaPresenceUpdated(PersonaPresenceUpdated)"))
-        });
+        w.queue_async(move |w| social_relationship::handle_persona_presence_updated(w, persona_id, presence));
     }
     Ok(())
 }

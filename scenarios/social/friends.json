@@ -611,6 +611,87 @@
       }
     },
     {
+      "note": "Driver 101's user switches to driver 103.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "103"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 103 asks driver 100.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Back to driver 101.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "101"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 103 is deleted: driver 100's row naming them goes with them; driver 101's user's sent request stays.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/DeletePersona",
+        "query": {
+          "personaId": "103"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 101 asks driver 100: a sent request isn't a friendship and driver 100 has no row, so it's a new request.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/addfriendrequest",
+        "query": {
+          "displayName": "DRIVER1"
+        },
+        "headers": {
+          "userId": "2",
+          "securityToken": "00000000-0000-4000-8000-000000000004"
+        }
+      }
+    },
+    {
+      "note": "Driver 100 sees driver 101's request.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/getfriendlistfromuserid",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
       "note": "Driver 100 logs out of their driver.",
       "http": {
         "method": "POST",

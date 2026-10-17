@@ -102,3 +102,21 @@ status = "dropped"
 reason = """
 Unused upstream: nothing sorts entrants by their natural order. LobbyCountdownBO.onTimeout
 sorts with its own comparator, by persona id highest first."""
+
+["bo/SocialRelationshipBO#init()"]
+status = "dropped"
+reason = "@PostConstruct that only logs that the social system started."
+
+["bo/SocialRelationshipBO#shutdown()"]
+status = "dropped"
+reason = "@PreDestroy that only logs that the social system stopped."
+
+["dao/SocialRelationshipDAO#deleteAllByPersonaId(Long)"]
+status = "dropped"
+reason = """
+Unused upstream: nothing calls it. Deleting a driver removes the rows naming it through
+the foreign key's ON DELETE CASCADE, in MySQL as in SQLite."""
+
+["jpa/SocialRelationshipEntity@SocialRelationshipEntity.deleteAllByPersonaId"]
+status = "dropped"
+reason = "Only SocialRelationshipDAO.deleteAllByPersonaId runs it, and nothing calls that."

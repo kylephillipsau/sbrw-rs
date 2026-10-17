@@ -49,6 +49,7 @@ pub mod scenery_util;
 pub mod scripting;
 pub mod session;
 pub mod social;
+pub mod social_relationship;
 pub mod token_session;
 pub mod user;
 pub mod util;

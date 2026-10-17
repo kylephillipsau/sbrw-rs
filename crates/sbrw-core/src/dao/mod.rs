@@ -41,6 +41,7 @@ pub mod persona_badge;
 pub mod product;
 pub mod report;
 pub mod reward_table;
+pub mod social_relationship;
 pub mod treasure_hunt;
 pub mod treasure_hunt_config;
 pub mod used_powerup;

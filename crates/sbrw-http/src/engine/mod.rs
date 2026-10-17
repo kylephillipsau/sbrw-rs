@@ -25,6 +25,7 @@ mod personas;
 mod powerups;
 mod reporting;
 mod routes;
+mod social;
 mod user;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -390,6 +391,16 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/Event#arbitration(InputStream,Long)" => event::arbitration(state, call).await,
         "api/Event#bust(InputStream,String,Long)" => event::bust(state, call).await,
         "api/MatchMaking#launchEvent(int)" => matchmaking::launch_event(state, call).await,
+        "api/AddFriendRequest#addFriendRequest(String,String)" => social::add_friend_request(state, call).await,
+        "api/ResolveFriendsRequest#resolveFriendsRequest(Long,int)" => {
+            social::resolve_friends_request(state, call).await
+        }
+        "api/RemoveFriend#removefriend(Long)" => social::removefriend(state, call).await,
+        "api/GetFriendListFromUserId#getFriendsList(Long)" => social::get_friend_list_from_user_id(state, call).await,
+        "api/BlockPlayer#blockPlayer(String,Long)" => social::block_player(state, call).await,
+        "api/UnblockPlayer#unblockPlayer(Long,String,Long)" => social::unblock_player(state, call).await,
+        "api/GetBlockedUserList#getBlockedUserList(Long)" => social::get_blocked_user_list(state, call).await,
+        "api/GetBlockersByUsers#getBlockedUserList(Long,String)" => social::get_blockers_by_users(state, call).await,
         "api/MatchMaking#joinQueueRaceNow()" => matchmaking::join_queue_race_now(state, call).await,
         "api/MatchMaking#joinQueueEvent(int)" => matchmaking::join_queue_event(state, call).await,
         "api/MatchMaking#leaveQueue()" => matchmaking::leave_queue(state, call).await,

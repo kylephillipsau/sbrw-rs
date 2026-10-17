@@ -8,9 +8,10 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M6 done; M7 (social and moderation) is next. Everything the
-launcher and the game do up to driving around the world with other players,
-shopping, single-player events and racing other players is in place:
+**Status:** M7 done; M8 (operations and real multiplayer) is next.
+Everything the launcher and the game do up to driving around the world with
+other players, shopping, single-player events, racing other players, friends
+and moderation is in place:
 - Every HTTP call up to and including creating, selecting and deleting a
   driver, the starter car, the garage and the inventory is ported, and
   replays recordings of the original exactly.
@@ -40,6 +41,11 @@ shopping, single-player events and racing other players is in place:
   ([docs/protocol/race.md](docs/protocol/race.md)) and checks each racer's
   ticket against the lobby that launched. Two fake racers race through it
   with the tickets from a real launch and both appear in the results.
+- Friends and moderation replay recordings of the original exactly: friend
+  requests and their answers, the friends list with presence, presence
+  pushes to friends, blocking, badges, reports, and an admin's /kick, /ban
+  and /unban sent as reports, with bans ending on time. Announcements go to
+  every logged-in player through the XMPP server.
 
 Milestones are verified against recordings of the original and of these
 reference servers, not with the real game, so nothing here has been run
@@ -56,7 +62,7 @@ against the game itself yet. See
 | M4 Garage and economy | done |
 | M5 Single-player events, rewards, achievements | done |
 | M6 Lobbies and race relay | done |
-| M7 Social and moderation | |
+| M7 Social and moderation | done |
 | M8 Operations and real multiplayer | |
 | M9 Unpatched client (optional) | |
 
@@ -131,13 +137,17 @@ server_id = "my-server"
 [parameters]
 SESSION_LENGTH_MINUTES = "1440"
 TICKET_TOKEN = "secret"       # registration then needs an invite ticket
+ANNOUNCEMENT_AUTH = "secret"  # lets POST /Engine.svc/SendAnnouncement message everyone
 ```
 
 The `[server]`, `[xmpp]`, `[udp]`, `[launcher]` and `[modding]` settings
 (apart from the free-roam ones, which the original didn't have) are written
 into the original's parameters at startup (`public_host` becomes
 `XMPP_IP`, `UDP_FREEROAM_IP` and so on), so the ported code reads them as the
-original did. An entry in `[parameters]` wins over all of them.
+original did. An entry in `[parameters]` wins over all of them. The game
+data's `ADMIN_AUTH` and `ANNOUNCEMENT_AUTH` are the setup guide's
+placeholders, so unless set here each is a fresh secret at every start, and
+what they guard stays shut.
 
 Accounts and game state live in `<data dir>/world.db` (SQLite).
 

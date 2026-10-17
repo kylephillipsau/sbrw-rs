@@ -128,3 +128,23 @@ reason = "Unused upstream: nothing calls it. A deleted driver's badges go throug
 ["jpa/PersonaBadgeEntity@PersonaBadgeEntity.deleteAllBadgesForPersona"]
 status = "dropped"
 reason = "Only PersonaBadgeDAO.deleteAllBadgesForPersona runs it, and nothing calls that."
+
+["jpa/NewsArticleEntity@NewsArticleEntity.deleteAllByPersona"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it. Upstream never writes news articles; they come with the data."
+
+["jpa/NewsArticleEntity@NewsArticleEntity.findAllByReferencedPersona"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/NewsArticleEntity@NewsArticleEntity.deleteAllByReferencedPersona"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/convert/NewsArticleFilterConverter#convertToDatabaseColumn(NewsArticleFilters)"]
+status = "dropped"
+reason = "Writes a news article's filters, and upstream never writes news articles. Reading them is ported."
+
+["jpa/convert/NewsArticleTypeConverter#convertToDatabaseColumn(NewsArticleType)"]
+status = "dropped"
+reason = "Writes a news article's type, and upstream never writes news articles. Reading it is ported."

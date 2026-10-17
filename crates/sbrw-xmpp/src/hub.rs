@@ -5,6 +5,7 @@
 //! added after the attributes already there.
 
 use std::collections::{HashMap, VecDeque};
+use std::sync::{Arc, RwLock};
 
 use time::OffsetDateTime;
 use time::macros::format_description;
@@ -21,6 +22,10 @@ const NS_STANZAS: &str = "urn:ietf:params:xml:ns:xmpp-stanzas";
 /// Messages a room replays to a joiner: Openfire's default
 /// `xmpp.muc.history.maxNumber`. Only one is recorded so far.
 const HISTORY: usize = 25;
+
+/// Persona id -> the personas in its chat group, shared with the core's
+/// private lobbies (`OpenFireRestApiCli.getAllPersonaByGroup`).
+pub type GroupMembers = Arc<RwLock<HashMap<i64, Vec<i64>>>>;
 
 /// A stanza for one client.
 #[derive(Debug, PartialEq)]
@@ -57,6 +62,7 @@ pub struct Hub {
     /// Messages for users with no available session, by node, with when they came.
     offline: HashMap<String, Vec<(Element, OffsetDateTime)>>,
     rooms: HashMap<String, Room>,
+    groups: Option<GroupMembers>,
     new_id: Box<dyn FnMut() -> String + Send>,
     now: Box<dyn FnMut() -> OffsetDateTime + Send>,
 }
@@ -75,6 +81,7 @@ impl Hub {
             available: Vec::new(),
             offline: HashMap::new(),
             rooms: HashMap::new(),
+            groups: None,
             new_id,
             now,
         }
@@ -86,6 +93,35 @@ impl Hub {
         let room =
             Room { anonymous: true, persistent: true, locked: false, occupants: Vec::new(), history: VecDeque::new() };
         self.rooms.insert(name.to_lowercase(), room);
+    }
+
+    /// Keep `groups` up to date as players join and leave group rooms.
+    pub fn share_groups(&mut self, groups: GroupMembers) {
+        self.groups = Some(groups);
+        self.update_groups();
+    }
+
+    /// Each persona in a `group.channel.*` room, with that room's personas in
+    /// the order they joined. Upstream asked Openfire for the persona's rooms
+    /// and took the first group room's occupants; here a persona in more than
+    /// one has the first by name.
+    fn update_groups(&self) {
+        let Some(groups) = &self.groups else { return };
+        let mut names: Vec<&String> = self.rooms.keys().filter(|n| n.contains("group.channel.")).collect();
+        names.sort();
+        let mut members: HashMap<i64, Vec<i64>> = HashMap::new();
+        for name in names {
+            // As upstream reads an occupant: the number after the last dot (`sbrw.<persona>`).
+            let personas: Vec<i64> = self.rooms[name]
+                .occupants
+                .iter()
+                .filter_map(|o| o.jid.node.rsplit('.').next().and_then(|id| id.parse().ok()))
+                .collect();
+            for &persona in &personas {
+                members.entry(persona).or_insert_with(|| personas.clone());
+            }
+        }
+        *groups.write().expect("groups lock") = members;
     }
 
     /// A client has logged in. If it replaced a session with the same
@@ -167,6 +203,7 @@ impl Hub {
                 self.rooms.remove(&name);
             }
         }
+        self.update_groups();
         out
     }
 
@@ -191,7 +228,7 @@ impl Hub {
         let Some((node, domain)) = bare.split_once('@') else { return Vec::new() };
         if domain == self.conference {
             let room = node.to_lowercase();
-            return match (stanza.name.as_str(), resource) {
+            let out = match (stanza.name.as_str(), resource) {
                 ("presence", Some(nick)) if stanza.attribute("type") == Some("unavailable") => {
                     self.leave(from, &room, nick, stanza)
                 }
@@ -202,6 +239,10 @@ impl Hub {
                 ("iq", None) => self.owner_iq(from, &room, stanza),
                 _ => Vec::new(),
             };
+            if room.contains("group.channel.") {
+                self.update_groups();
+            }
+            return out;
         }
         if domain == self.domain && stanza.name == "message" {
             let mut message = stanza;
@@ -538,5 +579,39 @@ mod tests {
             let received = stamps.replace_all(&clients[who].received, "YYYY-MM-DDThh:mm:ss.sssZ");
             assert_eq!(received, expected_by_client[who], "what {who} received");
         }
+    }
+
+    #[test]
+    fn group_rooms_are_shared_with_the_core() {
+        let mut hub = Hub::new("127.0.0.1", Box::new(|| "id".to_owned()), Box::new(OffsetDateTime::now_utc));
+        let groups = GroupMembers::default();
+        hub.share_groups(groups.clone());
+        let jid = |persona: i64| FullJid {
+            node: format!("sbrw.{persona}"),
+            domain: "127.0.0.1".to_owned(),
+            resource: "EA-Chat".to_owned(),
+        };
+        let presence = |room: &str, nick: &str, unavailable: bool| {
+            let p = Element::new("presence").attr("to", &format!("{room}@conference.127.0.0.1/{nick}"));
+            if unavailable { p.attr("type", "unavailable") } else { p }
+        };
+        for persona in [100, 101, 102] {
+            hub.connect(&jid(persona));
+        }
+        // Configured, as the game does once it has made the room by joining it.
+        hub.create_public_room("group.channel.friends");
+        hub.route(&jid(100), presence("group.channel.friends", "a", false));
+        hub.route(&jid(101), presence("group.channel.friends", "b", false));
+        hub.route(&jid(102), presence("channel.en__1", "c", false));
+        let members = |persona| groups.read().unwrap().get(&persona).cloned();
+        assert_eq!(members(100), Some(vec![100, 101]));
+        assert_eq!(members(101), Some(vec![100, 101]));
+        assert_eq!(members(102), None, "a public room isn't a group");
+
+        hub.route(&jid(101), presence("group.channel.friends", "b", true));
+        assert_eq!(members(100), Some(vec![100]));
+        assert_eq!(members(101), None);
+        hub.disconnect(&jid(100));
+        assert!(groups.read().unwrap().is_empty());
     }
 }

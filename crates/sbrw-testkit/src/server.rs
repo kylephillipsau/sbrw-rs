@@ -44,6 +44,12 @@ impl SbrwServer {
         let effects = EffectLog::recording();
         let mut openfire = Openfire::default();
         openfire.online_users = scenario.openfire.as_ref().map_or(0, |o| o.online_users);
+        if let Some(state) = &scenario.openfire {
+            let mut groups = openfire.group_members.write().expect("groups lock");
+            for (persona, members) in &state.groups {
+                groups.insert(persona.parse()?, members.clone());
+            }
+        }
         let world = World::boot(WorldOptions {
             db_path: None,
             parameters: scenario.parameters.clone().unwrap_or_default(),
@@ -52,6 +58,7 @@ impl SbrwServer {
             openfire,
             // The reference build has no git.properties either.
             build_info: BuildInfo::unknown(),
+            relay: sbrw_common::RelayRegistry::default(),
         })?;
         let world = WorldHandle::spawn(world);
         let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), world.clone());

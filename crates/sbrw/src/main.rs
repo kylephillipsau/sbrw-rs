@@ -101,6 +101,8 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
     let (pushes, mut push_queue) = tokio::sync::mpsc::unbounded_channel();
     let mut openfire = sbrw_core::openfire::Openfire::default();
     let xmpp_accounts = openfire.accounts();
+    let group_members = openfire.group_members.clone();
+    let relay = sbrw_common::RelayRegistry::default();
     if !args.probe_xmpp {
         openfire.outbound = Some(pushes);
     }
@@ -111,6 +113,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         effects: sbrw_common::EffectLog::disabled(),
         openfire,
         build_info: sbrw_core::BuildInfo::of_this_build(),
+        relay: relay.clone(),
     })
     .context("starting the world")?;
     let world = sbrw_core::WorldHandle::spawn(world);
@@ -148,6 +151,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
             Box::new(|| uuid::Uuid::new_v4().to_string()),
             Box::new(time::OffsetDateTime::now_utc),
         );
+        hub.share_groups(group_members);
         // As OpenFireRestApiCli.init creates them.
         for room in rooms {
             if let (Some(short_name), Some(amount)) = (room.short_name, room.amount) {

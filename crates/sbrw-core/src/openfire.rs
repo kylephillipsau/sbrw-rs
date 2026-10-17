@@ -17,6 +17,10 @@ use serde_json::json;
 /// XMPP username -> password, shared with sbrw-xmpp's logins.
 pub type Accounts = Arc<RwLock<HashMap<String, String>>>;
 
+/// Persona id -> the personas in the group chat room (`group.channel.*`) it's
+/// in, as sbrw-xmpp's hub keeps it (a test scenario sets it instead).
+pub type GroupMembers = Arc<RwLock<HashMap<i64, Vec<i64>>>>;
+
 #[derive(Debug, Default)]
 pub struct Openfire {
     accounts: Accounts,
@@ -25,6 +29,7 @@ pub struct Openfire {
     /// Players connected to XMPP: a test scenario's simulated count until
     /// sbrw-xmpp serves clients and reports its own.
     pub online_users: i32,
+    pub group_members: GroupMembers,
 }
 
 impl Openfire {
@@ -46,6 +51,16 @@ impl Openfire {
     pub fn create_update_persona(&mut self, persona_id: i64, password: &str, effects: &EffectLog) {
         effects.openfire("createUpdatePersona", vec![json!(persona_id), json!(password)]);
         self.accounts.write().expect("accounts lock").insert(format!("sbrw.{persona_id}"), password.to_owned());
+    }
+
+    // port: xmpp/OpenFireRestApiCli#getAllPersonaByGroup(Long)
+    // port: xmpp/OpenFireRestApiCli#getAllOccupantsInRoom(String)
+    /// The personas in the group chat room the persona is in; none when it
+    /// isn't in one. Upstream asked Openfire's REST API for the persona's
+    /// rooms, then the first group room's occupants.
+    pub fn get_all_persona_by_group(&self, persona_id: i64, effects: &EffectLog) -> Vec<i64> {
+        effects.openfire("getAllPersonaByGroup", vec![json!(persona_id)]);
+        self.group_members.read().expect("groups lock").get(&persona_id).cloned().unwrap_or_default()
     }
 
     // port: xmpp/OpenFireSoapBoxCli#send(Object,Long)

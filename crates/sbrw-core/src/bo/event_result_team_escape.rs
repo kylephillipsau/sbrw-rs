@@ -98,6 +98,7 @@ pub fn handle_internal(
     )?;
     let p = &team_escape_arbitration_packet;
     let durability = car_damage::induce_car_damage(w, active_persona_id, p, &event_data_entity.event)?;
+    let race_again = event_result::prepare_race_again(w, &mut event_session_entity)?;
     let team_escape_event_result = TeamEscapeEventResult {
         accolades: Some(accolades),
         durability,
@@ -105,8 +106,9 @@ pub fn handle_internal(
         event_id: event_data_entity.event.id,
         event_session_id,
         persona_id: active_persona_id,
-        exit_path: Some(event_result::prepare_race_again(&event_session_entity)?),
-        ..Default::default()
+        exit_path: Some(race_again.exit_path),
+        lobby_invite_id: race_again.lobby_invite_id,
+        invite_lifetime_in_milliseconds: race_again.invite_lifetime_in_milliseconds,
     };
 
     if p.busted_count == 0 {

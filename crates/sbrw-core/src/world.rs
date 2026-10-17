@@ -14,7 +14,7 @@ use std::thread;
 
 use anyhow::anyhow;
 use rusqlite::Connection;
-use sbrw_common::{EffectLog, Env};
+use sbrw_common::{EffectLog, Env, RelayRegistry};
 
 use crate::bo::achievement::{self, Achievements};
 use crate::bo::login_announcement::LoginAnnouncements;
@@ -41,6 +41,8 @@ pub struct World {
     pub build_info: BuildInfo,
     /// Single-action timers waiting to fire.
     pub timers: Timers,
+    /// The race relay's guest list, written as lobbies launch.
+    pub relay: RelayRegistry,
     async_jobs: VecDeque<AsyncJob>,
     /// The container marked this transaction for rollback: a system exception
     /// crossed a bean's proxy, even if a caller caught it.
@@ -59,6 +61,7 @@ pub struct WorldOptions {
     pub effects: EffectLog,
     pub openfire: Openfire,
     pub build_info: BuildInfo,
+    pub relay: RelayRegistry,
 }
 
 impl World {
@@ -83,6 +86,7 @@ impl World {
             login_announcements: LoginAnnouncements::default(),
             build_info: options.build_info,
             timers: Timers::default(),
+            relay: options.relay,
             async_jobs: VecDeque::new(),
             rollback_only: false,
         };
@@ -195,6 +199,7 @@ impl World {
             effects: EffectLog::recording(),
             openfire: Openfire::default(),
             build_info: BuildInfo::unknown(),
+            relay: RelayRegistry::default(),
         })
         .expect("booting a test world");
         world.effects.drain();
@@ -291,6 +296,7 @@ mod tests {
             env: Env::deterministic(1, time::macros::datetime!(2026-01-01 12:00 UTC)),
             effects: effects.clone(),
             openfire: Openfire::default(),
+            relay: RelayRegistry::default(),
             build_info: BuildInfo::unknown(),
         })
         .unwrap();

@@ -2,7 +2,7 @@
 //! work due at a time, kept in memory as the container kept non-persistent
 //! timers.
 
-use crate::bo::dnf_timer;
+use crate::bo::{dnf_timer, lobby_countdown};
 use crate::{Fault, World, datetime};
 
 /// What a timer does when it fires.
@@ -10,6 +10,8 @@ use crate::{Fault, World, datetime};
 pub enum TimerKind {
     /// `DNFTimerBO`: tell a racer their time ran out.
     Dnf { event_session_id: i64, persona_id: i64 },
+    /// `LobbyCountdownBO`: launch a lobby.
+    LobbyStart { lobby_id: i64 },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -57,6 +59,7 @@ pub fn fire_due_timer(w: &mut World) -> Result<bool, Fault> {
     let Some(kind) = w.timers.take_due(now) else { return Ok(false) };
     match kind {
         TimerKind::Dnf { event_session_id, persona_id } => dnf_timer::on_timeout(w, event_session_id, persona_id)?,
+        TimerKind::LobbyStart { lobby_id } => lobby_countdown::on_timeout(w, lobby_id)?,
     }
     Ok(true)
 }

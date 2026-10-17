@@ -2,10 +2,4 @@
 # these to differ from its recording, and fails once one replays exactly so
 # that it gets removed from here. This list only ever shrinks.
 pending = [
-    "lobbies/lobby_errors",
-    "lobbies/no_race_again",
-    "lobbies/private",
-    "lobbies/race_now",
-    "lobbies/two_seats",
-    "lobbies/windows",
 ]

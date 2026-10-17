@@ -28,6 +28,7 @@ fn server_with(edit: impl FnOnce(&mut Config)) -> TestServer {
         effects: EffectLog::disabled(),
         openfire: Default::default(),
         build_info: BuildInfo::of_this_build(),
+        relay: sbrw_common::RelayRegistry::default(),
     })
     .unwrap();
     let state = sbrw_http::AppState::new(Arc::new(config), CaptureSink::disabled(), WorldHandle::spawn(world));

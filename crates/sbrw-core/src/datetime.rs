@@ -34,6 +34,17 @@ pub fn opt_to_sql(t: Option<PrimitiveDateTime>) -> Option<String> {
     t.map(to_sql)
 }
 
+/// A `LocalDateTime` bound as a query parameter: to the millisecond, the
+/// reference clock's precision, as MySQL compares it with a `DATETIME`
+/// column. Compare it with `column || '.000'`.
+pub fn to_sql_millis(t: PrimitiveDateTime) -> String {
+    format!(
+        "{}.{:03}",
+        t.replace_nanosecond(0).expect("0 is a valid nanosecond").format(FORMAT).expect("UTC datetimes always format"),
+        t.millisecond()
+    )
+}
+
 /// `LocalDate.now()` on a UTC server.
 pub fn today(env: &Env) -> Date {
     env.now().date()

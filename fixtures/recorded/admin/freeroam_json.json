@@ -1,0 +1,146 @@
+{
+  "scenario": "admin/freeroam_json",
+  "description": "GetFreeroamJson serves the file FREEROAM_JSON_PATH names, and 404 when it can't.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "No path set: 404.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetFreeroamJson",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "A path that doesn't exist.",
+      "sql": [
+        "INSERT INTO parameter (name, value) VALUES ('FREEROAM_JSON_PATH', '/nonexistent/freeroam.json')"
+      ]
+    },
+    {
+      "note": "Reloading parameters.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! reloaded parameters"
+      }
+    },
+    {
+      "note": "Still 404.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetFreeroamJson",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "A directory.",
+      "sql": [
+        "UPDATE parameter SET value = '/' WHERE name = 'FREEROAM_JSON_PATH'"
+      ]
+    },
+    {
+      "note": "Reloading parameters.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! reloaded parameters"
+      }
+    },
+    {
+      "note": "Also 404.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetFreeroamJson",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Connection": "close"
+        },
+        "body": ""
+      }
+    }
+  ],
+  "db": {
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ]
+  }
+}

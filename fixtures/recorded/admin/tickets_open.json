@@ -1,0 +1,178 @@
+{
+  "scenario": "admin/tickets_open",
+  "description": "Invite tickets when no ticket token is set: anyone can make one, and registration ignores them.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "No token is needed.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "alice"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [alice] with ticket: <strong>SBRW-2037241344</strong>"
+      }
+    },
+    {
+      "note": "Any token will do.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "anything"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [alice] with ticket: <strong>SBRW-2037241344</strong>"
+      }
+    },
+    {
+      "note": "Registering without a ticket works: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "A ticket is ignored: launcher token ...0002.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-nope"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>2</UserId><LoginToken>00000000-0000-4000-8000-000000000002</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": "alice",
+        "TICKET": "SBRW-2037241344",
+        "USERID": null
+      },
+      {
+        "ID": 2,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      },
+      {
+        "ID": 3,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 2
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player1@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      },
+      {
+        "ID": 2,
+        "EMAIL": "player2@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "description": "Password recovery: asking for a link (no mail server is set up) and resetting with a key.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "An unknown email.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "form": {
+          "email": "nobody@example.com"
+        }
+      }
+    },
+    {
+      "note": "No email.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "form": {}
+      }
+    },
+    {
+      "note": "Player 1 registers: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Player 1 asks for a link; there's no mail server.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "form": {
+          "email": "player1@example.com"
+        }
+      }
+    },
+    {
+      "note": "Recovery keys: open, expired, closed, and another user's.",
+      "sql": [
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 0, 'openkey', 1)",
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 11:00:00', 0, 'expiredkey', 1)",
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 1, 'closedkey', 1)"
+      ]
+    },
+    {
+      "note": "An open key: the link was already sent (emails match without regard to case).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "form": {
+          "email": "PLAYER1@example.com"
+        }
+      }
+    },
+    {
+      "note": "Empty values.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "",
+          "passwordconf": "",
+          "randomKey": ""
+        }
+      }
+    },
+    {
+      "note": "A missing value.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "a",
+          "randomKey": "openkey"
+        }
+      }
+    },
+    {
+      "note": "The passwords differ.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "a",
+          "passwordconf": "b",
+          "randomKey": "openkey"
+        }
+      }
+    },
+    {
+      "note": "An unknown key.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": "nokey"
+        }
+      }
+    },
+    {
+      "note": "An expired key.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": "expiredkey"
+        }
+      }
+    },
+    {
+      "note": "A closed key.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": "closedkey"
+        }
+      }
+    },
+    {
+      "note": "The open key, in other case: the password is now hunter2.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "hunter2",
+          "passwordconf": "hunter2",
+          "randomKey": "OPENKEY"
+        }
+      }
+    },
+    {
+      "note": "The key is closed now.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "x",
+          "passwordconf": "x",
+          "randomKey": "openkey"
+        }
+      }
+    },
+    {
+      "note": "The old password fails.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "The new one works: launcher token ...0002.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "f3bbbd66a63d4bf1747940578ec3d0103530e21d"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "An hour later.",
+      "advance_ms": 3600000
+    },
+    {
+      "note": "A key expiring at exactly the current time.",
+      "sql": [
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 0, 'edgekey', 1)"
+      ]
+    },
+    {
+      "note": "Not expired until the time has passed.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "y",
+          "passwordconf": "y",
+          "randomKey": "edgekey"
+        }
+      }
+    },
+    {
+      "note": "Every key is closed or expired, so a new link is attempted.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "form": {
+          "email": "player1@example.com"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "description": "Reloading parameters and login announcements with the admin token, and both refusing once the token is gone.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "SERVER_INFO_NAME": "Before"
+  },
+  "steps": [
+    {
+      "note": "The server's name.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation"
+      }
+    },
+    {
+      "note": "The name changes in the database.",
+      "sql": [
+        "UPDATE parameter SET value = 'After' WHERE name = 'SERVER_INFO_NAME'"
+      ]
+    },
+    {
+      "note": "Parameters are cached: still the old name.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation"
+      }
+    },
+    {
+      "note": "The wrong token reloads nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "message": "x",
+          "adminAuth": "wrong"
+        }
+      }
+    },
+    {
+      "note": "The admin token reloads them.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "The new name.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation"
+      }
+    },
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "An English announcement.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('first.jpg', NULL, 'ImageOnly', 'NotApplicable', 'EN')"
+      ]
+    },
+    {
+      "note": "English is cached now.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Another English announcement.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('second.jpg', NULL, 'ImageOnly', 'NotApplicable', 'EN')"
+      ]
+    },
+    {
+      "note": "Still only the first.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The wrong token clears nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "form": {
+          "adminAuth": "wrong"
+        }
+      }
+    },
+    {
+      "note": "Still only the first.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The admin token clears the cache.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "form": {
+          "message": "x",
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "Both now.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The admin token is deleted.",
+      "sql": [
+        "DELETE FROM parameter WHERE name = 'ADMIN_AUTH'"
+      ]
+    },
+    {
+      "note": "It's still cached, so it still works.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "So does reloading, which drops it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "Now there is no admin token.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "For either.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "Even with no token sent.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {}
+      }
+    }
+  ]
+}

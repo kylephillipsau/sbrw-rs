@@ -1,0 +1,515 @@
+{
+  "scenario": "admin/recovery",
+  "description": "Password recovery: asking for a link (no mail server is set up) and resetting with a key.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "An unknown email.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "email": "nobody@example.com"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: Invalid email!"
+      }
+    },
+    {
+      "note": "No email.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "query": null,
+        "headers": null,
+        "form": {},
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: Invalid email!"
+      }
+    },
+    {
+      "note": "Player 1 registers: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Player 1 asks for a link; there's no mail server.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "email": "player1@example.com"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: Can't send email!"
+      }
+    },
+    {
+      "note": "Recovery keys: open, expired, closed, and another user's.",
+      "sql": [
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 0, 'openkey', 1)",
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 11:00:00', 0, 'expiredkey', 1)",
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 1, 'closedkey', 1)"
+      ]
+    },
+    {
+      "note": "An open key: the link was already sent (emails match without regard to case).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "email": "PLAYER1@example.com"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: Recovery password link already sent, please check your spam mail box or try again in 1 hour."
+      }
+    },
+    {
+      "note": "Empty values.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "",
+          "passwordconf": "",
+          "randomKey": ""
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: empty values!"
+      }
+    },
+    {
+      "note": "A missing value.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "a",
+          "randomKey": "openkey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: empty values!"
+      }
+    },
+    {
+      "note": "The passwords differ.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "a",
+          "passwordconf": "b",
+          "randomKey": "openkey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: Passwords not match!"
+      }
+    },
+    {
+      "note": "An unknown key.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": "nokey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: invalid randomKey!"
+      }
+    },
+    {
+      "note": "An expired key.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": "expiredkey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: randomKey expired"
+      }
+    },
+    {
+      "note": "A closed key.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": "closedkey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: randomKey expired"
+      }
+    },
+    {
+      "note": "The open key, in other case: the password is now hunter2.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "hunter2",
+          "passwordconf": "hunter2",
+          "randomKey": "OPENKEY"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Password changed!"
+      }
+    },
+    {
+      "note": "The key is closed now.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "x",
+          "passwordconf": "x",
+          "randomKey": "openkey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: randomKey expired"
+      }
+    },
+    {
+      "note": "The old password fails.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>LOGIN ERROR</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "The new one works: launcher token ...0002.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "f3bbbd66a63d4bf1747940578ec3d0103530e21d"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000002</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "An hour later.",
+      "advance_ms": 3600000
+    },
+    {
+      "note": "A key expiring at exactly the current time.",
+      "sql": [
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 0, 'edgekey', 1)"
+      ]
+    },
+    {
+      "note": "Not expired until the time has passed.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "y",
+          "passwordconf": "y",
+          "randomKey": "edgekey"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Password changed!"
+      }
+    },
+    {
+      "note": "Every key is closed or expired, so a new link is attempted.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/forgotPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "email": "player1@example.com"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: Can't send email!"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "recovery_password": [
+      {
+        "id": 1,
+        "expirationDate": "2026-01-01 13:00:00",
+        "isClose": true,
+        "randomKey": "openkey",
+        "userId": 1
+      },
+      {
+        "id": 2,
+        "expirationDate": "2026-01-01 11:00:00",
+        "isClose": false,
+        "randomKey": "expiredkey",
+        "userId": 1
+      },
+      {
+        "id": 3,
+        "expirationDate": "2026-01-01 13:00:00",
+        "isClose": true,
+        "randomKey": "closedkey",
+        "userId": 1
+      },
+      {
+        "id": 4,
+        "expirationDate": "2026-01-01 13:00:00",
+        "isClose": true,
+        "randomKey": "edgekey",
+        "userId": 1
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player1@example.com",
+        "PASSWORD": "95cb0bfd2977c761298d9624e4b4d4c72a39974a",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": "HWID-1",
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

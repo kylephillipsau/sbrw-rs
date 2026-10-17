@@ -1,0 +1,46 @@
+{
+  "description": "A ticket token of \"null\": registration ignores tickets, but making one needs the token \"null\".",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "TICKET_TOKEN": "null"
+  },
+  "steps": [
+    {
+      "note": "The wrong token makes no ticket.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "The token \"null\" does.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "null"
+        }
+      }
+    },
+    {
+      "note": "Registering without a ticket works: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    }
+  ]
+}

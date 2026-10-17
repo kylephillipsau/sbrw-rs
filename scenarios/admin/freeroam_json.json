@@ -1,0 +1,60 @@
+{
+  "description": "GetFreeroamJson serves the file FREEROAM_JSON_PATH names, and 404 when it can't.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "No path set: 404.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/GetFreeroamJson"
+      }
+    },
+    {
+      "note": "A path that doesn't exist.",
+      "sql": [
+        "INSERT INTO parameter (name, value) VALUES ('FREEROAM_JSON_PATH', '/nonexistent/freeroam.json')"
+      ]
+    },
+    {
+      "note": "Reloading parameters.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "Still 404.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/GetFreeroamJson"
+      }
+    },
+    {
+      "note": "A directory.",
+      "sql": [
+        "UPDATE parameter SET value = '/' WHERE name = 'FREEROAM_JSON_PATH'"
+      ]
+    },
+    {
+      "note": "Reloading parameters.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        }
+      }
+    },
+    {
+      "note": "Also 404.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/GetFreeroamJson"
+      }
+    }
+  ]
+}

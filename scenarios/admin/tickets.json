@@ -1,0 +1,229 @@
+{
+  "description": "Invite tickets when registration needs one: making them with the ticket token, and registering with them.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "parameters": {
+    "TICKET_TOKEN": "secret"
+  },
+  "steps": [
+    {
+      "note": "The wrong token makes no ticket.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "wrong"
+        }
+      }
+    },
+    {
+      "note": "Nor does none.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "alice"
+        }
+      }
+    },
+    {
+      "note": "Alice's ticket.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "Asking again gives Alice the same one.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "Names match without regard to case.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "ALICE",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "Bob's, made in the same millisecond, has the same number as Alice's.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "bob",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "A second later.",
+      "advance_ms": 1000
+    },
+    {
+      "note": "Carol's has a new number.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "carol",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "No name: a ticket for null.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "No name again: another row, since null matches nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "Registering without a ticket fails.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "So does an unknown ticket.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-0"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "A bad email is refused before the ticket is looked at.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "not-an-email",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037241344"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Alice's ticket works: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037241344"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "The same number is now in use, though Bob's row with it is not.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037241344"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Carol's ticket works too: launcher token ...0002.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037242344"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        }
+      }
+    },
+    {
+      "note": "Another second.",
+      "advance_ms": 1000
+    },
+    {
+      "note": "Dave's ticket.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "form": {
+          "discordName": "dave",
+          "ticketAuth": "secret"
+        }
+      }
+    },
+    {
+      "note": "Dave's ticket is unused, but player 1's email is taken.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037243344"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,529 @@
+{
+  "scenario": "admin/tickets",
+  "description": "Invite tickets when registration needs one: making them with the ticket token, and registering with them.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "The wrong token makes no ticket.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "wrong"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token!"
+      }
+    },
+    {
+      "note": "Nor does none.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "alice"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token!"
+      }
+    },
+    {
+      "note": "Alice's ticket.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [alice] with ticket: <strong>SBRW-2037241344</strong>"
+      }
+    },
+    {
+      "note": "Asking again gives Alice the same one.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "alice",
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [alice] with ticket: <strong>SBRW-2037241344</strong>"
+      }
+    },
+    {
+      "note": "Names match without regard to case.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "ALICE",
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [alice] with ticket: <strong>SBRW-2037241344</strong>"
+      }
+    },
+    {
+      "note": "Bob's, made in the same millisecond, has the same number as Alice's.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "bob",
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [bob] with ticket: <strong>SBRW-2037241344</strong>"
+      }
+    },
+    {
+      "note": "A second later.",
+      "advance_ms": 1000
+    },
+    {
+      "note": "Carol's has a new number.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "carol",
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [carol] with ticket: <strong>SBRW-2037242344</strong>"
+      }
+    },
+    {
+      "note": "No name: a ticket for null.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [null] with ticket: <strong>SBRW-2037242344</strong>"
+      }
+    },
+    {
+      "note": "No name again: another row, since null matches nothing.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [null] with ticket: <strong>SBRW-2037242344</strong>"
+      }
+    },
+    {
+      "note": "Registering without a ticket fails.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>Registration Error: Invalid Ticket!</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "So does an unknown ticket.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-0"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>Registration Error: Invalid Ticket!</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "A bad email is refused before the ticket is looked at.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "not-an-email",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037241344"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>Registration Error: Invalid Email Format!</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Alice's ticket works: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037241344"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "The same number is now in use, though Bob's row with it is not.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037241344"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>Registration Error: Ticket already in use!</Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Carol's ticket works too: launcher token ...0002.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player2@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037242344"
+        },
+        "headers": {
+          "X-HWID": "HWID-2"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>2</UserId><LoginToken>00000000-0000-4000-8000-000000000002</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Another second.",
+      "advance_ms": 1000
+    },
+    {
+      "note": "Dave's ticket.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/CreateTicket",
+        "query": null,
+        "headers": null,
+        "form": {
+          "discordName": "dave",
+          "ticketAuth": "secret"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "Discord Name: [dave] with ticket: <strong>SBRW-2037243344</strong>"
+      }
+    },
+    {
+      "note": "Dave's ticket is unused, but player 1's email is taken.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+          "inviteTicket": "SBRW-2037243344"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 500,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Description>Registration Error: Registration limit reached for email!</Description></LoginStatusVO>"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": "alice",
+        "TICKET": "SBRW-2037241344",
+        "USERID": 1
+      },
+      {
+        "ID": 2,
+        "DISCORD_NAME": "bob",
+        "TICKET": "SBRW-2037241344",
+        "USERID": null
+      },
+      {
+        "ID": 3,
+        "DISCORD_NAME": "carol",
+        "TICKET": "SBRW-2037242344",
+        "USERID": 2
+      },
+      {
+        "ID": 4,
+        "DISCORD_NAME": null,
+        "TICKET": "SBRW-2037242344",
+        "USERID": null
+      },
+      {
+        "ID": 5,
+        "DISCORD_NAME": null,
+        "TICKET": "SBRW-2037242344",
+        "USERID": null
+      },
+      {
+        "ID": 6,
+        "DISCORD_NAME": "dave",
+        "TICKET": "SBRW-2037243344",
+        "USERID": null
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player1@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": "HWID-1",
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:01",
+        "lastLogin": "2026-01-01 12:00:01",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      },
+      {
+        "ID": 2,
+        "EMAIL": "player2@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:01",
+        "lastLogin": "2026-01-01 12:00:01",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

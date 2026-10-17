@@ -60,7 +60,8 @@ public final class Http {
             request.contentType(r.contentType != null ? r.contentType : "application/xml");
         } else if (r.form != null) {
             request.contentType("application/x-www-form-urlencoded");
-            request.content(query(r.form).substring(1).getBytes(StandardCharsets.UTF_8));
+            // An empty form is an empty body.
+            request.content(query(r.form).replaceFirst("^\\?", "").getBytes(StandardCharsets.UTF_8));
         }
         MockHttpResponse response = new MockHttpResponse();
         dispatcher.invoke(request, response);

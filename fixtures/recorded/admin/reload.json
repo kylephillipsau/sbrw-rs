@@ -1,0 +1,518 @@
+{
+  "scenario": "admin/reload",
+  "description": "Reloading parameters and login announcements with the admin token, and both refusing once the token is gone.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "The server's name.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"activatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL\"],\"adminList\":\"???\",\"country\":\"US\",\"disactivatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL_DISABLE\"],\"numberOfRegistered\":0,\"onlineNumber\":0,\"ownerList\":\"???\",\"requireTicket\":false,\"secondsToShutDown\":9999999,\"serverName\":\"Before\",\"serverVersion\":\"unknown\",\"timezone\":0}"
+      }
+    },
+    {
+      "note": "The name changes in the database.",
+      "sql": [
+        "UPDATE parameter SET value = 'After' WHERE name = 'SERVER_INFO_NAME'"
+      ]
+    },
+    {
+      "note": "Parameters are cached: still the old name.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"activatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL\"],\"adminList\":\"???\",\"country\":\"US\",\"disactivatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL_DISABLE\"],\"numberOfRegistered\":0,\"onlineNumber\":0,\"ownerList\":\"???\",\"requireTicket\":false,\"secondsToShutDown\":9999999,\"serverName\":\"Before\",\"serverVersion\":\"unknown\",\"timezone\":0}"
+      }
+    },
+    {
+      "note": "The wrong token reloads nothing.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "x",
+          "adminAuth": "wrong"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token"
+      }
+    },
+    {
+      "note": "The admin token reloads them.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! reloaded parameters"
+      }
+    },
+    {
+      "note": "The new name.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/GetServerInformation",
+        "query": null,
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"activatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL\"],\"adminList\":\"???\",\"country\":\"US\",\"disactivatedHolidaySceneryGroups\":[\"SCENERY_GROUP_NORMAL_DISABLE\"],\"numberOfRegistered\":0,\"onlineNumber\":0,\"ownerList\":\"???\",\"requireTicket\":false,\"secondsToShutDown\":9999999,\"serverName\":\"After\",\"serverVersion\":\"unknown\",\"timezone\":0}"
+      }
+    },
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "An English announcement.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('first.jpg', NULL, 'ImageOnly', 'NotApplicable', 'EN')"
+      ]
+    },
+    {
+      "note": "English is cached now.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>first.jpg</ImageUrl><Type>ImageOnly</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "Another English announcement.",
+      "sql": [
+        "INSERT INTO login_announcement (imageUrl, target, type, context, language) VALUES ('second.jpg', NULL, 'ImageOnly', 'NotApplicable', 'EN')"
+      ]
+    },
+    {
+      "note": "Still only the first.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>first.jpg</ImageUrl><Type>ImageOnly</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "The wrong token clears nothing.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "wrong"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token"
+      }
+    },
+    {
+      "note": "Still only the first.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>first.jpg</ImageUrl><Type>ImageOnly</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "The admin token clears the cache.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "x",
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! cleared login announcements cache"
+      }
+    },
+    {
+      "note": "Both now.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/LoginAnnouncements",
+        "query": {
+          "language": "EN"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginAnnouncementsDefinition><Announcements><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>1</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>first.jpg</ImageUrl><Type>ImageOnly</Type></LoginAnnouncementDefinition><LoginAnnouncementDefinition><Context>NotApplicable</Context><Id>2</Id><ImageChecksum>-1</ImageChecksum><ImageUrl>second.jpg</ImageUrl><Type>ImageOnly</Type></LoginAnnouncementDefinition></Announcements><ImagesPath>http://i.imgur.com/</ImagesPath></LoginAnnouncementsDefinition>"
+      }
+    },
+    {
+      "note": "The admin token is deleted.",
+      "sql": [
+        "DELETE FROM parameter WHERE name = 'ADMIN_AUTH'"
+      ]
+    },
+    {
+      "note": "It's still cached, so it still works.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! cleared login announcements cache"
+      }
+    },
+    {
+      "note": "So does reloading, which drops it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "SUCCESS! reloaded parameters"
+      }
+    },
+    {
+      "note": "Now there is no admin token.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! no admin token set in DB"
+      }
+    },
+    {
+      "note": "For either.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "query": null,
+        "headers": null,
+        "form": {
+          "adminAuth": "InsertAdminAuthHere"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! no admin token set in DB"
+      }
+    },
+    {
+      "note": "Even with no token sent.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {},
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! no admin token set in DB"
+      }
+    }
+  ],
+  "db": {
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "login_announcement": [
+      {
+        "id": 1,
+        "imageUrl": "first.jpg",
+        "target": null,
+        "type": "ImageOnly",
+        "context": "NotApplicable",
+        "language": "EN"
+      },
+      {
+        "id": 2,
+        "imageUrl": "second.jpg",
+        "target": null,
+        "type": "ImageOnly",
+        "context": "NotApplicable",
+        "language": "EN"
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player1@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

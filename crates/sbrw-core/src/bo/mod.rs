@@ -11,6 +11,7 @@ pub mod authentication;
 pub mod basket;
 pub mod car_damage;
 pub mod car_slot;
+pub mod commerce;
 pub mod driver_persona;
 pub mod get_server_information;
 pub mod hardware_info;

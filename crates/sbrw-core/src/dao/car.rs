@@ -297,6 +297,11 @@ pub fn insert(db: &Connection, car: &mut CarEntity) -> rusqlite::Result<()> {
         car.version,
     ])?;
     car.id = db.last_insert_rowid();
+    insert_parts(db, car)
+}
+
+/// The car's parts, as new rows; sets their ids.
+fn insert_parts(db: &Connection, car: &mut CarEntity) -> rusqlite::Result<()> {
     for p in &mut car.paints {
         db.prepare_cached(
             "INSERT INTO paint (paintGroup, hue, sat, slot, paintVar, carId) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
@@ -334,9 +339,19 @@ pub fn insert(db: &Connection, car: &mut CarEntity) -> rusqlite::Result<()> {
     Ok(())
 }
 
+/// What Hibernate flushes for a managed car whose part sets were replaced
+/// (`OwnedCarConverter.*2NewEntity` clear and refill them): the old parts
+/// are orphans, so their rows go, and the new parts get new rows; sets their ids.
+pub fn replace_parts(db: &Connection, car: &mut CarEntity) -> rusqlite::Result<()> {
+    for table in ["paint", "performancepart", "skillmodpart", "vinyl", "visualpart"] {
+        db.prepare_cached(&format!("DELETE FROM {table} WHERE carId = ?1"))?.execute([car.id])?;
+    }
+    insert_parts(db, car)
+}
+
 /// `CarDAO.update` (`merge`), and what Hibernate flushes for a changed managed
-/// car: the car's columns. The merge cascades to parts the car already holds,
-/// which no caller ported so far changes.
+/// car: the car's columns. The merge cascades to parts the car already holds;
+/// [`replace_parts`] writes parts that changed.
 pub fn update(db: &Connection, car: &CarEntity) -> rusqlite::Result<()> {
     db.prepare_cached(
         "UPDATE car SET durability = ?2, expirationDate = ?3, heat = ?4, ownershipType = ?5, personaId = ?6,

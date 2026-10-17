@@ -8,6 +8,8 @@ use sbrw_java::util::hash_map_order;
 
 use crate::Fault;
 use crate::bo::util::achievement_commerce_context::AchievementCommerceContext;
+use crate::bo::util::achievement_customization_context::AchievementCustomizationContext;
+use crate::bo::util::achievement_inventory_context::AchievementInventoryContext;
 use crate::bo::util::achievement_progression_context::AchievementProgressionContext;
 use crate::dao::car::CarEntity;
 use crate::dao::persona::PersonaEntity;
@@ -23,6 +25,8 @@ pub enum Binding {
     Progression(AchievementProgressionContext),
     OwnedCar(Box<CarEntity>),
     CommerceCtx(Box<AchievementCommerceContext>),
+    CustomizationCtx(Box<AchievementCustomizationContext>),
+    InventoryCtx(Box<AchievementInventoryContext>),
 }
 
 /// A script's globals by name.

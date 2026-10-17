@@ -4,14 +4,14 @@
 use axum::http::StatusCode;
 use axum::response::Response;
 use sbrw_core::bo::util::owned_car_converter;
-use sbrw_core::bo::{basket, car_slot, inventory, persona, token_session};
+use sbrw_core::bo::{basket, car_slot, commerce, inventory, persona, token_session};
 use sbrw_core::dao::persona::PersonaEntity;
 use sbrw_core::{Fault, World};
 use sbrw_xml::ToXml;
 use sbrw_xml::dto::http::{
     ArrayOfCommerceItemTrans, ArrayOfInventoryItemTrans, ArrayOfOwnedCarTrans, ArrayOfProductTrans, ArrayOfWalletTrans,
-    BasketTrans, CarSlotInfoTrans, CommerceResultStatus, CommerceResultTrans, InvalidBasketTrans, InventoryItemTrans,
-    ProductTrans, WalletTrans,
+    BasketTrans, CarSlotInfoTrans, CommerceResultStatus, CommerceResultTrans, CommerceSessionTrans, InvalidBasketTrans,
+    InventoryItemTrans, ProductTrans, WalletTrans,
 };
 
 use super::{Call, entity};
@@ -20,6 +20,20 @@ use crate::AppState;
 /// A `{personaId}` or `{carId}` path parameter; the route always has one.
 fn path_id(call: &Call, name: &str) -> Result<i64, Fault> {
     call.path_long(name)?.ok_or_else(|| Fault::null_pointer(name))
+}
+
+// port: api/Personas#commerce(InputStream,Long)
+/// The shops' save: the selected car as the game wants it, with the basket
+/// and any items to sell.
+pub(super) async fn commerce(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id = path_id(call, "personaId")?;
+    token_session::verify_persona_ownership(call.session(), persona_id)?;
+    // Read line by line and joined with nothing, so line breaks are gone.
+    let xml: String = String::from_utf8_lossy(&call.body).split(['\n', '\r']).collect();
+    let commerce_session_trans: CommerceSessionTrans = sbrw_xml::from_xml(&xml)
+        .map_err(|e| anyhow::anyhow!("Failed to unmarshal stream to CommerceSessionTrans instance: {e}"))?;
+    let result = state.world().call(move |w| commerce::do_commerce(w, commerce_session_trans, persona_id)).await?;
+    Ok(entity(call, StatusCode::OK, result.to_xml()))
 }
 
 // port: api/Personas#baskets(InputStream,Long)

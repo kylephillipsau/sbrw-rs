@@ -361,6 +361,7 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         }
         "api/Catalog#productsInCategory(String,String,String)" => catalog::products_in_category(state, call).await,
         "api/Catalog#categories(String)" => catalog::categories(state, call).await,
+        "api/Personas#commerce(InputStream,Long)" => personas::commerce(state, call).await,
         "api/Personas#baskets(InputStream,Long)" => personas::baskets(state, call).await,
         "api/Personas#carslots(Long)" => personas::carslots(state, call).await,
         "api/Personas#inventoryObjects(String)" => personas::inventory_objects(state, call).await,

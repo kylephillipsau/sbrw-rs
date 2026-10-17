@@ -14,6 +14,8 @@ use time::PrimitiveDateTime;
 use crate::Fault;
 use crate::bo::achievement_transaction::{Binding, Bindings};
 use crate::bo::util::achievement_commerce_context::AchievementCommerceContext;
+use crate::bo::util::achievement_customization_context::AchievementCustomizationContext;
+use crate::bo::util::achievement_inventory_context::AchievementInventoryContext;
 use crate::bo::util::achievement_progression_context::AchievementProgressionContext;
 use crate::dao::car::CarEntity;
 use crate::dao::car_classes::CarClassesEntity;
@@ -37,6 +39,8 @@ fn java(binding: &Binding) -> JavaValue {
         Binding::Progression(p) => progression(p),
         Binding::OwnedCar(c) => car(c),
         Binding::CommerceCtx(c) => commerce_context(c),
+        Binding::CustomizationCtx(c) => customization_context(c),
+        Binding::InventoryCtx(c) => inventory_context(c),
     }
 }
 
@@ -140,6 +144,36 @@ fn commerce_context(c: &AchievementCommerceContext) -> JavaValue {
             .get("productEntity", opt(c.product_entity.as_ref(), product))
             .get("commerceType", JavaValue::Enum(c.commerce_type.name().to_owned()))
             .get("commerceTypeVal", JavaValue::Integer(c.commerce_type_val())),
+    )
+}
+
+/// The type, but not the lists or the counting methods: only one list
+/// answers for each type, and no script in the data reads any of it.
+fn customization_context(c: &AchievementCustomizationContext) -> JavaValue {
+    JavaValue::Bean(
+        Bean::new()
+            .get("type", JavaValue::Enum(c.r#type().name().to_owned()))
+            .get("typeVal", JavaValue::Integer(c.type_val())),
+    )
+}
+
+fn inventory_context(c: &AchievementInventoryContext) -> JavaValue {
+    let item = &c.inventory_item_entity;
+    JavaValue::Bean(
+        Bean::new()
+            .get(
+                "inventoryItemEntity",
+                JavaValue::Bean(
+                    Bean::new()
+                        .get("id", JavaValue::Long(item.id))
+                        .get("expirationDate", local_date_time(item.expiration_date))
+                        .get("remainingUseCount", JavaValue::Integer(item.remaining_use_count))
+                        .get("resellPrice", JavaValue::Integer(item.resell_price))
+                        .get("status", string(&item.status)),
+                ),
+            )
+            .get("event", JavaValue::Enum(c.event.name().to_owned()))
+            .get("eventVal", JavaValue::Integer(c.event_val())),
     )
 }
 

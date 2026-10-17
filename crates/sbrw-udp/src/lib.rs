@@ -1,8 +1,9 @@
 //! UDP free-roam and race relay servers for NFS World.
 //!
-//! So far: the free-roam server for a player alone (`freeroam`, every slot
-//! empty), and a probe that binds a port and records every datagram without
-//! answering, to collect real client packets for the protocol notes.
+//! So far: the free-roam server (`freeroam`, a port of the Go server, with its
+//! car-state decoder in `carstate`), and a probe that binds a port and records
+//! every datagram without answering, to collect real client packets for the
+//! protocol notes.
 
 pub mod carstate;
 pub mod freeroam;

@@ -19,9 +19,9 @@
 //! - Ticks are milliseconds truncated to 16 bits, big-endian throughout. A
 //!   client silent for 5 seconds is dropped.
 //!
-//! The Go server decodes each car state to place the car, and a car state it
-//! can't decode gets no answer. The decoder (`carstate`) comes with M3; until
-//! then every car state is taken as valid.
+//! The Go server decodes each car state to place the car (`carstate`). Its
+//! decoder reads missing bits as zeros and never fails, so every car state of
+//! two or more bytes is taken.
 
 use std::collections::HashMap;
 use std::net::SocketAddr;

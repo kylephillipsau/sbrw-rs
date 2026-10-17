@@ -4,6 +4,7 @@
 //! empty), and a probe that binds a port and records every datagram without
 //! answering, to collect real client packets for the protocol notes.
 
+pub mod carstate;
 pub mod freeroam;
 
 use std::collections::HashSet;

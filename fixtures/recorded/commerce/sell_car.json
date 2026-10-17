@@ -1,0 +1,1887 @@
+{
+  "scenario": "commerce/sell_car",
+  "description": "Selling cars: never the last car of one's own, never a rental, and the default car moves down.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100: level 60, 350000 cash, the starting powerups and insurance.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Car 1 (75000, resells for 50000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000020B</Description><Icon>ACH_OWN_DODGE</Icon><Name>GM_ACHIEVEMENT_000000A6</Name><AchievementDefinitionId>33</AchievementDefinitionId><AchievementRankId>161</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>1</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>91</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>92</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>93</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>94</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>95</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>15</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>33</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>21</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "The only car: not sold, and an empty answer.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Car 2 (75000), now the default.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR9</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>990337002</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>charger69</Name><Paints><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>7</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>0</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>4</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>5</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>6</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>3</Slot><Var>157</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-2037551243</PhysicsProfileHash><Rating>188</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>-197552797</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>200000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_00000211</Description><Icon>ACH_OWN_CAR</Icon><Name>GM_ACHIEVEMENT_00000018</Name><AchievementDefinitionId>15</AchievementDefinitionId><AchievementRankId>71</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>5</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>15</AchievementDefinitionId><CurrentValue>2</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>33</AchievementDefinitionId><CurrentValue>2</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>26</CurrentValue></AchievementProgress></Progressed><Score>26</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Car 3 (100000), now the default (index 2).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR4</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>-1054632705</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>eclipsegt</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>3</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>7</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>0</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>5</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>4</Slot><Var>0</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1562965059</PhysicsProfileHash><Rating>201</Rating><ResalePrice>50000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>3</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>100000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_000001F7</Description><Icon>ACH_OWN_MITSUBISHI</Icon><Name>GM_ACHIEVEMENT_00000050</Name><AchievementDefinitionId>49</AchievementDefinitionId><AchievementRankId>241</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>1</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>15</AchievementDefinitionId><CurrentValue>3</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>49</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>27</CurrentValue></AchievementProgress></Progressed><Score>27</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selling car 1: its resale price comes back, and the default index goes down by one.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "1"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>-1054632705</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>eclipsegt</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>0</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>7</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>5</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>3</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>4</Slot><Var>0</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1562965059</PhysicsProfileHash><Rating>201</Rating><ResalePrice>50000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>3</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "Cars 2 and 3.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CarSlotInfoTrans><CarsOwnedByPersona><OwnedCarTrans><CustomCar><BaseCar>990337002</BaseCar><CarClassHash>872416321</CarClassHash><Id>2</Id><IsPreset>true</IsPreset><Level>0</Level><Name>charger69</Name><Paints><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>3</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>0</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>5</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>7</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>4</Slot><Var>157</Var></CustomPaintTrans><CustomPaintTrans><Group>595033610</Group><Hue>496032434</Hue><Sat>255</Sat><Slot>6</Slot><Var>157</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-2037551243</PhysicsProfileHash><Rating>188</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>-197552797</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>2</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>-1054632705</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>eclipsegt</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>0</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>5</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>7</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>3</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>4</Slot><Var>0</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1562965059</PhysicsProfileHash><Rating>201</Rating><ResalePrice>50000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>3</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></CarsOwnedByPersona><DefaultOwnedCarIndex>1</DefaultOwnedCarIndex><ObtainableSlots><ProductTrans><BundleItems/><CategoryId></CategoryId><Currency>_NS</Currency><Description>New car slot !!</Description><DurationMinute>0</DurationMinute><Hash>-1143680669</Hash><Icon>128_cash</Icon><Level>70</Level><LongDescription>New car slot !</LongDescription><Price>100.0</Price><Priority>0</Priority><ProductId>SRV-GARAGESLOT</ProductId><SecondaryIcon></SecondaryIcon><UseCount>1</UseCount><VisualStyle></VisualStyle><WebIcon></WebIcon><WebLocation></WebLocation></ProductTrans></ObtainableSlots><OwnedCarSlotsCount>251</OwnedCarSlotsCount></CarSlotInfoTrans>"
+      }
+    },
+    {
+      "note": "Enabling the rental, and cash for it. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE product SET enabled = 1 WHERE productId = 'SRV-CAR56'",
+        "UPDATE persona SET cash = 2000000 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "Car 4, a rental.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CAR56</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>-691868418</BaseCar><CarClassHash>-2142411446</CarClassHash><Id>4</Id><IsPreset>true</IsPreset><Level>0</Level><Name>car1008</Name><Paints><CustomPaintTrans><Group>-1480403439</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>1</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>54610746</Group><Hue>496032596</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>-1480403439</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>2</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>5</Slot><Var>25</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-1137657781</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>41050011</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>181117512</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-162538886</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-659189942</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>1139943343</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1541998384</PhysicsProfileHash><Rating>820</Rating><ResalePrice>3500000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1244408496</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-297285755</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-378057954</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>201416165</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>201416165</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>922552012</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>29</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>556</ScaleX><ScaleY>426</ScaleY><Shear>0</Shear><TranX>-223</TranX><TranY>-213</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>26</Layer><Mir>true</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>325</TranX><TranY>215</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1312218333</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>15</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>337</TranX><TranY>-286</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-988707850</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>18</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>262</ScaleX><ScaleY>262</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>409</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805878</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>7</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-481</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805714</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>1</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1802</ScaleX><ScaleY>1294</ScaleY><Shear>0</Shear><TranX>-390</TranX><TranY>9</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>13</Layer><Mir>true</Mir><Rot>18</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-463</TranX><TranY>327</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456132369</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>16</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>163</ScaleY><Shear>0</Shear><TranX>174</TranX><TranY>312</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456132369</Hash><Hue1>-799662354</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>17</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>163</ScaleY><Shear>0</Shear><TranX>-179</TranX><TranY>314</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>2079553809</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>3</Layer><Mir>false</Mir><Rot>203</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>654</ScaleY><Shear>0</Shear><TranX>-386</TranX><TranY>-12</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456305083</Hash><Hue1>-799662283</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>19</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-305</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>55988370</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>20</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>65</ScaleX><ScaleY>98</ScaleY><Shear>0</Shear><TranX>-343</TranX><TranY>163</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1552012649</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>8</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>445</TranX><TranY>-40</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491166</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>22</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>566</ScaleX><ScaleY>98</ScaleY><Shear>0</Shear><TranX>141</TranX><TranY>-379</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>12</Layer><Mir>true</Mir><Rot>18</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-461</TranX><TranY>327</TranY><Var1>255</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1312218333</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>14</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-337</TranX><TranY>-286</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>2079553809</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>4</Layer><Mir>false</Mir><Rot>53</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>654</ScaleY><Shear>0</Shear><TranX>391</TranX><TranY>-7</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>23</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-81</TranX><TranY>81</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662352</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>24</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-409</TranX><TranY>163</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805861</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>2</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1769</ScaleX><ScaleY>1638</ScaleY><Shear>0</Shear><TranX>-1</TranX><TranY>332</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>-799662348</Hue1><Hue2>-799662279</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>5</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>426</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-481</TranY><Var1>40</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1246607603</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>11</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-445</TranX><TranY>128</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>28</Layer><Mir>true</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>655</ScaleY><Shear>0</Shear><TranX>-15</TranX><TranY>-440</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>55988370</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>21</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>65</ScaleX><ScaleY>96</ScaleY><Shear>0</Shear><TranX>343</TranX><TranY>163</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805529</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1802</ScaleX><ScaleY>1196</ScaleY><Shear>0</Shear><TranX>-1</TranX><TranY>-31</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805878</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>6</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>655</ScaleX><ScaleY>655</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>115</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662312</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>25</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>409</TranX><TranY>163</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1246607603</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>9</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>445</TranX><TranY>128</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1552012649</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>10</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-445</TranX><TranY>-37</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>27</Layer><Mir>true</Mir><Rot>129</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>287</TranX><TranY>-258</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>1182177126</PartHash><SlotHash>1694991</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-273819714</PartHash><SlotHash>-2126743923</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-1166179714</PartHash><SlotHash>2106784967</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-1986763776</PartHash><SlotHash>453545749</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><ExpirationDate>2026-01-02T12:00:00.000Z</ExpirationDate><Heat>1.0</Heat><Id>4</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>1650000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>27</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Rentals can't be sold.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "4"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "No such car.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "99"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Car 2 as the default (index 0).",
+      "request": {
+        "method": "PUT",
+        "path": "/Engine.svc/personas/100/defaultcar/2",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Selling the default car at index 0: the index becomes the count less one.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "2"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>-691868418</BaseCar><CarClassHash>-2142411446</CarClassHash><Id>4</Id><IsPreset>true</IsPreset><Level>0</Level><Name>car1008</Name><Paints><CustomPaintTrans><Group>-1480403439</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>1</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>-1480403439</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>2</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>54610746</Group><Hue>496032596</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>5</Slot><Var>25</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>41050011</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-162538886</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-1137657781</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>1139943343</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>181117512</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-659189942</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1541998384</PhysicsProfileHash><Rating>820</Rating><ResalePrice>3500000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-378057954</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>201416165</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1244408496</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-297285755</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>201416165</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>1246607603</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>11</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-445</TranX><TranY>128</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456305083</Hash><Hue1>-799662283</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>19</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-305</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>26</Layer><Mir>true</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>325</TranX><TranY>215</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>55988370</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>21</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>65</ScaleX><ScaleY>96</ScaleY><Shear>0</Shear><TranX>343</TranX><TranY>163</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>23</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-81</TranX><TranY>81</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805714</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>1</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1802</ScaleX><ScaleY>1294</ScaleY><Shear>0</Shear><TranX>-390</TranX><TranY>9</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>27</Layer><Mir>true</Mir><Rot>129</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>287</TranX><TranY>-258</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>-799662348</Hue1><Hue2>-799662279</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>5</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>426</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-481</TranY><Var1>40</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805878</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>7</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-481</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805878</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>6</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>655</ScaleX><ScaleY>655</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>115</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456132369</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>16</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>163</ScaleY><Shear>0</Shear><TranX>174</TranX><TranY>312</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1552012649</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>10</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-445</TranX><TranY>-37</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>13</Layer><Mir>true</Mir><Rot>18</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-463</TranX><TranY>327</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456132369</Hash><Hue1>-799662354</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>17</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>163</ScaleY><Shear>0</Shear><TranX>-179</TranX><TranY>314</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-988707850</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>18</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>262</ScaleX><ScaleY>262</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>409</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>55988370</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>20</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>65</ScaleX><ScaleY>98</ScaleY><Shear>0</Shear><TranX>-343</TranX><TranY>163</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805861</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>2</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1769</ScaleX><ScaleY>1638</ScaleY><Shear>0</Shear><TranX>-1</TranX><TranY>332</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>2079553809</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>3</Layer><Mir>false</Mir><Rot>203</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>654</ScaleY><Shear>0</Shear><TranX>-386</TranX><TranY>-12</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662312</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>25</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>409</TranX><TranY>163</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>922552012</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>29</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>556</ScaleX><ScaleY>426</ScaleY><Shear>0</Shear><TranX>-223</TranX><TranY>-213</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1246607603</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>9</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>445</TranX><TranY>128</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805529</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1802</ScaleX><ScaleY>1196</ScaleY><Shear>0</Shear><TranX>-1</TranX><TranY>-31</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>28</Layer><Mir>true</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>655</ScaleY><Shear>0</Shear><TranX>-15</TranX><TranY>-440</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1312218333</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>14</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-337</TranX><TranY>-286</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662352</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>24</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-409</TranX><TranY>163</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>12</Layer><Mir>true</Mir><Rot>18</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-461</TranX><TranY>327</TranY><Var1>255</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491166</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>22</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>566</ScaleX><ScaleY>98</ScaleY><Shear>0</Shear><TranX>141</TranX><TranY>-379</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1312218333</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>15</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>337</TranX><TranY>-286</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1552012649</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>8</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>445</TranX><TranY>-40</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>2079553809</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>4</Layer><Mir>false</Mir><Rot>53</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>654</ScaleY><Shear>0</Shear><TranX>391</TranX><TranY>-7</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-1986763776</PartHash><SlotHash>453545749</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-1166179714</PartHash><SlotHash>2106784967</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>1182177126</PartHash><SlotHash>1694991</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-273819714</PartHash><SlotHash>-2126743923</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><ExpirationDate>2026-01-02T12:00:00.000Z</ExpirationDate><Heat>1.0</Heat><Id>4</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "One car of the driver's own left, besides the rental: not sold.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/cars",
+        "query": {
+          "serialNumber": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "Cars 3 and 4.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CarSlotInfoTrans><CarsOwnedByPersona><OwnedCarTrans><CustomCar><BaseCar>-1054632705</BaseCar><CarClassHash>872416321</CarClassHash><Id>3</Id><IsPreset>true</IsPreset><Level>0</Level><Name>eclipsegt</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>3</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>7</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>4</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>0</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032328</Hue><Sat>0</Sat><Slot>5</Slot><Var>0</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1562965059</PhysicsProfileHash><Rating>201</Rating><ResalePrice>50000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls/><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>3</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans><OwnedCarTrans><CustomCar><BaseCar>-691868418</BaseCar><CarClassHash>-2142411446</CarClassHash><Id>4</Id><IsPreset>true</IsPreset><Level>0</Level><Name>car1008</Name><Paints><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>54610746</Group><Hue>496032596</Hue><Sat>0</Sat><Slot>6</Slot><Var>0</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>5</Slot><Var>25</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>42744494</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>-1480403439</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>2</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>-1480403439</Group><Hue>496032431</Hue><Sat>0</Sat><Slot>1</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>1139943343</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>41050011</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>181117512</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-162538886</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-659189942</PerformancePartAttribHash></PerformancePartTrans><PerformancePartTrans><PerformancePartAttribHash>-1137657781</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1541998384</PhysicsProfileHash><Rating>820</Rating><ResalePrice>3500000.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>201416165</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-297285755</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>201416165</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1244408496</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-378057954</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>-883491363</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>12</Layer><Mir>true</Mir><Rot>18</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-461</TranX><TranY>327</TranY><Var1>255</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805878</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>7</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-481</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>922552012</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>29</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>556</ScaleX><ScaleY>426</ScaleY><Shear>0</Shear><TranX>-223</TranX><TranY>-213</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>2079553809</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>4</Layer><Mir>false</Mir><Rot>53</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>654</ScaleY><Shear>0</Shear><TranX>391</TranX><TranY>-7</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456132369</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>16</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>163</ScaleY><Shear>0</Shear><TranX>174</TranX><TranY>312</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>-799662348</Hue1><Hue2>-799662279</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>5</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>426</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-481</TranY><Var1>40</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662312</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>25</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>409</TranX><TranY>163</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456132369</Hash><Hue1>-799662354</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>17</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>163</ScaleY><Shear>0</Shear><TranX>-179</TranX><TranY>314</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>26</Layer><Mir>true</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>325</TranX><TranY>215</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491363</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>13</Layer><Mir>true</Mir><Rot>18</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-463</TranX><TranY>327</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805878</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>6</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>655</ScaleX><ScaleY>655</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>115</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>55988370</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>20</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>65</ScaleX><ScaleY>98</ScaleY><Shear>0</Shear><TranX>-343</TranX><TranY>163</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662352</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>24</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-409</TranX><TranY>163</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-988707850</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>18</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>262</ScaleX><ScaleY>262</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>409</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1312218333</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>14</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-337</TranX><TranY>-286</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>2079553809</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>3</Layer><Mir>false</Mir><Rot>203</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>654</ScaleX><ScaleY>654</ScaleY><Shear>0</Shear><TranX>-386</TranX><TranY>-12</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-228372018</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>23</Layer><Mir>false</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>163</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>-81</TranX><TranY>81</TranY><Var1>63</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-456305083</Hash><Hue1>-799662283</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>19</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>-305</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1552012649</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>10</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-445</TranX><TranY>-37</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>28</Layer><Mir>true</Mir><Rot>128</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>655</ScaleY><Shear>0</Shear><TranX>-15</TranX><TranY>-440</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1246607603</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>9</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>445</TranX><TranY>128</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1552012649</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>8</Layer><Mir>false</Mir><Rot>64</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>445</TranX><TranY>-40</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>55988370</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>21</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>65</ScaleX><ScaleY>96</ScaleY><Shear>0</Shear><TranX>343</TranX><TranY>163</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1312218333</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>15</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>81</ScaleX><ScaleY>81</ScaleY><Shear>0</Shear><TranX>337</TranX><TranY>-286</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805861</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>2</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1769</ScaleX><ScaleY>1638</ScaleY><Shear>0</Shear><TranX>-1</TranX><TranY>332</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805529</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1802</ScaleX><ScaleY>1196</ScaleY><Shear>0</Shear><TranX>-1</TranX><TranY>-31</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-883491166</Hash><Hue1>-799662156</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>22</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>255</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>566</ScaleX><ScaleY>98</ScaleY><Shear>0</Shear><TranX>141</TranX><TranY>-379</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-1008805714</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>1</Layer><Mir>true</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1802</ScaleX><ScaleY>1294</ScaleY><Shear>0</Shear><TranX>-390</TranX><TranY>9</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>-869896863</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>27</Layer><Mir>true</Mir><Rot>129</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>1310</ScaleX><ScaleY>983</ScaleY><Shear>0</Shear><TranX>287</TranX><TranY>-258</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1246607603</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>11</Layer><Mir>false</Mir><Rot>192</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>327</ScaleX><ScaleY>327</ScaleY><Shear>0</Shear><TranX>-445</TranX><TranY>128</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-273819714</PartHash><SlotHash>-2126743923</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-1166179714</PartHash><SlotHash>2106784967</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>-1986763776</PartHash><SlotHash>453545749</SlotHash></VisualPartTrans><VisualPartTrans><PartHash>1182177126</PartHash><SlotHash>1694991</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><ExpirationDate>2026-01-02T12:00:00.000Z</ExpirationDate><Heat>1.0</Heat><Id>4</Id><OwnershipType>RentalCar</OwnershipType></OwnedCarTrans></CarsOwnedByPersona><DefaultOwnedCarIndex>1</DefaultOwnedCarIndex><ObtainableSlots><ProductTrans><BundleItems/><CategoryId></CategoryId><Currency>_NS</Currency><Description>New car slot !!</Description><DurationMinute>0</DurationMinute><Hash>-1143680669</Hash><Icon>128_cash</Icon><Level>70</Level><LongDescription>New car slot !</LongDescription><Price>100.0</Price><Priority>0</Priority><ProductId>SRV-GARAGESLOT</ProductId><SecondaryIcon></SecondaryIcon><UseCount>1</UseCount><VisualStyle></VisualStyle><WebIcon></WebIcon><WebLocation></WebLocation></ProductTrans></ObtainableSlots><OwnedCarSlotsCount>251</OwnedCarSlotsCount></CarSlotInfoTrans>"
+      }
+    },
+    {
+      "note": "Cash and boost.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Badges/><Boost>0.0</Boost><Cash>1687500.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>27</Score></ProfileData>"
+      }
+    },
+    {
+      "note": "Another driver's garage.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/101/cars",
+        "query": {
+          "serialNumber": "3"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-773</ErrorCode><InnerException><ErrorCode>-773</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat jdk.internal.reflect.GeneratedMethodAccessor31.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$Xwt5X62m.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.carsPost(Personas.java:205)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException\n\tat com.soapboxrace.core.bo.TokenSessionBO.verifyPersonaOwnership(TokenSessionBO.java:162)\n\tat jdk.internal.reflect.GeneratedMethodAccessor31.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.TokenSessionBO$ByteBuddy$Xwt5X62m.verifyPersonaOwnership(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.carsPost(Personas.java:205)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE product SET enabled = 0 WHERE productId = 'SRV-CAR56'"
+      ]
+    }
+  ],
+  "db": {
+    "car": [
+      {
+        "id": 3,
+        "durability": 100,
+        "expirationDate": null,
+        "heat": 1.0,
+        "ownershipType": "CustomizedCar",
+        "personaId": 100,
+        "baseCar": -1054632705,
+        "carClassHash": 872416321,
+        "isPreset": true,
+        "level": 0,
+        "name": "eclipsegt",
+        "physicsProfileHash": -1562965059,
+        "rating": 201,
+        "resalePrice": 50000.0,
+        "rideHeightDrop": 0.0,
+        "skillModSlotCount": 5,
+        "version": 0
+      },
+      {
+        "id": 4,
+        "durability": 100,
+        "expirationDate": "2026-01-02 12:00:00",
+        "heat": 1.0,
+        "ownershipType": "RentalCar",
+        "personaId": 100,
+        "baseCar": -691868418,
+        "carClassHash": -2142411446,
+        "isPreset": true,
+        "level": 0,
+        "name": "car1008",
+        "physicsProfileHash": -1541998384,
+        "rating": 820,
+        "resalePrice": 3500000.0,
+        "rideHeightDrop": 0.0,
+        "skillModSlotCount": 5,
+        "version": 0
+      }
+    ],
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 1,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "paint": [
+      {
+        "id": 13,
+        "paintGroup": 47885063,
+        "hue": 496032328,
+        "sat": 0,
+        "slot": 3,
+        "paintVar": 0,
+        "carId": 3
+      },
+      {
+        "id": 14,
+        "paintGroup": 47885063,
+        "hue": 496032328,
+        "sat": 0,
+        "slot": 7,
+        "paintVar": 0,
+        "carId": 3
+      },
+      {
+        "id": 15,
+        "paintGroup": 47885063,
+        "hue": 496032328,
+        "sat": 0,
+        "slot": 0,
+        "paintVar": 0,
+        "carId": 3
+      },
+      {
+        "id": 16,
+        "paintGroup": 47885063,
+        "hue": 496032328,
+        "sat": 0,
+        "slot": 5,
+        "paintVar": 0,
+        "carId": 3
+      },
+      {
+        "id": 17,
+        "paintGroup": 47885063,
+        "hue": 496032328,
+        "sat": 0,
+        "slot": 6,
+        "paintVar": 0,
+        "carId": 3
+      },
+      {
+        "id": 18,
+        "paintGroup": 47885063,
+        "hue": 496032328,
+        "sat": 0,
+        "slot": 4,
+        "paintVar": 0,
+        "carId": 3
+      },
+      {
+        "id": 19,
+        "paintGroup": -1480403439,
+        "hue": 496032431,
+        "sat": 0,
+        "slot": 1,
+        "paintVar": 255,
+        "carId": 4
+      },
+      {
+        "id": 20,
+        "paintGroup": 54610746,
+        "hue": 496032596,
+        "sat": 0,
+        "slot": 6,
+        "paintVar": 0,
+        "carId": 4
+      },
+      {
+        "id": 21,
+        "paintGroup": 42744494,
+        "hue": 496032431,
+        "sat": 255,
+        "slot": 3,
+        "paintVar": 255,
+        "carId": 4
+      },
+      {
+        "id": 22,
+        "paintGroup": -1480403439,
+        "hue": 496032431,
+        "sat": 0,
+        "slot": 2,
+        "paintVar": 255,
+        "carId": 4
+      },
+      {
+        "id": 23,
+        "paintGroup": 42744494,
+        "hue": 496032431,
+        "sat": 0,
+        "slot": 5,
+        "paintVar": 25,
+        "carId": 4
+      },
+      {
+        "id": 24,
+        "paintGroup": 42744494,
+        "hue": 496032431,
+        "sat": 255,
+        "slot": 4,
+        "paintVar": 255,
+        "carId": 4
+      },
+      {
+        "id": 25,
+        "paintGroup": 42744494,
+        "hue": 496032431,
+        "sat": 255,
+        "slot": 7,
+        "paintVar": 255,
+        "carId": 4
+      },
+      {
+        "id": 26,
+        "paintGroup": 42744494,
+        "hue": 496032431,
+        "sat": 255,
+        "slot": 0,
+        "paintVar": 255,
+        "carId": 4
+      }
+    ],
+    "performancepart": [
+      {
+        "id": 1,
+        "performancePartAttribHash": -1137657781,
+        "carId": 4
+      },
+      {
+        "id": 2,
+        "performancePartAttribHash": 41050011,
+        "carId": 4
+      },
+      {
+        "id": 3,
+        "performancePartAttribHash": 181117512,
+        "carId": 4
+      },
+      {
+        "id": 4,
+        "performancePartAttribHash": -162538886,
+        "carId": 4
+      },
+      {
+        "id": 5,
+        "performancePartAttribHash": -659189942,
+        "carId": 4
+      },
+      {
+        "id": 6,
+        "performancePartAttribHash": 1139943343,
+        "carId": 4
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 0.0,
+        "cash": 1687500.0,
+        "curCarIndex": 1,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 27,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "persona_achievement": [
+      {
+        "ID": 1,
+        "can_progress": true,
+        "current_value": 3,
+        "achievement_id": 15,
+        "persona_id": 100
+      },
+      {
+        "ID": 2,
+        "can_progress": true,
+        "current_value": 2,
+        "achievement_id": 33,
+        "persona_id": 100
+      },
+      {
+        "ID": 3,
+        "can_progress": false,
+        "current_value": 45,
+        "achievement_id": 19,
+        "persona_id": 100
+      },
+      {
+        "ID": 4,
+        "can_progress": true,
+        "current_value": 27,
+        "achievement_id": 20,
+        "persona_id": 100
+      },
+      {
+        "ID": 5,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 49,
+        "persona_id": 100
+      }
+    ],
+    "persona_achievement_rank": [
+      {
+        "ID": 1,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 71,
+        "persona_achievement_id": 1
+      },
+      {
+        "ID": 2,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 161,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 3,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 162,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 4,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 91,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 5,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 92,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 6,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 93,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 7,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 94,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 8,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 95,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 9,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 96,
+        "persona_achievement_id": 4
+      },
+      {
+        "ID": 10,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 72,
+        "persona_achievement_id": 1
+      },
+      {
+        "ID": 11,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 241,
+        "persona_achievement_id": 5
+      },
+      {
+        "ID": 12,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 242,
+        "persona_achievement_id": 5
+      }
+    ],
+    "skillmodpart": [
+      {
+        "id": 1,
+        "isFixed": false,
+        "skillModPartAttribHash": 1244408496,
+        "carId": 4
+      },
+      {
+        "id": 2,
+        "isFixed": false,
+        "skillModPartAttribHash": -297285755,
+        "carId": 4
+      },
+      {
+        "id": 3,
+        "isFixed": false,
+        "skillModPartAttribHash": -378057954,
+        "carId": 4
+      },
+      {
+        "id": 4,
+        "isFixed": false,
+        "skillModPartAttribHash": 201416165,
+        "carId": 4
+      },
+      {
+        "id": 5,
+        "isFixed": false,
+        "skillModPartAttribHash": 201416165,
+        "carId": 4
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -1155869325,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ],
+    "vinyl": [
+      {
+        "id": 3,
+        "hash": 922552012,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 29,
+        "mir": true,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 556,
+        "scaley": 426,
+        "shear": 0,
+        "tranx": -223,
+        "trany": -213,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 4,
+        "hash": -869896863,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 26,
+        "mir": true,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 1310,
+        "scaley": 983,
+        "shear": 0,
+        "tranx": 325,
+        "trany": 215,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 5,
+        "hash": -1312218333,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 15,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 81,
+        "scaley": 81,
+        "shear": 0,
+        "tranx": 337,
+        "trany": -286,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 6,
+        "hash": -988707850,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 18,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 262,
+        "scaley": 262,
+        "shear": 0,
+        "tranx": 0,
+        "trany": 409,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 7,
+        "hash": -1008805878,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 7,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 654,
+        "scaley": 983,
+        "shear": 0,
+        "tranx": 0,
+        "trany": -481,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 8,
+        "hash": -1008805714,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 1,
+        "mir": true,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 1802,
+        "scaley": 1294,
+        "shear": 0,
+        "tranx": -390,
+        "trany": 9,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 9,
+        "hash": -883491363,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 13,
+        "mir": true,
+        "rot": 18,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": -463,
+        "trany": 327,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 10,
+        "hash": -456132369,
+        "hue1": -799662156,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 16,
+        "mir": false,
+        "rot": 128,
+        "sat1": 255,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 163,
+        "scaley": 163,
+        "shear": 0,
+        "tranx": 174,
+        "trany": 312,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 11,
+        "hash": -456132369,
+        "hue1": -799662354,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 17,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 163,
+        "scaley": 163,
+        "shear": 0,
+        "tranx": -179,
+        "trany": 314,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 12,
+        "hash": 2079553809,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 3,
+        "mir": false,
+        "rot": 203,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 654,
+        "scaley": 654,
+        "shear": 0,
+        "tranx": -386,
+        "trany": -12,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 13,
+        "hash": -456305083,
+        "hue1": -799662283,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 19,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": 0,
+        "trany": -305,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 14,
+        "hash": 55988370,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 20,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 65,
+        "scaley": 98,
+        "shear": 0,
+        "tranx": -343,
+        "trany": 163,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 15,
+        "hash": 1552012649,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 8,
+        "mir": false,
+        "rot": 64,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": 445,
+        "trany": -40,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 16,
+        "hash": -883491166,
+        "hue1": -799662156,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 22,
+        "mir": true,
+        "rot": 0,
+        "sat1": 255,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 566,
+        "scaley": 98,
+        "shear": 0,
+        "tranx": 141,
+        "trany": -379,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 17,
+        "hash": -883491363,
+        "hue1": -799662156,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 12,
+        "mir": true,
+        "rot": 18,
+        "sat1": 255,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": -461,
+        "trany": 327,
+        "var1": 255,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 18,
+        "hash": -1312218333,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 14,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 81,
+        "scaley": 81,
+        "shear": 0,
+        "tranx": -337,
+        "trany": -286,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 19,
+        "hash": 2079553809,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 4,
+        "mir": false,
+        "rot": 53,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 654,
+        "scaley": 654,
+        "shear": 0,
+        "tranx": 391,
+        "trany": -7,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 20,
+        "hash": -228372018,
+        "hue1": -799662156,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 23,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 163,
+        "scaley": 81,
+        "shear": 0,
+        "tranx": -81,
+        "trany": 81,
+        "var1": 63,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 21,
+        "hash": -228372018,
+        "hue1": -799662352,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 24,
+        "mir": false,
+        "rot": 192,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 81,
+        "scaley": 81,
+        "shear": 0,
+        "tranx": -409,
+        "trany": 163,
+        "var1": 63,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 22,
+        "hash": -1008805861,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 2,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 1769,
+        "scaley": 1638,
+        "shear": 0,
+        "tranx": -1,
+        "trany": 332,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 23,
+        "hash": -883491363,
+        "hue1": -799662348,
+        "hue2": -799662279,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 5,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 0,
+        "scaley": 426,
+        "shear": 0,
+        "tranx": 0,
+        "trany": -481,
+        "var1": 40,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 24,
+        "hash": 1246607603,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 11,
+        "mir": false,
+        "rot": 192,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": -445,
+        "trany": 128,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 25,
+        "hash": -869896863,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 28,
+        "mir": true,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 1310,
+        "scaley": 655,
+        "shear": 0,
+        "tranx": -15,
+        "trany": -440,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 26,
+        "hash": 55988370,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 21,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 65,
+        "scaley": 96,
+        "shear": 0,
+        "tranx": 343,
+        "trany": 163,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 27,
+        "hash": -1008805529,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 0,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 1802,
+        "scaley": 1196,
+        "shear": 0,
+        "tranx": -1,
+        "trany": -31,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 28,
+        "hash": -1008805878,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 6,
+        "mir": false,
+        "rot": 128,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 655,
+        "scaley": 655,
+        "shear": 0,
+        "tranx": 0,
+        "trany": 115,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 29,
+        "hash": -228372018,
+        "hue1": -799662312,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 25,
+        "mir": false,
+        "rot": 64,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 81,
+        "scaley": 81,
+        "shear": 0,
+        "tranx": 409,
+        "trany": 163,
+        "var1": 63,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 30,
+        "hash": 1246607603,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 9,
+        "mir": false,
+        "rot": 64,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": 445,
+        "trany": 128,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 31,
+        "hash": 1552012649,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 10,
+        "mir": false,
+        "rot": 192,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 327,
+        "scaley": 327,
+        "shear": 0,
+        "tranx": -445,
+        "trany": -37,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      },
+      {
+        "id": 32,
+        "hash": -869896863,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 27,
+        "mir": true,
+        "rot": 129,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 1310,
+        "scaley": 983,
+        "shear": 0,
+        "tranx": 287,
+        "trany": -258,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 4
+      }
+    ],
+    "visualpart": [
+      {
+        "id": 1,
+        "partHash": 1182177126,
+        "slotHash": 1694991,
+        "carId": 4
+      },
+      {
+        "id": 2,
+        "partHash": -273819714,
+        "slotHash": -2126743923,
+        "carId": 4
+      },
+      {
+        "id": 3,
+        "partHash": -1166179714,
+        "slotHash": 2106784967,
+        "carId": 4
+      },
+      {
+        "id": 4,
+        "partHash": -1986763776,
+        "slotHash": 453545749,
+        "carId": 4
+      }
+    ]
+  }
+}

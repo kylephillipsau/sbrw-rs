@@ -1,0 +1,1072 @@
+{
+  "scenario": "commerce/basket_items",
+  "description": "The basket's other products: powerups, repairs, a treasure-hunt revive, amplifiers, products it doesn't sell, and selling an inventory item back.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100: level 60, 350000 cash, the starting powerups and insurance.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "A starter car to repair later (75000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><PurchasedCars><OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>100</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans></PurchasedCars><Status>Success</Status><Wallets><WalletTrans><Balance>275000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000020B</Description><Icon>ACH_OWN_DODGE</Icon><Name>GM_ACHIEVEMENT_000000A6</Name><AchievementDefinitionId>33</AchievementDefinitionId><AchievementRankId>161</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>1</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>91</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>92</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>93</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>94</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded><AchievementAwarded><AchievedOn>2026-01-01T12:00:00</AchievedOn><Clip>AchievementFlasherBase</Clip><Description>GM_ACHIEVEMENT_0000004E</Description><Icon>ACH_REACH_DRIVERLEVEL</Icon><Name>GM_ACHIEVEMENT_0000004D</Name><AchievementDefinitionId>19</AchievementDefinitionId><AchievementRankId>95</AchievementRankId><ClipLengthInSeconds>5.0</ClipLengthInSeconds><IsRare>true</IsRare><Points>4</Points><Rarity>0.0</Rarity></AchievementAwarded></Achievements><Badges/><PersonaId>100</PersonaId><Progressed><AchievementProgress><AchievementDefinitionId>15</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>33</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>1</CurrentValue></AchievementProgress><AchievementProgress><AchievementDefinitionId>20</AchievementDefinitionId><CurrentValue>21</CurrentValue></AchievementProgress></Progressed><Score>21</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Run flats (12000): 15 more on the starting stack.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-POWERUP0</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Success</Status><Wallets><WalletTrans><Balance>263000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "A disabled powerup: insufficient funds, as the original reports it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-POWERUP3</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Fail_InsufficientFunds</Status><Wallets><WalletTrans><Balance>263000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "A powerup that doesn't exist.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-POWERUP99</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ejb.EJBTransactionRolledbackException: java.lang.RuntimeException: Could not find product with ID: SRV-POWERUP99\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:297)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.dao.ProductDAO$ByteBuddy$N0S78IpP.findByProductId(Unknown Source)\n\tat com.soapboxrace.core.bo.BasketBO.buyPowerups(BasketBO.java:118)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.BasketBO$ByteBuddy$SeO6eBiW.buyPowerups(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.baskets(Personas.java:95)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.RuntimeException: Could not find product with ID: SRV-POWERUP99\n\tat com.soapboxrace.core.dao.ProductDAO.findByProductId(ProductDAO.java:48)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:286)\n\t... 34 more\n</StackTrace></InnerException><StackTrace>javax.ejb.EJBTransactionRolledbackException: java.lang.RuntimeException: Could not find product with ID: SRV-POWERUP99\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:297)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.dao.ProductDAO$ByteBuddy$N0S78IpP.findByProductId(Unknown Source)\n\tat com.soapboxrace.core.bo.BasketBO.buyPowerups(BasketBO.java:118)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.BasketBO$ByteBuddy$SeO6eBiW.buyPowerups(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.baskets(Personas.java:95)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.RuntimeException: Could not find product with ID: SRV-POWERUP99\n\tat com.soapboxrace.core.dao.ProductDAO.findByProductId(ProductDAO.java:48)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:286)\n\t... 34 more\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Run flats at 30.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<InventoryTrans><InventoryItems><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>30</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_emergencyevade</EntitlementTag><Hash>-1564932069</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP8</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA2B9081B</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>onemorelap</EntitlementTag><Hash>1627606782</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP10</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x61034EFE</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>INSURANCE_AMPLIFIER</EntitlementTag><ExpirationDate>2026-01-08T12:00:00</ExpirationDate><Hash>8483711</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-INSURANCE</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0081737F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans></InventoryItems><PerformancePartsCapacity>100</PerformancePartsCapacity><PerformancePartsUsedSlotCount>0</PerformancePartsUsedSlotCount><SkillModPartsCapacity>150</SkillModPartsCapacity><SkillModPartsUsedSlotCount>0</SkillModPartsUsedSlotCount><VisualPartsCapacity>200</VisualPartsCapacity><VisualPartsUsedSlotCount>0</VisualPartsUsedSlotCount></InventoryTrans>"
+      }
+    },
+    {
+      "note": "Damaging the car.",
+      "sql": [
+        "UPDATE car SET durability = 40 WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "A repair costs 150 for each point of durability missing: 9000.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-REPAIR</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Success</Status><Wallets><WalletTrans><Balance>254000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "Repairing a car at full durability is free.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-REPAIR</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Success</Status><Wallets><WalletTrans><Balance>254000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "Damaging it again, with no cash left.",
+      "sql": [
+        "UPDATE car SET durability = 10 WHERE personaId = 100",
+        "UPDATE persona SET cash = 100 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "Not enough cash for 13500.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-REPAIR</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Fail_InsufficientFunds</Status><Wallets><WalletTrans><Balance>100.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "Still damaged.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<OwnedCarTrans><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032526</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts/><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>37500.0</ResalePrice><RideHeightDrop>0.0</RideHeightDrop><SkillModParts/><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts/></CustomCar><Durability>10</Durability><Heat>1.0</Heat><Id>1</Id><OwnershipType>CustomizedCar</OwnershipType></OwnedCarTrans>"
+      }
+    },
+    {
+      "note": "Cash back, and a broken treasure-hunt streak.",
+      "sql": [
+        "UPDATE persona SET cash = 300000 WHERE ID = 100",
+        "UPDATE treasure_hunt SET isStreakBroken = 1 WHERE personaId = 100"
+      ]
+    },
+    {
+      "note": "Reviving the streak (48000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-THREVIVE</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Success</Status><Wallets><WalletTrans><Balance>252000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "A cash amplifier costs 400 boost, and the driver has none.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-AMP-CASH</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Fail_InsufficientFunds</Status><Wallets><WalletTrans><Balance>252000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "Some boost.",
+      "sql": [
+        "UPDATE persona SET boost = 1000 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "Bought.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-AMP-CASH</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Success</Status><Wallets><WalletTrans><Balance>252000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>600.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "Only one of each amplifier.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-AMP-CASH</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Fail_MaxAllowedPurchasesForThisProduct</Status><Wallets><WalletTrans><Balance>252000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>600.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "The starting insurance counts too.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-AMP-INSURANCE</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Fail_MaxAllowedPurchasesForThisProduct</Status><Wallets><WalletTrans><Balance>252000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>600.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "A product type the basket doesn't handle: no status.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARSLOT</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Wallets><WalletTrans><Balance>252000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>600.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "A product that doesn't exist.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-NO-SUCH-PRODUCT</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-500</ErrorCode><InnerException><ErrorCode>-500</ErrorCode><StackTrace>javax.ejb.EJBTransactionRolledbackException: java.lang.RuntimeException: Could not find product with ID: SRV-NO-SUCH-PRODUCT\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:297)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.dao.ProductDAO$ByteBuddy$N0S78IpP.findByProductId(Unknown Source)\n\tat com.soapboxrace.core.bo.BasketBO.findProduct(BasketBO.java:91)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.BasketBO$ByteBuddy$SeO6eBiW.findProduct(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.baskets(Personas.java:101)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.RuntimeException: Could not find product with ID: SRV-NO-SUCH-PRODUCT\n\tat com.soapboxrace.core.dao.ProductDAO.findByProductId(ProductDAO.java:48)\n\tat jdk.internal.reflect.GeneratedMethodAccessor27.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:286)\n\t... 34 more\n</StackTrace></InnerException><StackTrace>javax.ejb.EJBTransactionRolledbackException: java.lang.RuntimeException: Could not find product with ID: SRV-NO-SUCH-PRODUCT\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:297)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.dao.ProductDAO$ByteBuddy$N0S78IpP.findByProductId(Unknown Source)\n\tat com.soapboxrace.core.bo.BasketBO.findProduct(BasketBO.java:91)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.BasketBO$ByteBuddy$SeO6eBiW.findProduct(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.baskets(Personas.java:101)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\nCaused by: java.lang.RuntimeException: Could not find product with ID: SRV-NO-SUCH-PRODUCT\n\tat com.soapboxrace.core.dao.ProductDAO.findByProductId(ProductDAO.java:48)\n\tat jdk.internal.reflect.GeneratedMethodAccessor27.invoke(Unknown Source)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:286)\n\t... 34 more\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "The cash amplifier and the extra run flats.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<InventoryTrans><InventoryItems><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>30</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_emergencyevade</EntitlementTag><Hash>-1564932069</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP8</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA2B9081B</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>onemorelap</EntitlementTag><Hash>1627606782</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP10</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x61034EFE</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>INSURANCE_AMPLIFIER</EntitlementTag><ExpirationDate>2026-01-08T12:00:00</ExpirationDate><Hash>8483711</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-INSURANCE</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0081737F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>CASH_AMPLIFIER_2X</EntitlementTag><ExpirationDate>2026-01-02T12:00:00</ExpirationDate><Hash>525953935</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-CASH</ProductId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x1F596B8F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans></InventoryItems><PerformancePartsCapacity>100</PerformancePartsCapacity><PerformancePartsUsedSlotCount>0</PerformancePartsUsedSlotCount><SkillModPartsCapacity>150</SkillModPartsCapacity><SkillModPartsUsedSlotCount>0</SkillModPartsUsedSlotCount><VisualPartsCapacity>200</VisualPartsCapacity><VisualPartsUsedSlotCount>0</VisualPartsUsedSlotCount></InventoryTrans>"
+      }
+    },
+    {
+      "note": "Selling the run flats back: the whole stack goes, for its resell price of 0.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/sell/runflattires",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      }
+    },
+    {
+      "note": "An item the driver doesn't have.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/sell/nosuchitem",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 503,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<EngineExceptionTrans><ErrorCode>-1908</ErrorCode><InnerException><ErrorCode>-1908</ErrorCode><StackTrace>com.soapboxrace.core.engine.EngineException: An item stack with the entitlement tag 'nosuchitem' could not be found. IID: 1\n\tat com.soapboxrace.core.bo.InventoryBO.removeItem(InventoryBO.java:458)\n\tat com.soapboxrace.core.bo.InventoryBO.removeItem(InventoryBO.java:396)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.InventoryBO$ByteBuddy$lMAbm8Oc.removeItem(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.sellInventoryItem(Personas.java:194)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></InnerException><StackTrace>com.soapboxrace.core.engine.EngineException: An item stack with the entitlement tag 'nosuchitem' could not be found. IID: 1\n\tat com.soapboxrace.core.bo.InventoryBO.removeItem(InventoryBO.java:458)\n\tat com.soapboxrace.core.bo.InventoryBO.removeItem(InventoryBO.java:396)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat com.soapboxrace.reference.Container.invoke(Container.java:496)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.lambda$intercept$0(Container.java:552)\n\tat com.soapboxrace.reference.Container.inTransaction(Container.java:308)\n\tat com.soapboxrace.reference.Container$EjbInterceptor.intercept(Container.java:557)\n\tat com.soapboxrace.core.bo.InventoryBO$ByteBuddy$lMAbm8Oc.removeItem(Unknown Source)\n\tat com.soapboxrace.core.api.Personas.sellInventoryItem(Personas.java:194)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)\n\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n\tat java.base/java.lang.reflect.Method.invoke(Method.java:566)\n\tat org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:138)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:517)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:406)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$0(ResourceMethodInvoker.java:370)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:372)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:344)\n\tat org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:317)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:440)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:229)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:135)\n\tat org.jboss.resteasy.core.interception.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:356)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:138)\n\tat org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:215)\n\tat com.soapboxrace.reference.Http.invoke(Http.java:66)\n\tat com.soapboxrace.reference.Recorder.record(Recorder.java:106)\n\tat com.soapboxrace.reference.Recorder.main(Recorder.java:61)\n</StackTrace></EngineExceptionTrans>"
+      }
+    },
+    {
+      "note": "Without the run flats.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<InventoryTrans><InventoryItems><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_emergencyevade</EntitlementTag><Hash>-1564932069</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP8</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA2B9081B</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>onemorelap</EntitlementTag><Hash>1627606782</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP10</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x61034EFE</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>INSURANCE_AMPLIFIER</EntitlementTag><ExpirationDate>2026-01-08T12:00:00</ExpirationDate><Hash>8483711</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-INSURANCE</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0081737F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>CASH_AMPLIFIER_2X</EntitlementTag><ExpirationDate>2026-01-02T12:00:00</ExpirationDate><Hash>525953935</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-CASH</ProductId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x1F596B8F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans></InventoryItems><PerformancePartsCapacity>100</PerformancePartsCapacity><PerformancePartsUsedSlotCount>0</PerformancePartsUsedSlotCount><SkillModPartsCapacity>150</SkillModPartsCapacity><SkillModPartsUsedSlotCount>0</SkillModPartsUsedSlotCount><VisualPartsCapacity>200</VisualPartsCapacity><VisualPartsUsedSlotCount>0</VisualPartsUsedSlotCount></InventoryTrans>"
+      }
+    },
+    {
+      "note": "Cash and boost.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Badges/><Boost>600.0</Boost><Cash>252000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>21</Score></ProfileData>"
+      }
+    }
+  ],
+  "db": {
+    "car": [
+      {
+        "id": 1,
+        "durability": 10,
+        "expirationDate": null,
+        "heat": 1.0,
+        "ownershipType": "CustomizedCar",
+        "personaId": 100,
+        "baseCar": 1008844988,
+        "carClassHash": 872416321,
+        "isPreset": true,
+        "level": 0,
+        "name": "challenger71",
+        "physicsProfileHash": -1550817422,
+        "rating": 175,
+        "resalePrice": 37500.0,
+        "rideHeightDrop": 0.0,
+        "skillModSlotCount": 5,
+        "version": 0
+      }
+    ],
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 0,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 0,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 12,
+        "expirationDate": "2026-01-02 12:00:00",
+        "remainingUseCount": 0,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-CASH"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "paint": [
+      {
+        "id": 1,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 0,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 2,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 4,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 3,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 5,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 4,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 6,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 5,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 255,
+        "slot": 7,
+        "paintVar": 255,
+        "carId": 1
+      },
+      {
+        "id": 6,
+        "paintGroup": 47885063,
+        "hue": 496032526,
+        "sat": 207,
+        "slot": 3,
+        "paintVar": 255,
+        "carId": 1
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 600.0,
+        "cash": 252000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 21,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "persona_achievement": [
+      {
+        "ID": 1,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 15,
+        "persona_id": 100
+      },
+      {
+        "ID": 2,
+        "can_progress": true,
+        "current_value": 1,
+        "achievement_id": 33,
+        "persona_id": 100
+      },
+      {
+        "ID": 3,
+        "can_progress": false,
+        "current_value": 45,
+        "achievement_id": 19,
+        "persona_id": 100
+      },
+      {
+        "ID": 4,
+        "can_progress": true,
+        "current_value": 21,
+        "achievement_id": 20,
+        "persona_id": 100
+      }
+    ],
+    "persona_achievement_rank": [
+      {
+        "ID": 1,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 71,
+        "persona_achievement_id": 1
+      },
+      {
+        "ID": 2,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 161,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 3,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 162,
+        "persona_achievement_id": 2
+      },
+      {
+        "ID": 4,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 91,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 5,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 92,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 6,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 93,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 7,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 94,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 8,
+        "achieved_on": "2026-01-01 12:00:00",
+        "state": "RewardWaiting",
+        "achievement_rank_id": 95,
+        "persona_achievement_id": 3
+      },
+      {
+        "ID": 9,
+        "achieved_on": null,
+        "state": "InProgress",
+        "achievement_rank_id": 96,
+        "persona_achievement_id": 4
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -1155869325,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ],
+    "vinyl": [
+      {
+        "id": 1,
+        "hash": 871751947,
+        "hue1": 0,
+        "hue2": 0,
+        "hue3": 0,
+        "hue4": 0,
+        "layer": 0,
+        "mir": false,
+        "rot": 0,
+        "sat1": 0,
+        "sat2": 0,
+        "sat3": 0,
+        "sat4": 0,
+        "scalex": 0,
+        "scaley": 0,
+        "shear": 0,
+        "tranx": 0,
+        "trany": 0,
+        "var1": 0,
+        "var2": 0,
+        "var3": 0,
+        "var4": 0,
+        "carId": 1
+      }
+    ]
+  }
+}

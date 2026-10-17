@@ -44,6 +44,7 @@ public final class Vectors {
         write(out.resolve("ban_expires.json"), banExpires());
         write(out.resolve("java_number_to_string.json"), numberToString());
         write(out.resolve("nashorn.json"), NashornVectors.vectors());
+        write(out.resolve("java_multimap_order.json"), multimapOrder());
     }
 
     /** Float.toString and Double.toString, which JAXB uses for xs:float and xs:double. */
@@ -89,6 +90,44 @@ public final class Vectors {
         root.put("about", what + " on " + System.getProperty("java.vendor") + " " + System.getProperty("java.version")
                 + ", locale " + Locale.getDefault() + ", charset " + Charset.defaultCharset()
                 + ", zone " + ZoneId.systemDefault());
+        return root;
+    }
+
+    /**
+     * The order {@code ArrayListMultimap.create().entries()} gives, which CommerceBO checks and
+     * prices a basket's parts in: keys put in turn, and the indexes of the puts in entry order.
+     */
+    private static Map<String, Object> multimapOrder() {
+        Map<String, Object> root = about("Guava 28.1 ArrayListMultimap.create().entries()");
+        Random r = new Random(7);
+        List<Map<String, Object>> cases = new ArrayList<>();
+        for (int n = 0; n < 300; n++) {
+            int size = n < 60 ? n : 1 + r.nextInt(80);
+            com.google.common.collect.ArrayListMultimap<Integer, Integer> m = com.google.common.collect.ArrayListMultimap.create();
+            List<Integer> keys = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                int key;
+                switch (r.nextInt(4)) {
+                    case 0:
+                        key = r.nextInt(64);
+                        break;
+                    case 1:
+                        key = keys.isEmpty() ? r.nextInt() : keys.get(r.nextInt(keys.size()));
+                        break;
+                    default:
+                        key = r.nextInt();
+                }
+                keys.add(key);
+                m.put(key, i);
+            }
+            List<Integer> order = new ArrayList<>();
+            for (Map.Entry<Integer, Integer> e : m.entries()) order.add(e.getValue());
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("keys", keys);
+            c.put("order", order);
+            cases.add(c);
+        }
+        root.put("cases", cases);
         return root;
     }
 

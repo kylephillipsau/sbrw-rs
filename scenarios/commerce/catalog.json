@@ -1,0 +1,244 @@
+{
+  "description": "The shop catalogue: products by category and type for the driver's level and premium status, and the categories with their vinyls.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Before there's a driver, products are for level 1 and not premium.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_POWERUPS",
+          "clientProductType": "POWERUP"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Driver 100: level 60, 350000 cash, the starting powerups and insurance.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Powerups: the enabled ones, in the order the availability index gives.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_POWERUPS",
+          "clientProductType": "POWERUP"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Skill mods, whose minimum levels are 0 and 1.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "NFSW_NA_EP_SKILLMODPARTS",
+          "clientProductType": "SKILLMODPART"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Enabling a premium plate. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE product SET enabled = 1 WHERE productId = 'SRV-LICENSE11'"
+      ]
+    },
+    {
+      "note": "License plates: a free user doesn't see the premium one.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_VANITY_LICENSE_PLATE",
+          "clientProductType": "VISUALPART"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The type compares without case, as MySQL's collation does.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_POWERUPS",
+          "clientProductType": "powerup"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "An unknown category: an empty list.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "NO_SUCH_CATEGORY",
+          "clientProductType": "POWERUP"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A powerup for level 61 and up, one hidden from level 60, and the user made premium. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE product SET minLevel = 61 WHERE productId = 'SRV-POWERUP4'",
+        "UPDATE product SET minLevel = 60 WHERE productId = 'SRV-POWERUP5'",
+        "UPDATE user SET premium = 1 WHERE ID = 1"
+      ]
+    },
+    {
+      "note": "Level 60 sees the level-60 powerup but not the level-61 one.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_POWERUPS",
+          "clientProductType": "POWERUP"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A premium user sees the premium plate too.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_VANITY_LICENSE_PLATE",
+          "clientProductType": "VISUALPART"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Amplifiers.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "STORE_AMPLIFIERS",
+          "clientProductType": "AMPLIFIER"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Card packs: five of 108 are enabled.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/productsInCategory",
+        "query": {
+          "categoryName": "BoosterPacks",
+          "clientProductType": "BUNDLE"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Every category with the vinyls it holds.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/catalog/categories",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE product SET minLevel = 1 WHERE productId = 'SRV-POWERUP4'",
+        "UPDATE product SET minLevel = 1 WHERE productId = 'SRV-POWERUP5'",
+        "UPDATE product SET enabled = 0 WHERE productId = 'SRV-LICENSE11'"
+      ]
+    }
+  ]
+}

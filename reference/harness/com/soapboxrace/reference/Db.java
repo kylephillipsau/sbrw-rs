@@ -107,6 +107,15 @@ public final class Db implements AutoCloseable {
         }
     }
 
+    /** The first column of each row a query returns, as strings. */
+    public List<String> strings(String query) throws SQLException {
+        List<String> out = new ArrayList<>();
+        try (Statement st = conn.createStatement(); ResultSet rs = st.executeQuery(query)) {
+            while (rs.next()) out.add(rs.getString(1));
+        }
+        return out;
+    }
+
     /** Every runtime table that has rows, ordered by primary key. */
     public Map<String, List<Map<String, Object>>> snapshot() throws SQLException {
         Map<String, List<Map<String, Object>>> out = new TreeMap<>();

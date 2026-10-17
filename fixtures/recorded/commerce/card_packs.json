@@ -1,0 +1,727 @@
+{
+  "scenario": "commerce/card_packs",
+  "description": "Buying card packs: each card is a reward script, drawn with the shared Random.",
+  "upstream": "SoapboxRaceWorld/soapbox-race-core@d3edcd002514eb5265ad44484d79c4d2541ab055",
+  "boot": {
+    "openfire": [
+      {
+        "call": "init",
+        "args": []
+      },
+      {
+        "call": "getTotalOnlineUsers",
+        "args": []
+      }
+    ]
+  },
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000001</LoginToken><Description></Description></LoginStatusVO>"
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<UserInfo><defaultPersonaIdx>0</defaultPersonaIdx><personas/><user><fullGameAccess>false</fullGameAccess><isComplete>false</isComplete><remoteUserId>0</remoteUserId><securityToken>00000000-0000-4000-8000-000000000002</securityToken><subscribeMsg>false</subscribeMsg><userId>1</userId></user></UserInfo>"
+      }
+    },
+    {
+      "note": "Driver 100: level 60, 350000 cash, the starting powerups and insurance.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Boost>0.0</Boost><Cash>350000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      },
+      "effects": {
+        "openfire": [
+          {
+            "call": "createUpdatePersona",
+            "args": [
+              100,
+              "00000000-0000-40"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": ""
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ],
+        "redis": [
+          {
+            "command": "HDEL",
+            "args": [
+              "matchmaking_queue",
+              [
+                "100"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "note": "Cash for several packs.",
+      "sql": [
+        "UPDATE persona SET cash = 5000000 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "A bronze pack (50000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-BRONZE</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>-758684113</Hash><Title>STREET TRANSMISSION</Title></CommerceItemTrans><CommerceItemTrans><Hash>623491420</Hash><Title>STREET ENGINE</Title></CommerceItemTrans><CommerceItemTrans><Hash>1113720384</Hash><Title>TEAM SLINGSHOT x18</Title></CommerceItemTrans><CommerceItemTrans><Hash>1113720384</Hash><Title>TEAM SLINGSHOT x18</Title></CommerceItemTrans><CommerceItemTrans><Hash>957701799</Hash><Title>READY! x18</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_pistonhead_transmission_street_greyrarity</EntitlementTag><Hash>-758684113</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-D2C7662F</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>2800.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xD2C7662F</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_smokeshow_engine_street_eliterarity</EntitlementTag><Hash>623491420</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-2529B95C</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>12000.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x2529B95C</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>33</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>51</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>33</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4950000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "A silver pack (85000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-SILVER</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>260279097</Hash><Title>RACE SUSPENSION</Title></CommerceItemTrans><CommerceItemTrans><Hash>1092518153</Hash><Title>RACE TRANSMISSION</Title></CommerceItemTrans><CommerceItemTrans><Hash>-537557654</Hash><Title>RUN FLATS x24</Title></CommerceItemTrans><CommerceItemTrans><Hash>-537557654</Hash><Title>RUN FLATS x30</Title></CommerceItemTrans><CommerceItemTrans><Hash>2236629</Hash><Title>SLINGSHOT x24</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_gearhead_suspension_race_eliterarity</EntitlementTag><Hash>260279097</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-F838B39</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>7520.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0F838B39</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_pistonhead_transmission_race_greyrarity</EntitlementTag><Hash>1092518153</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-411E8109</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>8400.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x411E8109</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>69</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4865000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "A mystery pack (80000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-MYSTERY</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>-611661916</Hash><Title>EMERGENCY EVADE x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>2236629</Hash><Title>SLINGSHOT x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>-537557654</Hash><Title>RUN FLATS x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>1805681994</Hash><Title>JUGGERNAUT x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>-1692359144</Hash><Title>INSTANT COOLDOWN x12</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>27</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>51</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>81</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>27</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>27</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4785000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "A skill-mod mystery pack (80000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-SKILLMODS-MYSTERY</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>-1692359144</Hash><Title>INSTANT COOLDOWN x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>957701799</Hash><Title>READY! x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>1805681994</Hash><Title>JUGGERNAUT x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>2236629</Hash><Title>SLINGSHOT x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>2236629</Hash><Title>SLINGSHOT x12</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>45</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>75</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4705000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "A skill-mod bronze pack (120000).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-SKILLMODS-BRONZE</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>1014017422</Hash><Title>WELL OILED MACHINE</Title></CommerceItemTrans><CommerceItemTrans><Hash>1108949171</Hash><Title>SUPER SHOT</Title></CommerceItemTrans><CommerceItemTrans><Hash>2236629</Hash><Title>SLINGSHOT x24</Title></CommerceItemTrans><CommerceItemTrans><Hash>301400546</Hash><Title>AERODYNAMIC</Title></CommerceItemTrans><CommerceItemTrans><Hash>1805681994</Hash><Title>JUGGERNAUT x24</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>gearratio_enhancement_2_b</EntitlementTag><Hash>1014017422</Hash><InventoryId>1</InventoryId><ProductId>SRV-SKILL-3C70AD8E</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6313.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x3C70AD8E</StringHash><VirtualItemType>skillmodpart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nitrous_power_02_c</EntitlementTag><Hash>1108949171</Hash><InventoryId>1</InventoryId><ProductId>SRV-SKILL-421938B3</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6375.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x421938B3</StringHash><VirtualItemType>skillmodpart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>99</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot_power_02_b</EntitlementTag><Hash>301400546</Hash><InventoryId>1</InventoryId><ProductId>SRV-SKILL-11F701E2</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6313.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x11F701E2</StringHash><VirtualItemType>skillmodpart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4585000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "Another silver pack: the same cards, different draws.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-SILVER</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>-1570839780</Hash><Title>RACE TRANSMISSION</Title></CommerceItemTrans><CommerceItemTrans><Hash>-880514079</Hash><Title>RACE ENGINE</Title></CommerceItemTrans><CommerceItemTrans><Hash>1805681994</Hash><Title>JUGGERNAUT x24</Title></CommerceItemTrans><CommerceItemTrans><Hash>-1681514783</Hash><Title>NITROUS x24</Title></CommerceItemTrans><CommerceItemTrans><Hash>-1692359144</Hash><Title>INSTANT COOLDOWN x24</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_pistonhead_transmission_race_uncommonrarity</EntitlementTag><Hash>-1570839780</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-A25EE31C</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>9800.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA25EE31C</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_gearhead_engine_race_uncommonrarity</EntitlementTag><Hash>-880514079</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-CB846BE1</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>14000.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xCB846BE1</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>87</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4500000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "The mystery gift pack, free (0 boost).",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-MYSTERY-GIFT</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems><CommerceItemTrans><Hash>-1681514783</Hash><Title>NITROUS x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>1113720384</Hash><Title>TEAM SLINGSHOT x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>-1681514783</Hash><Title>NITROUS x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>-611661916</Hash><Title>EMERGENCY EVADE x12</Title></CommerceItemTrans><CommerceItemTrans><Hash>-635457857</Hash><Title>PRO TIRES</Title></CommerceItemTrans></CommerceItems><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>51</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_smokeshow_tires_pro_uncommonrarity</EntitlementTag><Hash>-635457857</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-DA1FAEBF</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6000.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDA1FAEBF</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans></InventoryItems><PurchasedCars/><Status>Success</Status><Wallets><WalletTrans><Balance>4500000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      },
+      "effects": {
+        "xmpp": [
+          {
+            "to": 100,
+            "body": "<response status=\"1\" ticket=\"0\"><AchievementsAwarded><Achievements/><Badges/><PersonaId>100</PersonaId><Progressed/><Score>0</Score></AchievementsAwarded></response>"
+          }
+        ]
+      }
+    },
+    {
+      "note": "A disabled pack: insufficient funds.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-GOLD</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>",
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<CommerceResultTrans><CommerceItems/><InvalidBasket/><InventoryItems><InventoryItemTrans><Hash>0</Hash><InventoryId>0</InventoryId><RemainingUseCount>0</RemainingUseCount><ResellPrice>0.0</ResellPrice></InventoryItemTrans></InventoryItems><Status>Fail_InsufficientFunds</Status><Wallets><WalletTrans><Balance>4500000.0</Balance><Currency>CASH</Currency></WalletTrans><WalletTrans><Balance>0.0</Balance><Currency>BOOST</Currency></WalletTrans></Wallets></CommerceResultTrans>"
+      }
+    },
+    {
+      "note": "Everything the packs gave.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "query": null,
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<InventoryTrans><InventoryItems><InventoryItemTrans><EntitlementTag>runflattires</EntitlementTag><Hash>-537557654</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP0</ProductId><RemainingUseCount>81</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDFF5856A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>instantcooldown</EntitlementTag><Hash>-1692359144</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP2</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9B20A618</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot</EntitlementTag><Hash>2236629</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP4</ProductId><RemainingUseCount>99</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x002220D5</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>ready</EntitlementTag><Hash>957701799</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP5</ProductId><RemainingUseCount>45</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x39155EA7</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>juggernaut</EntitlementTag><Hash>1805681994</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP6</ProductId><RemainingUseCount>87</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x6BA0854A</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>emergencyevade</EntitlementTag><Hash>-611661916</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP7</ProductId><RemainingUseCount>39</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDB8AC7A4</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_emergencyevade</EntitlementTag><Hash>-1564932069</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP8</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA2B9081B</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nosshot</EntitlementTag><Hash>-1681514783</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP9</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x9BC61EE1</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>onemorelap</EntitlementTag><Hash>1627606782</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP10</ProductId><RemainingUseCount>15</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x61034EFE</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>team_slingshot</EntitlementTag><Hash>1113720384</Hash><InventoryId>1</InventoryId><ProductId>SRV-POWERUP11</ProductId><RemainingUseCount>63</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x42620640</StringHash><VirtualItemType>powerup</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>INSURANCE_AMPLIFIER</EntitlementTag><ExpirationDate>2026-01-08T12:00:00</ExpirationDate><Hash>8483711</Hash><InventoryId>1</InventoryId><ProductId>SRV-AMP-INSURANCE</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>0.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0081737F</StringHash><VirtualItemType>amplifier</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_pistonhead_transmission_street_greyrarity</EntitlementTag><Hash>-758684113</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-D2C7662F</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>2800.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xD2C7662F</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_smokeshow_engine_street_eliterarity</EntitlementTag><Hash>623491420</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-2529B95C</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>12000.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x2529B95C</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_gearhead_suspension_race_eliterarity</EntitlementTag><Hash>260279097</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-F838B39</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>7520.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x0F838B39</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_pistonhead_transmission_race_greyrarity</EntitlementTag><Hash>1092518153</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-411E8109</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>8400.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x411E8109</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>gearratio_enhancement_2_b</EntitlementTag><Hash>1014017422</Hash><InventoryId>1</InventoryId><ProductId>SRV-SKILL-3C70AD8E</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6313.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x3C70AD8E</StringHash><VirtualItemType>skillmodpart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>nitrous_power_02_c</EntitlementTag><Hash>1108949171</Hash><InventoryId>1</InventoryId><ProductId>SRV-SKILL-421938B3</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6375.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x421938B3</StringHash><VirtualItemType>skillmodpart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>slingshot_power_02_b</EntitlementTag><Hash>301400546</Hash><InventoryId>1</InventoryId><ProductId>SRV-SKILL-11F701E2</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6313.0</ResellPrice><Status>ACTIVE</Status><StringHash>0x11F701E2</StringHash><VirtualItemType>skillmodpart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_pistonhead_transmission_race_uncommonrarity</EntitlementTag><Hash>-1570839780</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-A25EE31C</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>9800.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xA25EE31C</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_gearhead_engine_race_uncommonrarity</EntitlementTag><Hash>-880514079</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-CB846BE1</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>14000.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xCB846BE1</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans><InventoryItemTrans><EntitlementTag>t0_smokeshow_tires_pro_uncommonrarity</EntitlementTag><Hash>-635457857</Hash><InventoryId>1</InventoryId><ProductId>SRV-PERF-DA1FAEBF</ProductId><RemainingUseCount>1</RemainingUseCount><ResellPrice>6000.0</ResellPrice><Status>ACTIVE</Status><StringHash>0xDA1FAEBF</StringHash><VirtualItemType>performancepart</VirtualItemType></InventoryItemTrans></InventoryItems><PerformancePartsCapacity>100</PerformancePartsCapacity><PerformancePartsUsedSlotCount>7</PerformancePartsUsedSlotCount><SkillModPartsCapacity>150</SkillModPartsCapacity><SkillModPartsUsedSlotCount>3</SkillModPartsUsedSlotCount><VisualPartsCapacity>200</VisualPartsCapacity><VisualPartsUsedSlotCount>0</VisualPartsUsedSlotCount></InventoryTrans>"
+      }
+    },
+    {
+      "note": "Cash and boost.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<ProfileData><Badges/><Boost>0.0</Boost><Cash>4500000.0</Cash><IconIndex>5</IconIndex><Level>60</Level><Name>DRIVER1</Name><PercentToLevel>0.0</PercentToLevel><PersonaId>100</PersonaId><Rating>0.0</Rating><Rep>0.0</Rep><RepAtCurrentLevel>0</RepAtCurrentLevel><Score>0</Score></ProfileData>"
+      }
+    }
+  ],
+  "db": {
+    "inventory": [
+      {
+        "id": 1,
+        "performancePartsCapacity": 100,
+        "performancePartsUsedSlotCount": 7,
+        "skillModPartsCapacity": 150,
+        "skillModPartsUsedSlotCount": 3,
+        "visualPartsCapacity": 200,
+        "visualPartsUsedSlotCount": 0,
+        "personaId": 100
+      }
+    ],
+    "inventory_item": [
+      {
+        "id": 1,
+        "expirationDate": null,
+        "remainingUseCount": 81,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP0"
+      },
+      {
+        "id": 2,
+        "expirationDate": null,
+        "remainingUseCount": 63,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP2"
+      },
+      {
+        "id": 3,
+        "expirationDate": null,
+        "remainingUseCount": 99,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP4"
+      },
+      {
+        "id": 4,
+        "expirationDate": null,
+        "remainingUseCount": 45,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP5"
+      },
+      {
+        "id": 5,
+        "expirationDate": null,
+        "remainingUseCount": 87,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP6"
+      },
+      {
+        "id": 6,
+        "expirationDate": null,
+        "remainingUseCount": 39,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP7"
+      },
+      {
+        "id": 7,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP8"
+      },
+      {
+        "id": 8,
+        "expirationDate": null,
+        "remainingUseCount": 63,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP9"
+      },
+      {
+        "id": 9,
+        "expirationDate": null,
+        "remainingUseCount": 15,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP10"
+      },
+      {
+        "id": 10,
+        "expirationDate": null,
+        "remainingUseCount": 63,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-POWERUP11"
+      },
+      {
+        "id": 11,
+        "expirationDate": "2026-01-08 12:00:00",
+        "remainingUseCount": 1,
+        "resellPrice": 0,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-AMP-INSURANCE"
+      },
+      {
+        "id": 12,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 2800,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-D2C7662F"
+      },
+      {
+        "id": 13,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 12000,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-2529B95C"
+      },
+      {
+        "id": 14,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 7520,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-F838B39"
+      },
+      {
+        "id": 15,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 8400,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-411E8109"
+      },
+      {
+        "id": 16,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 6313,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-SKILL-3C70AD8E"
+      },
+      {
+        "id": 17,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 6375,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-SKILL-421938B3"
+      },
+      {
+        "id": 18,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 6313,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-SKILL-11F701E2"
+      },
+      {
+        "id": 19,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 9800,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-A25EE31C"
+      },
+      {
+        "id": 20,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 14000,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-CB846BE1"
+      },
+      {
+        "id": 21,
+        "expirationDate": null,
+        "remainingUseCount": 1,
+        "resellPrice": 6000,
+        "status": "ACTIVE",
+        "inventoryEntity_id": 1,
+        "productId": "SRV-PERF-DA1FAEBF"
+      }
+    ],
+    "invite_ticket": [
+      {
+        "ID": 1,
+        "DISCORD_NAME": null,
+        "TICKET": "empty-ticket",
+        "USERID": 1
+      }
+    ],
+    "online_users": [
+      {
+        "ID": 1767268800,
+        "numberOfOnline": 0,
+        "numberOfRegistered": 0
+      }
+    ],
+    "persona": [
+      {
+        "ID": 100,
+        "boost": 0.0,
+        "cash": 4500000.0,
+        "curCarIndex": 0,
+        "iconIndex": 5,
+        "level": 60,
+        "motto": null,
+        "name": "DRIVER1",
+        "percentToLevel": 0.0,
+        "rating": 0.0,
+        "rep": 0.0,
+        "repAtCurrentLevel": 0,
+        "score": 0,
+        "USERID": 1,
+        "created": "2026-01-01 12:00:00",
+        "badges": null,
+        "first_login": "2026-01-01 12:00:00",
+        "last_login": "2026-01-01 12:00:00",
+        "numCarSlots": 250
+      }
+    ],
+    "treasure_hunt": [
+      {
+        "personaId": 100,
+        "coinsCollected": 0,
+        "isStreakBroken": false,
+        "numCoins": 15,
+        "seed": -1155869325,
+        "streak": 1,
+        "thDate": "2026-01-01",
+        "isCompleted": false
+      }
+    ],
+    "user": [
+      {
+        "ID": 1,
+        "EMAIL": "player@example.com",
+        "PASSWORD": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8",
+        "premium": false,
+        "isAdmin": false,
+        "HWID": null,
+        "IP_ADDRESS": "127.0.0.1",
+        "created": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-01 12:00:00",
+        "gameHardwareHash": null,
+        "isLocked": false,
+        "selectedPersonaIndex": 0
+      }
+    ]
+  }
+}

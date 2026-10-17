@@ -1,0 +1,356 @@
+{
+  "description": "Customising a car in the shops (commerce): paints, performance parts, skill mods, plates and vinyls, paid for or taken from the inventory, and what happens when the basket is short of funds or invalid.",
+  "seed": 1,
+  "clock": "2026-01-01T12:00:00Z",
+  "steps": [
+    {
+      "note": "Registration logs in too: launcher token ...0001.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/User/createUser",
+        "query": {
+          "email": "player@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": {
+          "X-HWID": "HWID-1"
+        }
+      }
+    },
+    {
+      "note": "Permanent session ...0002.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/GetPermanentSession",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    },
+    {
+      "note": "Driver 100: level 60, 350000 cash, the starting powerups and insurance.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/DriverPersona/CreatePersona",
+        "query": {
+          "name": "DRIVER1",
+          "iconIndex": "5"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Selecting it.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/User/SecureLoginPersona",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "A starter car (75000): car 1, with six gloss paints and one vinyl.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-SCAR6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "Its parts.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Repainting all six slots in another gloss colour: six paints of group GLOSS removed and six added, at 500 each.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-PBODY6</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "An engine (16000): the rating and class change.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-PERF-2EB805EA</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>783812074</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A better engine (32000), the old one selling back for 4000.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-PERF-EB169D6A</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-350839446</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A skill mod (13000).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-SKILL-7428C03E</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-350839446</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A license plate (5000).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-EPLICENSE3</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-350839446</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>871751947</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A vinyl that costs 1500 boost, which the driver doesn't have. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE vinylproduct SET price = 1500, currency = '_NS' WHERE hash = 361907633"
+      ]
+    },
+    {
+      "note": "Swapping the vinyl for it: insufficient funds, and the car as it was.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-350839446</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>3277</ScaleX><ScaleY>3277</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "Boost.",
+      "sql": [
+        "UPDATE persona SET boost = 5000 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "Now it's bought; a scale of 3277 is stored as 0, and a removed vinyl sells for nothing.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-350839446</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>3277</ScaleX><ScaleY>3277</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "An engine in the inventory.",
+      "sql": [
+        "INSERT INTO inventory_item (expirationDate, remainingUseCount, resellPrice, status, inventoryEntity_id, productId) VALUES (NULL, 1, 6000, 'ACTIVE', (SELECT id FROM inventory WHERE personaId = 100), 'SRV-PERF-37F824AC')"
+      ]
+    },
+    {
+      "note": "Fitting the engine from the inventory: free, the item is used up, and the old engine sells back for 8000.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>939009196</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "Another engine in the inventory.",
+      "sql": [
+        "INSERT INTO inventory_item (expirationDate, remainingUseCount, resellPrice, status, inventoryEntity_id, productId) VALUES (NULL, 1, 12000, 'ACTIVE', (SELECT id FROM inventory WHERE personaId = 100), 'SRV-PERF-B0F38419')"
+      ]
+    },
+    {
+      "note": "Fitting a copy of it with the product in the basket: paid for (48000), and the inventory item stays.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-PERF-B0F38419</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-1326218215</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "Selling that inventory item: its resell price (12000) comes back.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items><EntitlementItemTrans><EntitlementId>t0_gearhead_engine_street_eliterarity</EntitlementId><Quantity>1</Quantity></EntitlementItemTrans></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-1326218215</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A skill mod in the inventory, and little cash.",
+      "sql": [
+        "INSERT INTO inventory_item (expirationDate, remainingUseCount, resellPrice, status, inventoryEntity_id, productId) VALUES (NULL, 1, 6375, 'ACTIVE', (SELECT id FROM inventory WHERE personaId = 100), 'SRV-SKILL-A3E960F0')",
+        "UPDATE persona SET cash = 100 WHERE ID = 100"
+      ]
+    },
+    {
+      "note": "The skill mod from the inventory and a plate (5000) the driver can't pay for: insufficient funds, but the skill mod is used up anyway.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-1326218215</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>-1544986384</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-1474600955</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "Cash, and two parts in the inventory.",
+      "sql": [
+        "UPDATE persona SET cash = 1000000 WHERE ID = 100",
+        "INSERT INTO inventory_item (expirationDate, remainingUseCount, resellPrice, status, inventoryEntity_id, productId) VALUES (NULL, 1, 6680, 'ACTIVE', (SELECT id FROM inventory WHERE personaId = 100), 'SRV-PERF-1D0F6829')",
+        "INSERT INTO inventory_item (expirationDate, remainingUseCount, resellPrice, status, inventoryEntity_id, productId) VALUES (NULL, 1, 10000, 'ACTIVE', (SELECT id FROM inventory WHERE personaId = 100), 'SRV-PERF-4AF5C6F')"
+      ]
+    },
+    {
+      "note": "An engine from the inventory and a vinyl that doesn't exist: the invalid vinyl comes first in the multimap's hash order, so the engine isn't used.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>487548969</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>1</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>1</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "The same with the other engine and an invalid vinyl that comes last: the engine is used up before the basket is found invalid.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>78601327</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans><CustomVinylTrans><Hash>31</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>1</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A performance part that isn't a product: the lookup throws, and everything rolls back.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>123456</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "A chrome paint twice: both are paid for (2000 each).",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/commerce",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<CommerceSessionTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Basket><Items><BasketItemTrans><ProductId>SRV-PBODY1</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></Basket><EntitlementsToSell><Items></Items></EntitlementsToSell><UpdatedCar><CustomCar><BaseCar>1008844988</BaseCar><CarClassHash>872416321</CarClassHash><Id>1</Id><IsPreset>true</IsPreset><Level>0</Level><Name>challenger71</Name><Paints><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>0</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>3</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>4</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>5</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>207</Sat><Slot>6</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>47885063</Group><Hue>496032431</Hue><Sat>255</Sat><Slot>7</Slot><Var>255</Var></CustomPaintTrans><CustomPaintTrans><Group>1419025149</Group><Hue>1</Hue><Sat>2</Sat><Slot>1</Slot><Var>3</Var></CustomPaintTrans><CustomPaintTrans><Group>1419025149</Group><Hue>1</Hue><Sat>2</Sat><Slot>1</Slot><Var>3</Var></CustomPaintTrans></Paints><PerformanceParts><PerformancePartTrans><PerformancePartAttribHash>-1326218215</PerformancePartAttribHash></PerformancePartTrans></PerformanceParts><PhysicsProfileHash>-1550817422</PhysicsProfileHash><Rating>175</Rating><ResalePrice>50000</ResalePrice><RideHeightDrop>0</RideHeightDrop><SkillModParts><SkillModPartTrans><IsFixed>false</IsFixed><SkillModPartAttribHash>1948827710</SkillModPartAttribHash></SkillModPartTrans></SkillModParts><SkillModSlotCount>5</SkillModSlotCount><Version>0</Version><Vinyls><CustomVinylTrans><Hash>361907633</Hash><Hue1>0</Hue1><Hue2>0</Hue2><Hue3>0</Hue3><Hue4>0</Hue4><Layer>0</Layer><Mir>false</Mir><Rot>0</Rot><Sat1>0</Sat1><Sat2>0</Sat2><Sat3>0</Sat3><Sat4>0</Sat4><ScaleX>0</ScaleX><ScaleY>0</ScaleY><Shear>0</Shear><TranX>0</TranX><TranY>0</TranY><Var1>0</Var1><Var2>0</Var2><Var3>0</Var3><Var4>0</Var4></CustomVinylTrans></Vinyls><VisualParts><VisualPartTrans><PartHash>-65412259</PartHash><SlotHash>1515028479</SlotHash></VisualPartTrans></VisualParts></CustomCar><Durability>100</Durability><Heat>1</Heat><Id>1</Id><OwnershipType>PresetCar</OwnershipType></UpdatedCar></CommerceSessionTrans>"
+      }
+    },
+    {
+      "note": "The car now.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/defaultcar",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The garage.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/100/carslots",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "The inventory.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/personas/inventory/objects",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Cash and boost.",
+      "http": {
+        "method": "GET",
+        "path": "/Engine.svc/DriverPersona/GetPersonaInfo",
+        "query": {
+          "personaId": "100"
+        },
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        }
+      }
+    },
+    {
+      "note": "Restoring the static data.",
+      "sql": [
+        "UPDATE vinylproduct SET price = 0, currency = 'CASH' WHERE hash = 361907633"
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ sbrw-rs needs neither Java nor this rig.
 ./reference/record.sh scenarios/user/register_and_login.json
 ./reference/record.sh vectors                        # JDK vectors -> fixtures/vectors/
 ./reference/record.sh dtos                           # XML classes -> fixtures/dto/
+./reference/record.sh reward-scripts                 # every reward script in the data -> fixtures/vectors/reward_scripts.json
 node reference/nfswo/subject_vectors.js > fixtures/vectors/xmpp_subject.json   # XMPP subject hash, from NFS-World-Offline
 ```
 
@@ -22,6 +23,8 @@ node reference/nfswo/subject_vectors.js > fixtures/vectors/xmpp_subject.json   #
 - `schema.json`: JAXB's runtime model of every XML class, including properties in marshalling order, element and attribute names, types, wrappers and `new X()` defaults. `tools/gen.py dtos` generates `crates/sbrw-xml/src/dto/` from it.
 - `golden.json`: what `JAXBUtility.marshal` writes for a fully populated instance and for `new X()` of each class. The generated Rust must write the same bytes.
 - `unmarshal.json`: how `JAXBUtility.unMarshal` reads odd input, such as bad numbers, unknown elements, namespaces and repeats.
+
+`reward-scripts` runs each distinct script in `card_pack_item`, `reward_table_item` and `achievement_reward` (774 of them) through `ItemRewardBO.scriptToItem` with seeds 1, 2 and 3. Each case records the reward the script built (cash, a product with its use count, or several), or the exceptions it threw, and the shared Random's next `nextInt()`, which pins how many draws the script made and of which kind.
 
 It needs Docker and nothing else. The first run downloads MySQL 8 and about
 150 MB of Maven dependencies, which are cached in the `sbrw-m2` volume.

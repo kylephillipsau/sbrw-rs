@@ -72,6 +72,7 @@ public final class Container {
     private final List<Class<?>> coreClasses;
     private final Map<Class<?>, Class<?>> substitutes;
     private final Map<Class<?>, Object> beans = new HashMap<>();
+    private final Map<Class<?>, Object> targets = new HashMap<>();
     private final Deque<Callable<Object>> asyncQueue = new ArrayDeque<>();
     private final List<PendingTimer> timers = new ArrayList<>();
     private final EntityManager entityManagerProxy;
@@ -97,6 +98,12 @@ public final class Container {
 
     public Recording recording() {
         return recording;
+    }
+
+    /** The bean instance itself, behind its proxy: for calling a private method, as the bean's own code does. */
+    Object target(Class<?> type) {
+        get(type);
+        return targets.get(type);
     }
 
     /** Eagerly create {@code @Startup} singletons, as the server does at boot. */
@@ -134,6 +141,7 @@ public final class Container {
                 return (T) instance;
             }
             Object target = newInstance(impl);
+            targets.put(type, target);
             instance = isEjb(type) ? newTransactionalProxy(impl, target) : target;
             // Other beans get the proxy; the bean's own calls on `this` reach the
             // target directly, so they skip the container, as on a real server.

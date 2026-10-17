@@ -17,6 +17,11 @@ pub fn now(env: &Env) -> PrimitiveDateTime {
     PrimitiveDateTime::new(t.date(), t.time())
 }
 
+/// `System.currentTimeMillis()`.
+pub fn current_time_millis(env: &Env) -> i64 {
+    (env.now().unix_timestamp_nanos() / 1_000_000) as i64
+}
+
 /// How MySQL stores a value in a `DATETIME(0)` column: fractional seconds are
 /// rounded half up, not truncated.
 pub fn to_sql(t: PrimitiveDateTime) -> String {

@@ -17,6 +17,9 @@
 mod boot;
 mod catalog;
 mod driver_persona;
+mod event;
+mod events;
+mod matchmaking;
 mod personas;
 mod powerups;
 mod reporting;
@@ -121,6 +124,19 @@ impl Call {
 
     /// A `Long` `@PathParam`; one `Long.valueOf` rejects isn't found (503, -500).
     pub fn path_long(&self, name: &str) -> Result<Option<i64>, Fault> {
+        self.path_param(name)
+            .map(|v| {
+                v.parse().map_err(|_| {
+                    Fault::Internal(anyhow::anyhow!(
+                        "Unable to extract parameter from http request: javax.ws.rs.PathParam(\"{name}\") value is '{v}'"
+                    ))
+                })
+            })
+            .transpose()
+    }
+
+    /// An `int` `@PathParam`; one `Integer.valueOf` rejects isn't found (503, -500).
+    pub fn path_int(&self, name: &str) -> Result<Option<i32>, Fault> {
         self.path_param(name)
             .map(|v| {
                 v.parse().map_err(|_| {
@@ -360,6 +376,11 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/DriverPersona#updateStatusMessage(InputStream)" => {
             driver_persona::update_status_message(state, call).await
         }
+        "api/Events#availableAtLevel()" => events::available_at_level(state, call).await,
+        "api/Events#instancedAccolades(Long)" => events::instanced_accolades(call),
+        "api/Event#abort(Long)" => event::abort(state, call).await,
+        "api/Event#launched(Long)" => event::launched(state, call).await,
+        "api/MatchMaking#launchEvent(int)" => matchmaking::launch_event(state, call).await,
         "api/Catalog#productsInCategory(String,String,String)" => catalog::products_in_category(state, call).await,
         "api/Catalog#categories(String)" => catalog::categories(state, call).await,
         "api/Personas#commerce(InputStream,Long)" => personas::commerce(state, call).await,

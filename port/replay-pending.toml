@@ -5,5 +5,4 @@ pending = [
     "social/admin",
     "social/announce",
     "social/announce_unset",
-    "social/badges",
 ]

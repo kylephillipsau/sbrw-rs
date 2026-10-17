@@ -3,7 +3,7 @@
 
 // port: dao/BadgeDefinitionDAO#<init>()
 
-use rusqlite::{Connection, Row};
+use rusqlite::{Connection, OptionalExtension, Row};
 
 /// `BadgeDefinitionEntity`. Its achievement (the EAGER inverse side of
 /// `achievement.badge_definition_id`) is held by id.
@@ -36,6 +36,13 @@ impl BadgeDefinitionEntity {
             achievement_id: row.get("b_achievement_id")?,
         })
     }
+}
+
+/// `BadgeDefinitionDAO.find` (`LongKeyedDAO.find`).
+pub fn find(db: &Connection, id: i64) -> rusqlite::Result<Option<BadgeDefinitionEntity>> {
+    db.prepare_cached(&format!("SELECT {COLUMNS} FROM badge_definition b WHERE b.ID = ?1"))?
+        .query_row([id], BadgeDefinitionEntity::from_row)
+        .optional()
 }
 
 // port: dao/BadgeDefinitionDAO#findAll()

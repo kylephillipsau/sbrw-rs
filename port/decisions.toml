@@ -120,3 +120,11 @@ the foreign key's ON DELETE CASCADE, in MySQL as in SQLite."""
 ["jpa/SocialRelationshipEntity@SocialRelationshipEntity.deleteAllByPersonaId"]
 status = "dropped"
 reason = "Only SocialRelationshipDAO.deleteAllByPersonaId runs it, and nothing calls that."
+
+["dao/PersonaBadgeDAO#deleteAllBadgesForPersona(Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's badges go through ON DELETE CASCADE."
+
+["jpa/PersonaBadgeEntity@PersonaBadgeEntity.deleteAllBadgesForPersona"]
+status = "dropped"
+reason = "Only PersonaBadgeDAO.deleteAllBadgesForPersona runs it, and nothing calls that."

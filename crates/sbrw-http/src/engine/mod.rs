@@ -15,6 +15,7 @@
 //! catch-all.
 
 mod achievements;
+mod badges;
 mod boot;
 mod catalog;
 mod driver_persona;
@@ -391,6 +392,7 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/Event#arbitration(InputStream,Long)" => event::arbitration(state, call).await,
         "api/Event#bust(InputStream,String,Long)" => event::bust(state, call).await,
         "api/MatchMaking#launchEvent(int)" => matchmaking::launch_event(state, call).await,
+        "api/Badges#set(InputStream,String)" => badges::set(state, call).await,
         "api/AddFriendRequest#addFriendRequest(String,String)" => social::add_friend_request(state, call).await,
         "api/ResolveFriendsRequest#resolveFriendsRequest(Long,int)" => {
             social::resolve_friends_request(state, call).await

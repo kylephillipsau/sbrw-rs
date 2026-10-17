@@ -8,9 +8,9 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M3 done; M4 (garage and economy) is next. Everything the
-launcher and the game do up to driving around the world with other players is
-in place:
+**Status:** M4 done; M5 (single-player events, rewards and achievements) is
+next. Everything the launcher and the game do up to driving around the world
+with other players, and shopping, is in place:
 - Every HTTP call up to and including creating, selecting and deleting a
   driver, the starter car, the garage and the inventory is ported, and
   replays recordings of the original exactly.
@@ -19,6 +19,12 @@ in place:
 - Free-roam on UDP 9999 (car states, who sees whom, the spawn queue, acks)
   matches the Go free-roam server, and a test "ghost" driving a real
   player's captured car states is seen moving by a fake player.
+- The shops replay recordings of the original exactly: the catalogue,
+  powerups, repairs, amplifiers, card packs, customising cars (paint,
+  vinyls, parts and their effect on the car's rating), selling cars and
+  items, using powerups, and rentals and items expiring. Every reward script
+  in the game data gives the same reward as the original for the same random
+  seed, and every car model gets the same rating.
 
 Milestones are verified against recordings of the original and of these
 reference servers, not with the real game, so nothing here has been run
@@ -32,7 +38,7 @@ against the game itself yet. See
 | M1 Register, log in, game boots | done |
 | M2 Create a driver, XMPP, spawn in the world | done |
 | M3 Free-roam multiplayer | done |
-| M4 Garage and economy | |
+| M4 Garage and economy | done |
 | M5 Single-player events, rewards, achievements | |
 | M6 Lobbies and race relay | |
 | M7 Social and moderation | |
@@ -150,7 +156,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 - **[`reference/`](reference/README.md)** runs the original Java core in Docker against MySQL. Randomness, time and tokens are made deterministic. Each scenario in `scenarios/` is recorded into `fixtures/recorded/`: every response, every XMPP push, and the database state at the end. sbrw-rs replays the same scenarios and has to produce the same output.
 - **`sbrw-testkit`** replays every scenario against sbrw-rs under the same seed, clock and token counter, and reports each difference by step and field. Run it with `cargo test -p sbrw-testkit --test replay` (add `-- <scenario>` to pick one, or `SBRW_REPLAY_REPORT=1` to see differences for pending scenarios). Scenarios not reproduced yet are listed in `port/replay-pending.toml`; the test fails when one starts passing, so the list only shrinks.
 - **`tools/gen.py`** generates code from upstream and from JVM recordings: the SQLite schema and static data, the route table, error codes, TLD lists, and the XML classes. CI checks that the generated files match their inputs.
-- **`fixtures/vectors/`** holds JVM outputs for the JDK behaviour the game logic depends on, such as `java.util.Random`, and the Go free-roam server's answers ([docs/protocol/freeroam.md](docs/protocol/freeroam.md)).
+- **`fixtures/vectors/`** holds JVM outputs for the JDK behaviour the game logic depends on, such as `java.util.Random` and `HashMap` order; what the original's own code gives for every reward script in the data and every car model's rating; and the Go free-roam server's answers ([docs/protocol/freeroam.md](docs/protocol/freeroam.md)).
 - **`tools/port.py`** inventories every method and named query in the original (870 units) and tracks which are ported. Rust code marks the unit it ports with `// port: <unit id>`, and `port/decisions.toml` lists deliberate deviations. Progress is in [docs/port-status.md](docs/port-status.md).
 
 | Crate | What it does |

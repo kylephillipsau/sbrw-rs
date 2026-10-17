@@ -387,3 +387,12 @@ pub fn delete(db: &Connection, car: &CarEntity) -> rusqlite::Result<()> {
     db.prepare_cached("DELETE FROM car WHERE id = ?1")?.execute([car.id])?;
     Ok(())
 }
+
+// port: dao/CarDAO#deleteAllExpired()
+// port: jpa/CarEntity@CarEntity.deleteAllExpired
+/// Delete every car whose expiry is now or past (`CURRENT_TIMESTAMP`, which
+/// is `now` here); the parts go with them by the foreign keys. Returns how
+/// many cars went.
+pub fn delete_all_expired(db: &Connection, now: PrimitiveDateTime) -> rusqlite::Result<usize> {
+    db.prepare_cached("DELETE FROM car WHERE expirationDate <= ?1")?.execute([datetime::to_sql(now)])
+}

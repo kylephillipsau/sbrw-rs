@@ -15,6 +15,7 @@ pub mod build_info;
 pub mod dao;
 pub mod datetime;
 pub mod engine;
+pub mod jobs;
 pub mod openfire;
 pub mod params;
 pub mod password;

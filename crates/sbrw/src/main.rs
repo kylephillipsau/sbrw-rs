@@ -127,6 +127,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         launcher_url = %format!("{}/Engine.svc", config.public_http_url()),
         "HTTP listening; add launcher_url as a server in the SBRW launcher"
     );
+    tasks.spawn(run_jobs(world.clone(), shutdown.clone()));
     let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world);
     tasks.spawn(sbrw_http::serve(http, state, shutdown.clone()));
 
@@ -218,6 +219,29 @@ struct WorldAccounts(sbrw_core::openfire::Accounts);
 impl sbrw_xmpp::stream::Accounts for WorldAccounts {
     fn password(&self, username: &str) -> Option<String> {
         self.0.read().ok()?.get(username).cloned()
+    }
+}
+
+/// Upstream's `@Schedule(minute = "*")` jobs, at the start of every minute.
+async fn run_jobs(world: sbrw_core::WorldHandle, shutdown: CancellationToken) -> std::io::Result<()> {
+    let into_minute = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(Duration::ZERO, |d| Duration::from_millis(u64::try_from(d.as_millis() % 60_000).unwrap_or(0)));
+    let first = tokio::time::Instant::now() + (Duration::from_secs(60) - into_minute);
+    let mut minutes = tokio::time::interval_at(first, Duration::from_secs(60));
+    minutes.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        tokio::select! {
+            () = shutdown.cancelled() => return Ok(()),
+            _ = minutes.tick() => {
+                for &job in sbrw_core::jobs::EVERY_MINUTE {
+                    if let Err(fault) = world.call(move |w| sbrw_core::jobs::run(w, job)).await {
+                        tracing::warn!(job, "scheduled job failed: {fault:#}");
+                    }
+                    world.run_async_jobs().await;
+                }
+            }
+        }
     }
 }
 

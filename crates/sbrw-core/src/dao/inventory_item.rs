@@ -136,3 +136,12 @@ pub fn delete(db: &Connection, item: &InventoryItemEntity) -> rusqlite::Result<(
     db.prepare_cached("DELETE FROM inventory_item WHERE id = ?1")?.execute([item.id])?;
     Ok(())
 }
+
+// port: dao/InventoryItemDAO#deleteAllExpiredItems()
+// port: jpa/InventoryItemEntity@InventoryItemEntity.deleteAllExpiredItems
+/// Delete every item whose expiry is past (`current_timestamp`, which is
+/// `now` here).
+pub fn delete_all_expired_items(db: &Connection, now: PrimitiveDateTime) -> rusqlite::Result<usize> {
+    db.prepare_cached("DELETE FROM inventory_item WHERE expirationDate IS NOT NULL AND expirationDate < ?1")?
+        .execute([datetime::to_sql(now)])
+}

@@ -1,5 +1,4 @@
-//! `InventoryBO`: the items a persona owns and the slots they take. Ported so
-//! far: everything but the job that deletes expired items.
+//! `InventoryBO`: the items a persona owns and the slots they take.
 
 use anyhow::anyhow;
 use sbrw_java::lang::{round_float, split, trim};
@@ -13,6 +12,14 @@ use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::product::{self, ProductEntity};
 use crate::engine::{EngineException, EngineExceptionCode};
 use crate::{Fault, World, datetime};
+
+// port: bo/InventoryBO#scheduledDeleteExpiredItems()
+/// Every minute: delete the items whose time is up (after their expiry, not
+/// at it). Their slots stay counted, as upstream's bulk delete left them.
+pub fn scheduled_delete_expired_items(w: &mut World) -> Result<(), Fault> {
+    inventory_item::delete_all_expired_items(w.db(), datetime::now(&w.env))?;
+    Ok(())
+}
 
 // port: bo/InventoryBO#getInventory(PersonaEntity)
 /// The persona's inventory, created if it has none.

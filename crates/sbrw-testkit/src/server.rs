@@ -3,7 +3,7 @@
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
 
-use anyhow::{Context, anyhow, bail};
+use anyhow::{Context, anyhow};
 use axum::Router;
 use axum::body::Body;
 use axum::extract::ConnectInfo;
@@ -107,7 +107,10 @@ impl SbrwServer {
 
     /// Run a scheduled job named after upstream's `@Schedule` method.
     pub async fn job(&mut self, name: &str) -> anyhow::Result<()> {
-        bail!("sbrw-rs has no scheduled job {name}")
+        let name = name.to_owned();
+        self.world.call(move |w| sbrw_core::jobs::run(w, &name)).await.map_err(|fault| anyhow!("{fault}"))?;
+        self.world.run_async_jobs().await;
+        Ok(())
     }
 
     /// Run a scenario's `sql` step in one transaction.

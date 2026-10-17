@@ -1389,11 +1389,13 @@ dependencies = [
  "sbrw-common",
  "sbrw-core",
  "sbrw-http",
+ "sbrw-udp",
  "serde",
  "serde_json",
  "tempfile",
  "time",
  "tokio",
+ "tokio-util",
  "toml 0.9.12+spec-1.1.0",
  "tower",
 ]

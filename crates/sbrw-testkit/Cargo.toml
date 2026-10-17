@@ -17,6 +17,7 @@ rusqlite.workspace = true
 sbrw-common.workspace = true
 sbrw-core.workspace = true
 sbrw-http.workspace = true
+sbrw-udp.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
@@ -27,6 +28,7 @@ tower.workspace = true
 
 [dev-dependencies]
 libtest-mimic.workspace = true
+tokio-util.workspace = true
 
 [[test]]
 name = "replay"

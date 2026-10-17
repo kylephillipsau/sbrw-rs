@@ -8,8 +8,12 @@
 //!
 //! `cargo test -p sbrw-testkit --test replay` replays everything. Scenarios the
 //! port doesn't reproduce yet are listed in `port/replay-pending.toml`.
+//!
+//! `freeroam` has a fake free-roam client and a ghost driving a real player's
+//! captured car states.
 
 pub mod compare;
+pub mod freeroam;
 pub mod scenario;
 pub mod server;
 pub mod snapshot;

@@ -106,8 +106,9 @@ SESSION_LENGTH_MINUTES = "1440"
 TICKET_TOKEN = "secret"       # registration then needs an invite ticket
 ```
 
-The `[server]`, `[xmpp]`, `[udp]`, `[launcher]` and `[modding]` settings are
-written into the original's parameters at startup (`public_host` becomes
+The `[server]`, `[xmpp]`, `[udp]`, `[launcher]` and `[modding]` settings
+(apart from the free-roam ones, which the original didn't have) are written
+into the original's parameters at startup (`public_host` becomes
 `XMPP_IP`, `UDP_FREEROAM_IP` and so on), so the ported code reads them as the
 original did. An entry in `[parameters]` wins over all of them.
 

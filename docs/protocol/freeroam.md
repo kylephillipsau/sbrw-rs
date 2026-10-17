@@ -85,7 +85,7 @@ From go `client.go` and `server.go`, confirmed by the vectors:
 - `multi_vectors.py` drives up to 16 players in nine scenarios → `freeroam_multi.json`.
   - Run it on the same Docker network as freeroamd, so no port proxy merges source addresses.
   - Each player sends only mid-way between its own ticks, positions keep everyone's whole distances distinct, and nothing is observed in the second when a silent player may or may not have been swept. That keeps two recordings identical.
-  - Running the same script against `sbrw serve` gives the recorded replies apart from the clock fields.
+  - Running the same script against `sbrw serve` gives the recorded replies apart from the clock fields; `compare.py` checks that.
 - `ghost_track.py` takes one player's car states from the capture for the testkit's ghost (`fixtures/freeroam/ghost.json`).
 
 ## Unknowns

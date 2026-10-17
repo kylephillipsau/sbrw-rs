@@ -149,6 +149,24 @@ mod tests {
         std::fs::remove_dir_all(dir).unwrap();
     }
 
+    #[test]
+    fn rarities_survive_a_restart_as_mysql_kept_them() {
+        let dir = tempfile_dir();
+        let path = dir.join("world.db");
+        let rarity = |conn: &Connection, id: i64| -> f64 {
+            conn.query_row("SELECT rarity FROM static.achievement_rank WHERE ID = ?1", [id], |r| r.get(0)).unwrap()
+        };
+        {
+            let conn = open(Some(&path), &BTreeMap::new()).unwrap();
+            crate::dao::achievement_rank::update_rank_rarity(&conn, 56, 0.5).unwrap();
+            assert_eq!(rarity(&conn, 56), 0.5);
+        }
+        let conn = open(Some(&path), &BTreeMap::new()).unwrap();
+        assert_eq!(rarity(&conn, 56), 0.5, "the job's rarity is back after a restart");
+        assert_eq!(rarity(&conn, 57), 0.0, "other ranks keep the data's");
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
     fn tempfile_dir() -> std::path::PathBuf {
         let dir = std::env::temp_dir().join(format!("sbrw-store-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();

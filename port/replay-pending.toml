@@ -6,7 +6,6 @@ pending = [
     "commerce/basket_no_economy",
     "commerce/card_pack_cars",
     "commerce/card_packs",
-    "commerce/catalog",
     "commerce/customise",
     "commerce/powerups",
     "commerce/powerups_no_decrease",

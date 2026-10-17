@@ -23,6 +23,7 @@ pub mod online_users;
 pub mod performance;
 pub mod persona;
 pub mod presence;
+pub mod product;
 pub mod scenery_util;
 pub mod scripting;
 pub mod session;

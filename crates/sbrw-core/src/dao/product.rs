@@ -121,6 +121,36 @@ pub fn find_by_hash(db: &Connection, hash: i32) -> Result<ProductEntity, Fault> 
     found.ok_or_else(|| Fault::Internal(anyhow!("Could not find product with hash: {hash}")))
 }
 
+// port: dao/ProductDAO#findByLevelEnabled(String,String,int,boolean,boolean)
+// port: jpa/ProductEntity@ProductEntity.findByLevelEnabled
+/// A category's products of one type up to a level, enabled or not, and
+/// premium ones only for `premium`. The query has no order; MySQL scans the
+/// table, so the rows come in key order (`commerce/catalog`, where a product
+/// moved to level 60 keeps its place).
+pub fn find_by_level_enabled(
+    db: &Connection,
+    category_name: &str,
+    product_type: &str,
+    min_level: i32,
+    enabled: bool,
+    premium: bool,
+) -> rusqlite::Result<Vec<ProductEntity>> {
+    db.prepare_cached(
+        "SELECT * FROM product WHERE enabled = ?3 AND minLevel <= ?4 AND (premium = 0 OR premium = ?5)
+         AND categoryName = ?1 AND productType = ?2 ORDER BY id",
+    )?
+    .query_map(rusqlite::params![category_name, product_type, enabled, min_level, premium], ProductEntity::from_row)?
+    .collect()
+}
+
+/// `ProductEntity.getBundleItems()`: the products whose parent this is. The
+/// set's order is Hibernate's; no product in the data has a parent.
+pub fn find_bundle_items(db: &Connection, parent_id: i64) -> rusqlite::Result<Vec<ProductEntity>> {
+    db.prepare_cached("SELECT * FROM product WHERE parentProductId = ?1 ORDER BY id")?
+        .query_map([parent_id], ProductEntity::from_row)?
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

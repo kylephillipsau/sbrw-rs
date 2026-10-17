@@ -101,6 +101,7 @@ one process `sbrw serve`
   - `tools/convert_mysql_dump.py` converts `Data.sql` to SQLite syntax as `assets/static.sql` (handles `_binary` and MySQL escapes), which is committed and embedded with `include_str!`.
   - At boot it's loaded into an in-memory SQLite, then `/data/static-overrides.sql` if present, then copied into a typed `Arc<StaticData>` with indexes and pre-parsed basket DTOs.
   - Player data lives in `/data/world.db`: about 31 runtime tables hand-ported, timestamps in unix milliseconds, persona ids starting at 100.
+  - One table is sbrw-rs's own: `achievement_rank_rarity` keeps the rarity job's results, which upstream wrote into the static `achievement_rank` rows MySQL kept; they're copied back over the static data at startup.
   - Before every migration and nightly, `VACUUM INTO /data/backups/`.
   - Tests assert static row counts.
 - **Config:**

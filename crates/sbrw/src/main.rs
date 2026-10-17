@@ -235,7 +235,11 @@ async fn run_timers(world: sbrw_core::WorldHandle, shutdown: CancellationToken) 
                 match world.call(sbrw_core::timers::fire_due_timer).await {
                     Ok(true) => world.run_async_jobs().await,
                     Ok(false) => break,
-                    Err(fault) => tracing::warn!("timer failed: {fault:#}"),
+                    Err(fault) => {
+                        // Any other timers due wait for the next second.
+                        tracing::warn!("timer failed: {fault:#}");
+                        break;
+                    }
                 }
             },
         }

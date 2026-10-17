@@ -221,6 +221,20 @@ impl Hub {
         self.deliver_to_user(&node, None, message)
     }
 
+    /// An announcement to every logged-in client, as SBRW's REST plugin
+    /// broadcast it (`MessageController.sendGameBroadcastMessage`): the
+    /// push's subject and id, from the server itself. Nothing is stored for
+    /// players who aren't logged in.
+    pub fn announce(&mut self, body: &str) -> Vec<Delivery> {
+        let message = Element::new("message")
+            .attr("to", "")
+            .attr("id", "JN_1234567")
+            .attr("from", &self.domain)
+            .child(Element::new("subject").text(SBRW_SUBJECT))
+            .child(Element::new("body").text(body));
+        self.sessions.iter().map(|s| deliver(s, &message)).collect()
+    }
+
     /// Route a stanza the client's stream didn't answer itself.
     pub fn route(&mut self, from: &FullJid, stanza: Element) -> Vec<Delivery> {
         let Some(to) = stanza.attribute("to").map(str::to_owned) else { return Vec::new() };
@@ -613,5 +627,28 @@ mod tests {
         assert_eq!(members(101), None);
         hub.disconnect(&jid(100));
         assert!(groups.read().unwrap().is_empty());
+    }
+
+    #[test]
+    fn announcements_go_to_every_logged_in_client() {
+        let mut hub = Hub::new("127.0.0.1", Box::new(|| "id".to_owned()), Box::new(OffsetDateTime::now_utc));
+        let jid = |persona: i64| FullJid {
+            node: format!("sbrw.{persona}"),
+            domain: "127.0.0.1".to_owned(),
+            resource: "EA-Chat".to_owned(),
+        };
+        hub.connect(&jid(100));
+        hub.connect(&jid(101));
+        hub.available(&jid(101));
+        let out = hub.announce("<response status='1' ticket='0'>\n<Message>Hi & bye</Message></response>");
+        let to: Vec<&str> = out.iter().map(|d| d.to.as_str()).collect();
+        assert_eq!(to, ["sbrw.100@127.0.0.1/EA-Chat", "sbrw.101@127.0.0.1/EA-Chat"]);
+        assert_eq!(
+            out[0].stanza,
+            "<message to=\"sbrw.100@127.0.0.1/EA-Chat\" id=\"JN_1234567\" from=\"127.0.0.1\"><subject>1337733113377331</subject>\
+             <body>&lt;response status='1' ticket='0'&gt;\n&lt;Message&gt;Hi &amp; bye&lt;/Message&gt;&lt;/response&gt;</body></message>"
+        );
+        hub.disconnect(&jid(100));
+        assert_eq!(hub.announce("x").len(), 1, "nothing kept for those not logged in");
     }
 }

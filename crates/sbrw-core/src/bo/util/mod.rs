@@ -8,6 +8,7 @@ pub mod achievement_progression_context;
 pub mod achievement_update_info;
 pub mod arbitration;
 pub mod list_differences;
+pub mod misc_utils;
 pub mod owned_car_converter;
 pub mod reward_vo;
 pub mod server_information_vo;

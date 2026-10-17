@@ -7,7 +7,9 @@
 
 pub mod achievement;
 pub mod achievement_transaction;
+pub mod admin;
 pub mod authentication;
+pub mod ban;
 pub mod basket;
 pub mod car_damage;
 pub mod car_slot;

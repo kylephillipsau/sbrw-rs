@@ -985,6 +985,38 @@
         },
         "body": "<LoginStatusVO><UserId>0</UserId><LoginToken></LoginToken><Ban><Reason>Your computer is banned from this server.</Reason></Ban></LoginStatusVO>"
       }
+    },
+    {
+      "note": "A day on.",
+      "advance_ms": 86400000
+    },
+    {
+      "note": "Driver 100's ban ends, and their hardware is cleared.",
+      "job": "BanBO#checkExpiredBans"
+    },
+    {
+      "note": "Driver 100 can log in again.",
+      "request": {
+        "method": "GET",
+        "path": "/Engine.svc/User/authenticateUser",
+        "query": {
+          "email": "player1@example.com",
+          "password": "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8"
+        },
+        "headers": null,
+        "form": null,
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "application/xml;charset=UTF-8"
+        },
+        "body": "<LoginStatusVO><UserId>1</UserId><LoginToken>00000000-0000-4000-8000-000000000008</LoginToken><Description></Description></LoginStatusVO>"
+      }
     }
   ],
   "db": {
@@ -998,7 +1030,7 @@
         "user_id": 1,
         "started": "2026-01-01 12:00:00",
         "banned_by_id": 102,
-        "active": true
+        "active": false
       },
       {
         "id": 2,
@@ -1026,7 +1058,7 @@
     "hardware_info": [
       {
         "ID": 1,
-        "banned": true,
+        "banned": false,
         "hardwareHash": "a647bb525591380084e518b71b7a087b54bea23d",
         "hardwareInfo": "<HardwareInfo><availableMem>0</availableMem><cpuBrand>Intel(R) Core(TM) i7-8700 CPU @ 3.21GHz</cpuBrand><cpuid0>GenuineIntel</cpuid0><cpuid1_0>0</cpuid1_0><cpuid1_1>0</cpuid1_1><cpuid1_2>0</cpuid1_2><cpuid1_3>0</cpuid1_3><deviceID>7041</deviceID><excpuid1_0>0</excpuid1_0><excpuid1_1>0</excpuid1_1><excpuid1_2>289</excpuid1_2><excpuid1_3>739248128</excpuid1_3><gpuDescription>NVIDIA GeForce GTX 1080</gpuDescription><gpuDriverBuild>14</gpuDriverBuild><gpuDriverSubversion>4645</gpuDriverSubversion><gpuDriverVersion>27</gpuDriverVersion><gpuMemory>8192</gpuMemory><gpuProduct>27</gpuProduct><osBuildNumber>19045</osBuildNumber><osMajorVersion>10</osMajorVersion><osMinorVersion>0</osMinorVersion><physicalCores>6</physicalCores><platformID>2</platformID><processAffinityMask>4095</processAffinityMask><servicePack></servicePack><systemAffinityMask>4095</systemAffinityMask><totalMemory>16777216</totalMemory><userID>0</userID><vendorID>4318</vendorID></HardwareInfo>",
         "userId": 1
@@ -1526,7 +1558,7 @@
         "HWID": null,
         "IP_ADDRESS": "127.0.0.1",
         "created": "2026-01-01 12:00:00",
-        "lastLogin": "2026-01-01 12:00:00",
+        "lastLogin": "2026-01-02 14:30:00",
         "gameHardwareHash": "a647bb525591380084e518b71b7a087b54bea23d",
         "isLocked": false,
         "selectedPersonaIndex": 0

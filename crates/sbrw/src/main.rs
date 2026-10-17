@@ -8,6 +8,7 @@ use std::time::Duration;
 use anyhow::Context;
 use clap::{Args, Parser, Subcommand};
 use sbrw_common::{CaptureSink, CaptureStream, Config};
+use sbrw_core::openfire::Outbound;
 use tokio::net::{TcpListener, UdpSocket};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
@@ -175,7 +176,8 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
                 tokio::select! {
                     () = stop.cancelled() => return Ok(()),
                     push = push_queue.recv() => match push {
-                        Some((to, body)) => server.with_hub(|hub| hub.push(to, &body)),
+                        Some(Outbound::Push(to, body)) => server.with_hub(|hub| hub.push(to, &body)),
+                        Some(Outbound::Announcement(body)) => server.with_hub(|hub| hub.announce(&body)),
                         None => return Ok(()),
                     },
                 }

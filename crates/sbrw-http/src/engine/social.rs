@@ -1,12 +1,13 @@
 //! Friends and blocks: `api/AddFriendRequest`, `ResolveFriendsRequest`,
 //! `RemoveFriend`, `GetFriendListFromUserId`, `BlockPlayer`, `UnblockPlayer`,
-//! `GetBlockedUserList` and `GetBlockersByUsers`, one resource each upstream.
+//! `GetBlockedUserList` and `GetBlockersByUsers`, one resource each upstream;
+//! and reports (`api/Social`), through which admins send commands.
 
 use anyhow::anyhow;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use sbrw_core::Fault;
-use sbrw_core::bo::social_relationship;
+use sbrw_core::bo::{admin, social, social_relationship};
 use sbrw_xml::ToXml;
 
 use super::{Call, entity};
@@ -105,4 +106,43 @@ pub(super) async fn get_blockers_by_users(state: &AppState, call: &Call) -> Resu
     let blockers =
         state.world().call(move |w| social_relationship::get_blockers_by_users(w, active_persona_id)).await?;
     Ok(entity(call, StatusCode::OK, blockers.to_xml()))
+}
+
+// port: api/Social#petition(String,Long,Long,Integer,String,Integer,Integer)
+/// A report against a driver; from an admin, a description starting with `/`
+/// is a command instead.
+pub(super) async fn petition(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    let persona_id = call.query_long("personaId")?;
+    let abuser_persona_id = call.query_long("abuserPersonaId")?;
+    let petition_type = call.query_int("petitionType")?;
+    let description = call.query("description");
+    let custom_car_id = call.query_int("customCarID")?;
+    let chat_minutes = call.query_int("chatMinutes")?;
+    let session = call.session();
+    let is_command = session.user.is_admin
+        && description.as_deref().ok_or_else(|| Fault::null_pointer("description"))?.starts_with('/');
+    if is_command {
+        let active_persona_id =
+            session.active_persona_id.ok_or_else(|| Fault::null_pointer("RequestSessionInfo.activePersonaId"))?;
+        let abuser_persona_id = abuser_persona_id.ok_or_else(|| anyhow!("id to load is required for loading"))?;
+        let command = description.unwrap_or_default();
+        state.world().call(move |w| admin::send_command(w, active_persona_id, abuser_persona_id, &command)).await?;
+    } else {
+        state
+            .world()
+            .call(move |w| {
+                social::send_report(
+                    w,
+                    persona_id,
+                    abuser_persona_id,
+                    petition_type,
+                    description,
+                    custom_car_id,
+                    chat_minutes,
+                    0,
+                )
+            })
+            .await?;
+    }
+    Ok(entity(call, StatusCode::OK, String::new()))
 }

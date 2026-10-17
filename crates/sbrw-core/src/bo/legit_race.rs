@@ -25,15 +25,15 @@ pub fn is_legit(
     if !legit {
         social::send_report(
             w,
-            0,
-            active_persona_id,
-            3,
-            format!(
+            Some(0),
+            Some(active_persona_id),
+            Some(3),
+            Some(format!(
                 "Abnormal event time: {} (below minimum of {} on event {}; session {})",
                 data_entity.server_time_in_milliseconds, minimum_time, session_entity.event.id, session_entity.id
-            ),
-            arbitration_packet.car_id() as i32,
-            0,
+            )),
+            Some(arbitration_packet.car_id() as i32),
+            Some(0),
             arbitration_packet.hacks_detected(),
         )?;
         return Ok(false);
@@ -42,17 +42,17 @@ pub fn is_legit(
     if arbitration_packet.hacks_detected() > 0 {
         social::send_report(
             w,
-            0,
-            active_persona_id,
-            3,
-            format!(
+            Some(0),
+            Some(active_persona_id),
+            Some(3),
+            Some(format!(
                 "hacksDetected={} (event {}; session {})",
                 arbitration_packet.hacks_detected(),
                 session_entity.event.id,
                 session_entity.id
-            ),
-            arbitration_packet.car_id() as i32,
-            0,
+            )),
+            Some(arbitration_packet.car_id() as i32),
+            Some(0),
             arbitration_packet.hacks_detected(),
         )?;
         return Ok(false);

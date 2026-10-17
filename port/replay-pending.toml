@@ -2,7 +2,4 @@
 # these to differ from its recording, and fails once one replays exactly so
 # that it gets removed from here. This list only ever shrinks.
 pending = [
-    "social/admin",
-    "social/announce",
-    "social/announce_unset",
 ]

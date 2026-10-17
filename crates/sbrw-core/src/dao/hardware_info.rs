@@ -1,4 +1,4 @@
-//! `HardwareInfoEntity` and the parts of `HardwareInfoDAO` ported so far.
+//! `HardwareInfoEntity` and `HardwareInfoDAO`.
 
 // port: dao/HardwareInfoDAO#<init>()
 
@@ -30,6 +30,14 @@ impl HardwareInfoEntity {
 pub fn find_by_hardware_hash(db: &Connection, hash: &str) -> rusqlite::Result<Option<HardwareInfoEntity>> {
     db.prepare_cached("SELECT * FROM hardware_info WHERE hardwareHash = ?1 ORDER BY ID LIMIT 1")?
         .query_row([hash], HardwareInfoEntity::from_row)
+        .optional()
+}
+
+// port: dao/HardwareInfoDAO#findByUserId(Long)
+// port: jpa/HardwareInfoEntity@HardwareInfoEntity.findByUserId
+pub fn find_by_user_id(db: &Connection, user_id: i64) -> rusqlite::Result<Option<HardwareInfoEntity>> {
+    db.prepare_cached("SELECT * FROM hardware_info WHERE userId = ?1 ORDER BY ID LIMIT 1")?
+        .query_row([user_id], HardwareInfoEntity::from_row)
         .optional()
 }
 

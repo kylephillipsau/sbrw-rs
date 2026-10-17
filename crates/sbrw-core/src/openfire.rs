@@ -21,11 +21,32 @@ pub type Accounts = Arc<RwLock<HashMap<String, String>>>;
 /// in, as sbrw-xmpp's hub keeps it (a test scenario sets it instead).
 pub type GroupMembers = Arc<RwLock<HashMap<i64, Vec<i64>>>>;
 
+/// What the core hands sbrw-xmpp's hub.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Outbound {
+    /// A push to a persona's game (`OpenFireSoapBoxCli.send`).
+    Push(i64, String),
+    /// A message for every player, already wrapped as a system chat message.
+    Announcement(String),
+}
+
+// port: xmpp/XmppChat#createSystemMessage(String)
+/// A chat line from "System", as the game shows admin replies and
+/// announcements. The text goes in as it is.
+pub fn create_system_message(message: &str) -> String {
+    format!(
+        "<response status='1' ticket='0'>\n<ChatBroadcast>\n<ChatBlob>\n<FromName>System</FromName>\n\
+         <FromPersonaId>0</FromPersonaId>\n<FromUserId>0</FromUserId>\n<Message>{message}</Message>\n<ToId>0</ToId>\n\
+         <Type>2</Type>\n</ChatBlob>\n</ChatBroadcast>\n</response>"
+    )
+}
+
 #[derive(Debug, Default)]
 pub struct Openfire {
     accounts: Accounts,
-    /// Where pushes go to be delivered: sbrw-xmpp's hub, when it runs.
-    pub outbound: Option<tokio::sync::mpsc::UnboundedSender<(i64, String)>>,
+    /// Where pushes and announcements go to be delivered: sbrw-xmpp's hub,
+    /// when it runs.
+    pub outbound: Option<tokio::sync::mpsc::UnboundedSender<Outbound>>,
     /// Players connected to XMPP: a test scenario's simulated count until
     /// sbrw-xmpp serves clients and reports its own.
     pub online_users: i32,
@@ -75,7 +96,19 @@ impl Openfire {
         // from the engine's account, whether or not the transaction commits.
         effects.xmpp(to, msg);
         if let Some(outbound) = &self.outbound {
-            let _ = outbound.send((to, msg.to_owned()));
+            let _ = outbound.send(Outbound::Push(to, msg.to_owned()));
+        }
+    }
+
+    // port: xmpp/OpenFireRestApiCli#sendChatAnnouncement(String)
+    /// Upstream posted the text to SBRW's REST plugin (`messages/game`), which
+    /// wraps it in the same system chat message and broadcasts it to every
+    /// session; sbrw-xmpp's hub does that. Without a message sbrw-rs
+    /// announces an empty one; what the plugin made of none isn't known.
+    pub fn send_chat_announcement(&self, message: Option<&str>, effects: &EffectLog) {
+        effects.openfire("sendChatAnnouncement", vec![json!(message)]);
+        if let Some(outbound) = &self.outbound {
+            let _ = outbound.send(Outbound::Announcement(create_system_message(message.unwrap_or_default())));
         }
     }
 

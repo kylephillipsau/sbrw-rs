@@ -26,6 +26,7 @@ mod personas;
 mod powerups;
 mod reporting;
 mod routes;
+mod send_announcement;
 mod social;
 mod user;
 
@@ -393,6 +394,10 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/Event#bust(InputStream,String,Long)" => event::bust(state, call).await,
         "api/MatchMaking#launchEvent(int)" => matchmaking::launch_event(state, call).await,
         "api/Badges#set(InputStream,String)" => badges::set(state, call).await,
+        "api/Social#petition(String,Long,Long,Integer,String,Integer,Integer)" => social::petition(state, call).await,
+        "api/SendAnnouncement#sendAnnouncement(String,String)" => {
+            send_announcement::send_announcement(state, call).await
+        }
         "api/AddFriendRequest#addFriendRequest(String,String)" => social::add_friend_request(state, call).await,
         "api/ResolveFriendsRequest#resolveFriendsRequest(Long,int)" => {
             social::resolve_friends_request(state, call).await

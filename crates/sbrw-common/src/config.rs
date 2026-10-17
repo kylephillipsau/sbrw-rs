@@ -341,6 +341,13 @@ impl Config {
         set("MODDING_BASE_PATH", self.mods_base_url());
         set("MODDING_FEATURES", self.modding.features.join(";"));
 
+        // The game data ships the setup guide's placeholders for these, which
+        // anyone could send. Until set under [parameters], they're a fresh
+        // secret each start, so the endpoints they guard stay shut.
+        for name in ["ADMIN_AUTH", "ANNOUNCEMENT_AUTH"] {
+            set(name, uuid::Uuid::new_v4().simple().to_string());
+        }
+
         p.extend(self.parameters.clone());
         p
     }
@@ -508,6 +515,10 @@ mod tests {
         assert_eq!(p["UDP_FREEROAM_IP"], "203.0.113.7");
         assert_eq!(p["UDP_FREEROAM_PORT"], "9999");
         assert_eq!(p["UDP_RACE_IP"], "203.0.113.7");
+        assert_eq!(p["ADMIN_AUTH"].len(), 32, "a secret, not the game data's placeholder");
+        assert_ne!(p["ANNOUNCEMENT_AUTH"], config.upstream_parameters()["ANNOUNCEMENT_AUTH"]);
+        config.parameters.insert("ANNOUNCEMENT_AUTH".into(), "mine".into());
+        assert_eq!(config.upstream_parameters()["ANNOUNCEMENT_AUTH"], "mine");
         assert_eq!(p["UDP_RACE_PORT"], "9998");
         assert_eq!(p["SERVER_ADDRESS"], "http://203.0.113.7:8680");
         // An explicit parameter wins over the typed config.

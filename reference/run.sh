@@ -5,6 +5,8 @@
 #   run.sh dtos                     write fixtures/dto/{schema,golden}.json
 #   run.sh reward-scripts           write fixtures/vectors/reward_scripts.json
 #   run.sh car-ratings              write fixtures/vectors/car_ratings.json
+#   run.sh event-rewards            write fixtures/vectors/event_rewards.json
+#   run.sh achievement-triggers     write fixtures/vectors/achievement_triggers.json
 set -euo pipefail
 cd /repo/reference/build/core
 mvn -B -q compile dependency:build-classpath -Dmdep.outputFile=target/classpath.txt
@@ -20,5 +22,11 @@ if [ "${1:-}" = reward-scripts ]; then
 fi
 if [ "${1:-}" = car-ratings ]; then
     exec java -Duser.timezone=UTC -cp "$classpath" com.soapboxrace.reference.CarRatings /repo
+fi
+if [ "${1:-}" = event-rewards ]; then
+    exec java -Duser.timezone=UTC -cp "$classpath" com.soapboxrace.reference.EventRewards /repo
+fi
+if [ "${1:-}" = achievement-triggers ]; then
+    exec java -Duser.timezone=UTC -cp "$classpath" com.soapboxrace.reference.AchievementTriggers /repo
 fi
 exec java -Duser.timezone=UTC -cp "$classpath" com.soapboxrace.reference.Recorder /repo "$@"

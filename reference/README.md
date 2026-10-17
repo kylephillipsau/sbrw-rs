@@ -17,6 +17,8 @@ sbrw-rs needs neither Java nor this rig.
 ./reference/record.sh dtos                           # XML classes -> fixtures/dto/
 ./reference/record.sh reward-scripts                 # every reward script in the data -> fixtures/vectors/reward_scripts.json
 ./reference/record.sh car-ratings                    # every car model's rating and class -> fixtures/vectors/car_ratings.json
+./reference/record.sh event-rewards                  # RewardBO's arithmetic -> fixtures/vectors/event_rewards.json
+./reference/record.sh achievement-triggers           # every achievement script -> fixtures/vectors/achievement_triggers.json
 node reference/nfswo/subject_vectors.js > fixtures/vectors/xmpp_subject.json   # XMPP subject hash, from NFS-World-Offline
 ```
 
@@ -28,6 +30,10 @@ node reference/nfswo/subject_vectors.js > fixtures/vectors/xmpp_subject.json   #
 `reward-scripts` runs each distinct script in `card_pack_item`, `reward_table_item` and `achievement_reward` (774 of them) through `ItemRewardBO.scriptToItem` with seeds 1, 2 and 3. Each case records the reward the script built (cash, a product with its use count, or several), or the exceptions it threw, and the shared Random's next `nextInt()`, which pins how many draws the script made and of which kind.
 
 `car-ratings` runs `PerformanceBO.calcNewCarClass` on every model in `car_classes`, bare and with random sets of performance parts, and on random physics profiles that aren't a model (1,323 cases).
+
+`event-rewards` runs the chains of `RewardBO` methods the event reward BOs call (a sprint's base, rank, perfect start, top speed and final multipliers; a pursuit's base, each statistic, top speed and final multipliers) on every `event_reward` row and 60 random configurations, for random levels, ranks, times, top speeds and packets, under three parameter sets (4,050 cases). Each case records the base rewards, the totals and every reward part. Skill mods, amplifiers and paying out need a driver in the database, so the scenarios cover those.
+
+`achievement-triggers` evaluates every achievement's update trigger and update value (120 scripts) on Nashorn against generated contexts of its category: 60 EVENT contexts, some with a packet of another class than the event's mode, 30 PROGRESSION and 24 COMMERCE (4,092 cases). Each context is recorded as the values it's built from, so sbrw-rs builds the same bindings.
 
 It needs Docker and nothing else. The first run downloads MySQL 8 and about
 150 MB of Maven dependencies, which are cached in the `sbrw-m2` volume.

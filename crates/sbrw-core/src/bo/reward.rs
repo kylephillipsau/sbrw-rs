@@ -678,3 +678,181 @@ pub fn get_reward_configuration(
     event_reward::find(w.db(), id)?
         .ok_or_else(|| Fault::engine(EngineExceptionCode::LuckyDrawNoTableDefinedForRace, true))
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use sbrw_xml::dto::http::{PursuitArbitrationPacket, RouteArbitrationPacket};
+    use serde::Deserialize;
+
+    use super::*;
+
+    #[derive(Deserialize)]
+    struct Vectors {
+        parameter_sets: Vec<BTreeMap<String, String>>,
+        configs: Vec<Config>,
+        cases: Vec<Case>,
+    }
+
+    #[derive(Deserialize)]
+    struct Config {
+        id: String,
+        base_rep_reward: i32,
+        base_cash_reward: i32,
+        level_rep_reward_multiplier: f32,
+        level_cash_reward_multiplier: f32,
+        final_rep_reward_multiplier: f32,
+        final_cash_reward_multiplier: f32,
+        perfect_start_rep_multiplier: f32,
+        perfect_start_cash_multiplier: f32,
+        top_speed_rep_multiplier: f32,
+        top_speed_cash_multiplier: f32,
+        rank_rep_multipliers: [f32; 8],
+        rank_cash_multipliers: [f32; 8],
+        min_top_speed_trigger: f32,
+    }
+
+    #[derive(Deserialize)]
+    struct Case {
+        chain: String,
+        parameter_set: usize,
+        config: usize,
+        level: i32,
+        rewards_time_limit: i64,
+        event_duration: i64,
+        top_speed: f32,
+        economy: bool,
+        reputation: bool,
+        rank: Option<i32>,
+        perfect_start: Option<i32>,
+        cops_deployed: Option<i32>,
+        cops_disabled: Option<i32>,
+        cops_rammed: Option<i32>,
+        cost_to_state: Option<i32>,
+        heat: Option<f32>,
+        infractions: Option<i32>,
+        road_blocks_dodged: Option<i32>,
+        spike_strips_dodged: Option<i32>,
+        base_rep: i32,
+        base_cash: i32,
+        rep: i32,
+        cash: i32,
+        parts: Vec<String>,
+    }
+
+    fn entity(c: &Config) -> EventRewardEntity {
+        EventRewardEntity {
+            id: c.id.clone(),
+            base_rep_reward: c.base_rep_reward,
+            base_cash_reward: c.base_cash_reward,
+            level_rep_reward_multiplier: c.level_rep_reward_multiplier,
+            level_cash_reward_multiplier: c.level_cash_reward_multiplier,
+            final_rep_reward_multiplier: c.final_rep_reward_multiplier,
+            final_cash_reward_multiplier: c.final_cash_reward_multiplier,
+            perfect_start_rep_multiplier: c.perfect_start_rep_multiplier,
+            perfect_start_cash_multiplier: c.perfect_start_cash_multiplier,
+            top_speed_rep_multiplier: c.top_speed_rep_multiplier,
+            top_speed_cash_multiplier: c.top_speed_cash_multiplier,
+            rank_rep_multipliers: c.rank_rep_multipliers,
+            rank_cash_multipliers: c.rank_cash_multipliers,
+            min_top_speed_trigger: c.min_top_speed_trigger,
+            reward_table_ranks: [None; 8],
+        }
+    }
+
+    /// The case's chain of `RewardBO` calls, as `EventRewards.java` makes them.
+    fn run(w: &World, config: &EventRewardEntity, case: &Case) -> RewardVO {
+        let persona = PersonaEntity { level: case.level, ..Default::default() };
+        let event = EventEntity { rewards_time_limit: case.rewards_time_limit, ..Default::default() };
+        let mut vo = RewardVO::new(case.economy, case.reputation);
+        if case.chain == "route" {
+            let packet = RouteArbitrationPacket {
+                rank: case.rank.unwrap(),
+                perfect_start: case.perfect_start.unwrap(),
+                top_speed: case.top_speed,
+                event_duration_in_milliseconds: case.event_duration,
+                ..Default::default()
+            };
+            set_base_reward(w, &persona, &event, config, &packet, &mut vo).unwrap();
+            set_rank_reward(config, &packet, &mut vo);
+            set_perfect_start_reward(config, packet.perfect_start, &mut vo);
+            set_top_speed_reward(config, packet.top_speed, &mut vo);
+            set_multiplier_reward(config, &mut vo);
+        } else {
+            let packet = PursuitArbitrationPacket {
+                event_duration_in_milliseconds: case.event_duration,
+                top_speed: case.top_speed,
+                ..Default::default()
+            };
+            set_base_reward(w, &persona, &event, config, &packet, &mut vo).unwrap();
+            let statistics = [
+                (case.cops_deployed.unwrap() as f32, EnumRewardType::COP_CARS_DEPLOYED),
+                (case.cops_disabled.unwrap() as f32, EnumRewardType::COP_CARS_DISABLED),
+                (case.cops_rammed.unwrap() as f32, EnumRewardType::COP_CARS_RAMMED),
+                (case.cost_to_state.unwrap() as f32, EnumRewardType::COST_TO_STATE),
+                (case.event_duration as f32, EnumRewardType::PURSUIT_LENGTH),
+                (case.heat.unwrap(), EnumRewardType::HEAT_LEVEL),
+                (case.infractions.unwrap() as f32, EnumRewardType::INFRACTIONS),
+                (case.road_blocks_dodged.unwrap() as f32, EnumRewardType::ROADBLOCKS_DODGED),
+                (case.spike_strips_dodged.unwrap() as f32, EnumRewardType::SPIKE_STRIPS_DODGED),
+            ];
+            for (value, reward_type) in statistics {
+                set_pursit_param_reward(w, value, reward_type, &mut vo).unwrap();
+            }
+            set_top_speed_reward(config, packet.top_speed, &mut vo);
+            set_multiplier_reward(config, &mut vo);
+        }
+        vo
+    }
+
+    #[test]
+    fn rewards_add_up_as_the_original() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/vectors/event_rewards.json");
+        let vectors: Vectors = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        assert_eq!(vectors.cases.len(), 4050);
+        let worlds: Vec<World> = vectors
+            .parameter_sets
+            .iter()
+            .map(|set| {
+                let overrides: Vec<(&str, &str)> = set.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+                World::test(&overrides)
+            })
+            .collect();
+        let configs: Vec<EventRewardEntity> = vectors.configs.iter().map(entity).collect();
+        let mut failures = Vec::new();
+        for (i, case) in vectors.cases.iter().enumerate() {
+            let vo = run(&worlds[case.parameter_set], &configs[case.config], case);
+            let parts: Vec<String> = vo
+                .array_of_reward_part()
+                .reward_part
+                .iter()
+                .map(|p| {
+                    format!(
+                        "{} {} {:?} {:?}",
+                        p.rep_part,
+                        p.token_part,
+                        p.reward_category.unwrap(),
+                        p.reward_type.unwrap()
+                    )
+                })
+                .collect();
+            let ours = (vo.base_rep(), vo.base_cash(), vo.rep(), vo.cash(), parts);
+            let theirs = (case.base_rep, case.base_cash, case.rep, case.cash, case.parts.clone());
+            if ours != theirs {
+                failures
+                    .push(format!("case {i} ({} on {}): ours {ours:?}, theirs {theirs:?}", case.chain, case.config));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "{} of {} differ:\n{}",
+            failures.len(),
+            vectors.cases.len(),
+            failures[..failures.len().min(5)].join("\n")
+        );
+        // The time bonus's edges are in the data: no time, and no limit.
+        assert!(vectors.cases.iter().any(|c| c.event_duration == 0 && c.rewards_time_limit == 0));
+        assert!(vectors.cases.iter().any(|c| c.event_duration == 0 && c.rewards_time_limit > 0));
+    }
+}

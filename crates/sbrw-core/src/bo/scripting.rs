@@ -422,6 +422,8 @@ fn product(p: &ProductEntity) -> JavaValue {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
     use crate::bo::util::achievement_commerce_context::CommerceType;
     use serde::Deserialize;
@@ -565,6 +567,15 @@ mod tests {
     /// Whether our result is what Nashorn returned: numbers by value (upstream
     /// only uses their value), other Java objects by their string form.
     fn same(case: &Case, ours: &Result<ScriptValue, ScriptException>) -> bool {
+        same_as_nashorn(case.class.as_deref(), case.value.as_deref(), case.error.is_some(), ours)
+    }
+
+    fn same_as_nashorn(
+        class: Option<&str>,
+        value: Option<&str>,
+        error: bool,
+        ours: &Result<ScriptValue, ScriptException>,
+    ) -> bool {
         let number = |v: &ScriptValue| match v {
             ScriptValue::Integer(i) => Some(f64::from(*i)),
             ScriptValue::Long(l) => Some(*l as f64),
@@ -572,8 +583,8 @@ mod tests {
             ScriptValue::Double(d) => Some(*d),
             _ => None,
         };
-        let value = case.value.as_deref().unwrap_or_default();
-        match (case.error.is_some(), case.class.as_deref(), ours) {
+        let value = value.unwrap_or_default();
+        match (error, class, ours) {
             (true, _, ours) => ours.is_err(),
             (false, _, Err(_)) => false,
             (false, None, Ok(v)) => *v == ScriptValue::Null,
@@ -623,5 +634,205 @@ mod tests {
             Ok(ScriptValue::Boolean(true))
         );
         assert!(eval("nobody.level", &bindings).unwrap().is_err());
+    }
+
+    #[derive(Deserialize)]
+    struct TriggerVectors {
+        contexts: BTreeMap<String, Vec<serde_json::Value>>,
+        cases: Vec<TriggerCase>,
+    }
+
+    #[derive(Deserialize)]
+    struct TriggerCase {
+        achievement: i64,
+        script: String,
+        context: usize,
+        class: Option<String>,
+        value: Option<String>,
+        error: Option<String>,
+    }
+
+    /// The bindings `AchievementTriggers.java` builds from a context's values.
+    fn trigger_bindings(category: &str, s: &serde_json::Value) -> Bindings {
+        use crate::bo::util::achievement_event_context::AchievementEventContext;
+        use crate::bo::util::arbitration::Packet;
+        use crate::dao::event::{EventEntity, EventMode};
+        use crate::dao::event_data::EventDataEntity;
+        use crate::dao::event_session::EventSessionEntity;
+        use crate::dao::lobby::LobbyEntity;
+        use sbrw_xml::dto::http::{
+            DragArbitrationPacket, PursuitArbitrationPacket, RouteArbitrationPacket, TeamEscapeArbitrationPacket,
+        };
+
+        let int = |k: &str| s[k].as_i64().unwrap() as i32;
+        let float = |k: &str| s[k].as_f64().unwrap() as f32;
+        let mut b = Bindings::new();
+        b.insert(
+            "persona".into(),
+            Binding::Persona(PersonaEntity {
+                persona_id: 100,
+                name: Some("DRIVER1".into()),
+                level: 60,
+                score: 27,
+                cash: 350000.0,
+                ..Default::default()
+            }),
+        );
+        b.insert(
+            "personaAchievement".into(),
+            Binding::PersonaAchievement(PersonaAchievementEntity {
+                can_progress: true,
+                current_value: s["current_value"].as_i64(),
+                ..Default::default()
+            }),
+        );
+        let car = |expiration_date| CarEntity {
+            id: 1,
+            name: Some("challenger71".into()),
+            is_preset: true,
+            expiration_date,
+            ..Default::default()
+        };
+        match category {
+            "EVENT" => {
+                let event = EventEntity {
+                    id: int("event_id"),
+                    event_mode_id: int("event_mode_id"),
+                    car_class_hash: int("car_class_hash"),
+                    track_length: float("track_length"),
+                    lobby_countdown_time: 60000,
+                    dnf_timer_time: 60000,
+                    ..Default::default()
+                };
+                let lobby = s["lobby"].as_object().map(|l| LobbyEntity {
+                    id: 7,
+                    is_private: l["is_private"].as_bool(),
+                    ..Default::default()
+                });
+                let session = EventSessionEntity { id: 1, event: event.clone(), lobby, ..Default::default() };
+                let (rank, finish_reason) = (int("rank"), int("finish_reason"));
+                let (jumps, fraction) = (s["sum_of_jumps"].as_i64().unwrap(), float("fraction_completed"));
+                let packet = match s["packet"].as_str().unwrap() {
+                    "route" => Packet::Route(RouteArbitrationPacket {
+                        rank,
+                        finish_reason,
+                        car_id: 1,
+                        sum_of_jumps_duration_in_milliseconds: jumps,
+                        fraction_completed: fraction,
+                        ..Default::default()
+                    }),
+                    "drag" => Packet::Drag(DragArbitrationPacket {
+                        rank,
+                        finish_reason,
+                        car_id: 1,
+                        sum_of_jumps_duration_in_milliseconds: jumps,
+                        fraction_completed: fraction,
+                        ..Default::default()
+                    }),
+                    "pursuit" => Packet::Pursuit(PursuitArbitrationPacket {
+                        rank,
+                        finish_reason,
+                        car_id: 1,
+                        sum_of_jumps_duration_in_milliseconds: jumps,
+                        cost_to_state: int("cost_to_state"),
+                        cops_disabled: int("cops_disabled"),
+                        road_blocks_dodged: int("road_blocks_dodged"),
+                        ..Default::default()
+                    }),
+                    _ => Packet::TeamEscape(TeamEscapeArbitrationPacket {
+                        rank,
+                        finish_reason,
+                        car_id: 1,
+                        sum_of_jumps_duration_in_milliseconds: jumps,
+                        fraction_completed: fraction,
+                        cost_to_state: int("cost_to_state"),
+                        cops_disabled: int("cops_disabled"),
+                        road_blocks_dodged: int("road_blocks_dodged"),
+                        ..Default::default()
+                    }),
+                };
+                let mode = EventMode::from_id(event.event_mode_id).unwrap();
+                let data = EventDataEntity { event: event.clone(), persona_id: Some(100), ..Default::default() };
+                b.insert(
+                    "eventContext".into(),
+                    Binding::EventCtx(Box::new(AchievementEventContext::new(mode, packet, session.clone()))),
+                );
+                b.insert("event".into(), Binding::Event(Box::new(event)));
+                b.insert("eventData".into(), Binding::EventData(Box::new(data)));
+                b.insert("eventSession".into(), Binding::EventSession(Box::new(session)));
+                b.insert("car".into(), Binding::OwnedCar(Box::new(car(None))));
+            }
+            "PROGRESSION" => {
+                let flag = |k: &str| s[k].as_bool().unwrap();
+                b.insert(
+                    "progression".into(),
+                    Binding::Progression(AchievementProgressionContext::new(
+                        Some(int("cash")),
+                        Some(int("rep")),
+                        Some(int("level")),
+                        Some(int("score")),
+                        Some(int("treasure_streak")),
+                        flag("level_changed"),
+                        flag("score_changed"),
+                        flag("treasure_streak_changed"),
+                        flag("in_event"),
+                    )),
+                );
+            }
+            "COMMERCE" => {
+                let commerce_type = match s["commerce_type"].as_str().unwrap() {
+                    "CAR_PURCHASE" => CommerceType::CarPurchase,
+                    _ => CommerceType::BundlePurchase,
+                };
+                let mut ctx = AchievementCommerceContext::new(commerce_type);
+                if let Some(manufactor) = s["manufactor"].as_str() {
+                    ctx.set_car_classes_entity(CarClassesEntity {
+                        manufactor: Some(manufactor.into()),
+                        ..Default::default()
+                    });
+                    let rental = s["rental"].as_bool().unwrap().then_some(datetime!(2026-01-02 12:34:56));
+                    b.insert("ownedCar".into(), Binding::OwnedCar(Box::new(car(rental))));
+                }
+                b.insert("commerceCtx".into(), Binding::CommerceCtx(Box::new(ctx)));
+            }
+            other => panic!("no contexts for {other}"),
+        }
+        b
+    }
+
+    #[test]
+    fn every_achievement_script_evaluates_as_nashorn_did() {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../fixtures/vectors/achievement_triggers.json");
+        let vectors: TriggerVectors = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let db = crate::store::open(None, &BTreeMap::new()).unwrap();
+        let achievements = crate::dao::achievement::find_all(&db).unwrap();
+        let mut failures = Vec::new();
+        let mut scripts = std::collections::BTreeSet::new();
+        for case in &vectors.cases {
+            let achievement = achievements.iter().find(|a| a.id == case.achievement).unwrap();
+            let category = achievement.category.as_deref().unwrap();
+            let script = match case.script.as_str() {
+                "trigger" => achievement.update_trigger.as_deref().unwrap(),
+                _ => achievement.update_value.as_deref().unwrap(),
+            };
+            scripts.insert((case.achievement, case.script.clone()));
+            let bindings = trigger_bindings(category, &vectors.contexts[category][case.context]);
+            let ours = eval(script, &bindings).unwrap();
+            if !same_as_nashorn(case.class.as_deref(), case.value.as_deref(), case.error.is_some(), &ours) {
+                failures.push(format!(
+                    "achievement {} {} on {category} context {}: Nashorn {:?} {:?} {:?}, ours {ours:?}",
+                    case.achievement, case.script, case.context, case.class, case.value, case.error
+                ));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "{} of {} differ:\n{}",
+            failures.len(),
+            vectors.cases.len(),
+            failures[..failures.len().min(8)].join("\n")
+        );
+        // Every trigger and value of the 60 categorised achievements.
+        assert_eq!(scripts.len(), 120);
     }
 }

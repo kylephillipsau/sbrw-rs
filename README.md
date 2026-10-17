@@ -82,6 +82,11 @@ data_dir = "data"             # /data in the container
 bind = "0.0.0.0:8680"
 # public_port = 80            # if a proxy or NAT changes the port players see
 
+[udp]                         # free-roam, as the Go server's [UDP] settings
+visibility_radius = 300.0     # how far apart players see each other
+max_visible_players = 14
+player_spawn_delay_ms = 200   # one more player comes into view this often
+
 [launcher]
 server_name = "My Server"
 discord_url = "https://discord.gg/..."

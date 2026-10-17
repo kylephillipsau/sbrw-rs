@@ -135,11 +135,31 @@ pub struct UdpConfig {
     pub freeroam: Listener,
     /// Replaces `UDP_RACE_PORT`.
     pub race: Listener,
+    /// Free-roam: how far apart players see each other, in the game's units.
+    /// The rest of this section follows the Go free-roam server's `[UDP]`
+    /// settings (`VisibilityRadius` here) and defaults.
+    pub visibility_radius: f64,
+    /// Free-roam: how many other players each player sees at once
+    /// (`MaxVisiblePlayers`).
+    pub max_visible_players: usize,
+    /// Free-roam: one more player comes into view this often, in
+    /// milliseconds; 0 means 200 (`PlayerSpawnDelayMs`).
+    pub player_spawn_delay_ms: u64,
+    /// Free-roam: every player sees every other, however far
+    /// (`DisableRadiusSync`).
+    pub disable_radius_sync: bool,
 }
 
 impl Default for UdpConfig {
     fn default() -> Self {
-        Self { freeroam: Listener::any(9999), race: Listener::any(9998) }
+        Self {
+            freeroam: Listener::any(9999),
+            race: Listener::any(9998),
+            visibility_radius: 300.0,
+            max_visible_players: 14,
+            player_spawn_delay_ms: 200,
+            disable_radius_sync: false,
+        }
     }
 }
 
@@ -402,6 +422,7 @@ mod tests {
             )?;
             jail.set_env("SBRW__LAUNCHER__SERVER_NAME", "From env");
             jail.set_env("SBRW__UDP__RACE__BIND", "0.0.0.0:7000");
+            jail.set_env("SBRW__UDP__MAX_VISIBLE_PLAYERS", "8");
             jail.set_env("SBRW_CAPTURE", "http, udp-race");
             jail.set_env("SBRW_PARAMETER_TICKET_TOKEN", "secret");
             let config = load_in_jail()?;
@@ -411,6 +432,8 @@ mod tests {
             assert_eq!(config.public_http_url(), "http://10.0.0.5:80");
             assert_eq!(config.udp.race.bind.port(), 7000);
             assert_eq!(config.udp.freeroam.bind.port(), 9999);
+            assert_eq!(config.udp.max_visible_players, 8);
+            assert_eq!(config.udp.visibility_radius, 300.0);
             assert_eq!(config.capture.streams, [CaptureStream::Http, CaptureStream::UdpRace]);
             assert_eq!(config.parameters["TICKET_TOKEN"], "secret");
             assert_eq!(config.parameters["SESSION_LENGTH_MINUTES"], "60");

@@ -188,7 +188,8 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         let bind = config.udp.freeroam.bind;
         let socket = UdpSocket::bind(bind).await.with_context(|| format!("binding free-roam to {bind}"))?;
         tracing::info!(%bind, "free-roam listening");
-        tasks.spawn(sbrw_udp::run_freeroam(socket, capture.clone(), shutdown.clone()));
+        let settings = sbrw_udp::freeroam::Settings::from_config(&config.udp);
+        tasks.spawn(sbrw_udp::run_freeroam(socket, settings, capture.clone(), shutdown.clone()));
     }
 
     let early_exit = tokio::select! {

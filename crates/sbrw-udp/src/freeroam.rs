@@ -75,6 +75,20 @@ impl Default for Settings {
     }
 }
 
+impl Settings {
+    /// From the `[udp]` config section; a spawn delay of 0 means 200 ms, as
+    /// in `newClient`.
+    pub fn from_config(udp: &sbrw_common::config::UdpConfig) -> Self {
+        let delay = if udp.player_spawn_delay_ms == 0 { 200 } else { udp.player_spawn_delay_ms };
+        Settings {
+            visibility_radius: udp.visibility_radius,
+            max_visible_players: udp.max_visible_players,
+            player_spawn_delay: Duration::from_millis(delay),
+            disable_radius_sync: udp.disable_radius_sync,
+        }
+    }
+}
+
 /// The client's tick from a hello packet, or `None` if this isn't one
 /// (`Server.RunPacketRead`).
 pub fn hello_tick(packet: &[u8]) -> Option<u16> {

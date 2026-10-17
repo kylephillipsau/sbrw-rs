@@ -24,11 +24,17 @@ fn server_tick() -> u16 {
 
 /// Serve free-roam on `socket` until shutdown, recording traffic under
 /// `udp-freeroam` when capture is on.
-pub async fn run_freeroam(socket: UdpSocket, capture: CaptureSink, shutdown: CancellationToken) -> io::Result<()> {
+pub async fn run_freeroam(
+    socket: UdpSocket,
+    settings: freeroam::Settings,
+    capture: CaptureSink,
+    shutdown: CancellationToken,
+) -> io::Result<()> {
     let local = socket.local_addr()?;
-    let mut server = freeroam::Freeroam::default();
+    let mut server = freeroam::Freeroam::new(settings);
     let mut sweep = tokio::time::interval(std::time::Duration::from_secs(1));
-    let mut buf = vec![0u8; 2048];
+    // The Go server's receive buffer: a longer datagram is cut to this.
+    let mut buf = vec![0u8; 1024];
     loop {
         let received = tokio::select! {
             () = shutdown.cancelled() => return Ok(()),
@@ -49,7 +55,12 @@ pub async fn run_freeroam(socket: UdpSocket, capture: CaptureSink, shutdown: Can
         if freeroam::hello_tick(&buf[..n]).is_some() {
             tracing::info!(%peer, "free-roam: new client");
         }
-        let Some(reply) = server.handle(peer, &buf[..n], server_tick(), std::time::Instant::now()) else { continue };
+        let named = server.name(peer).is_some();
+        let reply = server.handle(peer, &buf[..n], server_tick(), std::time::Instant::now());
+        if let Some(name) = server.name(peer).filter(|_| !named) {
+            tracing::info!(%peer, name, "free-roam: player info");
+        }
+        let Some(reply) = reply else { continue };
         capture.udp(CaptureStream::UdpFreeroam, Direction::Out, local, peer, &reply);
         if let Err(err) = socket.send_to(&reply, peer).await {
             tracing::warn!(%peer, %err, "free-roam: send failed");
@@ -100,7 +111,12 @@ mod tests {
         let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
         let addr = socket.local_addr().unwrap();
         let shutdown = CancellationToken::new();
-        let server = tokio::spawn(run_freeroam(socket, CaptureSink::disabled(), shutdown.clone()));
+        let server = tokio::spawn(run_freeroam(
+            socket,
+            freeroam::Settings::default(),
+            CaptureSink::disabled(),
+            shutdown.clone(),
+        ));
 
         let client = UdpSocket::bind("127.0.0.1:0").await.unwrap();
         let mut hello = [0u8; 58];

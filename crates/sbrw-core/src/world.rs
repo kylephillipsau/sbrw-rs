@@ -39,6 +39,9 @@ pub struct World {
     pub login_announcements: LoginAnnouncements,
     pub build_info: BuildInfo,
     async_jobs: VecDeque<AsyncJob>,
+    /// The container marked this transaction for rollback: a system exception
+    /// crossed a bean's proxy, even if a caller caught it.
+    rollback_only: bool,
 }
 
 /// An `@Asynchronous` invocation waiting to run.
@@ -77,6 +80,7 @@ impl World {
             login_announcements: LoginAnnouncements::default(),
             build_info: options.build_info,
             async_jobs: VecDeque::new(),
+            rollback_only: false,
         };
         // Upstream's @Startup beans, in the order the reference recordings show.
         world.transaction(|w| {
@@ -94,15 +98,66 @@ impl World {
     }
 
     /// Run `f` in one transaction, with upstream's commit and rollback rules.
+    /// A transaction marked for rollback rolls back whatever `f` returns, and
+    /// a success becomes `EJBTransactionRolledbackException`.
     pub fn transaction<R>(&mut self, f: impl FnOnce(&mut Self) -> Result<R, Fault>) -> Result<R, Fault> {
         self.db.execute_batch("BEGIN")?;
-        let result = catch_unwind(AssertUnwindSafe(|| f(self)))
+        self.rollback_only = false;
+        let mut result = catch_unwind(AssertUnwindSafe(|| f(self)))
             .unwrap_or_else(|panic| Err(Fault::Internal(anyhow!("panic in the world: {}", panic_message(&panic)))));
-        let commit = match &result {
-            Ok(_) => true,
-            Err(fault) => fault.commits(),
-        };
-        self.db.execute_batch(if commit { "COMMIT" } else { "ROLLBACK" })?;
+        if self.rollback_only && result.is_ok() {
+            result = Err(Fault::Internal(anyhow!("EJBTransactionRolledbackException: Transaction rolled back")));
+        }
+        let commit = !self.rollback_only
+            && match &result {
+                Ok(_) => true,
+                Err(fault) => fault.commits(),
+            };
+        self.rollback_only = false;
+        if commit {
+            self.db.execute_batch("COMMIT")?;
+        } else {
+            self.roll_back()?;
+        }
+        result
+    }
+
+    /// Roll back, keeping the ids the transaction took: MySQL's
+    /// auto-increment counters never go back, where SQLite's would.
+    fn roll_back(&self) -> rusqlite::Result<()> {
+        let taken: Vec<(String, i64)> = self
+            .db
+            .prepare_cached("SELECT name, seq FROM main.sqlite_sequence")?
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<rusqlite::Result<_>>()?;
+        self.db.execute_batch("ROLLBACK")?;
+        for (name, seq) in taken {
+            let kept = self
+                .db
+                .prepare_cached("UPDATE main.sqlite_sequence SET seq = ?2 WHERE name = ?1 AND seq < ?2")?
+                .execute(rusqlite::params![name, seq])?;
+            if kept == 0 {
+                self.db
+                    .prepare_cached(
+                        "INSERT INTO main.sqlite_sequence (name, seq)
+                         SELECT ?1, ?2 WHERE NOT EXISTS (SELECT 1 FROM main.sqlite_sequence WHERE name = ?1)",
+                    )?
+                    .execute(rusqlite::params![name, seq])?;
+            }
+        }
+        Ok(())
+    }
+
+    /// A call through another bean's proxy (an EJB or DAO), which upstream's
+    /// container ran inside the current transaction: a system exception from
+    /// it marks the transaction for rollback, whoever catches it.
+    pub fn ejb<R>(&mut self, f: impl FnOnce(&mut Self) -> Result<R, Fault>) -> Result<R, Fault> {
+        let result = f(self);
+        if let Err(fault) = &result
+            && !fault.commits()
+        {
+            self.rollback_only = true;
+        }
         result
     }
 
@@ -270,6 +325,63 @@ mod tests {
         });
         assert!(matches!(panicked, Err(Fault::Internal(_))));
         assert_eq!(users(&w), 1, "a panic rolls back");
+    }
+
+    #[test]
+    fn a_caught_system_exception_from_a_bean_still_rolls_back() {
+        let mut w = world();
+        let caught = w.transaction(|w| {
+            insert_user(w)?;
+            let _ = w.ejb(|_| Err::<(), _>(Fault::Internal(anyhow!("NoResultException"))));
+            Ok(())
+        });
+        assert!(matches!(caught, Err(Fault::Internal(_))), "a success becomes EJBTransactionRolledbackException");
+        assert_eq!(users(&w), 0);
+
+        let rethrown = w.transaction(|w| {
+            insert_user(w)?;
+            w.ejb(|_| Err::<(), _>(Fault::Internal(anyhow!("NoResultException"))))
+                .map_err(|_| Fault::engine(EngineExceptionCode::LuckyDrawCouldNotDrawProduct, true))
+        });
+        assert!(matches!(rethrown, Err(Fault::Engine(_))), "the EngineException still reaches the caller");
+        assert_eq!(users(&w), 0, "but doesn't commit");
+
+        let engine = w.transaction(|w| {
+            insert_user(w)?;
+            w.ejb(|_| Err::<(), _>(Fault::engine(EngineExceptionCode::UnspecifiedError, true)))
+        });
+        assert!(matches!(engine, Err(Fault::Engine(_))));
+        assert_eq!(users(&w), 1, "an EngineException from a bean doesn't mark the transaction");
+
+        w.transaction(insert_user).unwrap();
+        assert_eq!(users(&w), 2, "the mark doesn't outlive its transaction");
+    }
+
+    #[test]
+    fn ids_taken_by_a_rolled_back_transaction_stay_taken() {
+        let mut w = world();
+        let id = |w: &mut World| -> Result<i64, Fault> {
+            w.db().execute("INSERT INTO chat_announcement (announcementMessage) VALUES ('hi')", [])?;
+            Ok(w.db().last_insert_rowid())
+        };
+        let first = w.transaction(id).unwrap();
+        let _ = w.transaction(|w| {
+            id(w)?;
+            id(w)?;
+            Err::<i64, _>(Fault::Internal(anyhow!("boom")))
+        });
+        assert_eq!(w.transaction(id).unwrap(), first + 3, "as MySQL's auto-increment, ids aren't reused");
+        let _ = w.transaction(|w| {
+            w.db().execute("INSERT INTO lobby DEFAULT VALUES", [])?;
+            Err::<(), _>(Fault::Internal(anyhow!("boom")))
+        });
+        let lobby: i64 = w
+            .transaction(|w| {
+                w.db().execute("INSERT INTO lobby DEFAULT VALUES", [])?;
+                Ok(w.db().last_insert_rowid())
+            })
+            .unwrap();
+        assert_eq!(lobby, 2, "even for a table's first rows");
     }
 
     #[tokio::test]

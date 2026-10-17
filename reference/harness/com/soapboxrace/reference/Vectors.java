@@ -45,6 +45,7 @@ public final class Vectors {
         write(out.resolve("java_number_to_string.json"), numberToString());
         write(out.resolve("nashorn.json"), NashornVectors.vectors());
         write(out.resolve("java_multimap_order.json"), multimapOrder());
+        write(out.resolve("java_weight_sum.json"), weightSum());
     }
 
     /** Float.toString and Double.toString, which JAXB uses for xs:float and xs:double. */
@@ -125,6 +126,54 @@ public final class Vectors {
             Map<String, Object> c = new LinkedHashMap<>();
             c.put("keys", keys);
             c.put("order", order);
+            cases.add(c);
+        }
+        root.put("cases", cases);
+        return root;
+    }
+
+    /**
+     * How ItemRewardBO sums drop weights: a {@code HashMap<Long, Double>} from row id to weight,
+     * {@code weights.values().stream().mapToDouble(d -> d).sum()}. Each case gives the ids and weights
+     * in the order they were put, the order {@code values()} gives back (as indexes), and the sum's bits.
+     */
+    private static Map<String, Object> weightSum() {
+        Map<String, Object> root = about("HashMap<Long, Double>.values() order and DoubleStream.sum()");
+        Random r = new Random(11);
+        double[] common = {0.1, 0.55, 0.04, 0.2, 0.001, 0.009, 0.25, 0.05, 0.3, 0.15, 0.6, 0.02, 0.005, 0.0001, 1e-7};
+        List<Map<String, Object>> cases = new ArrayList<>();
+        for (int n = 0; n < 400; n++) {
+            int size = 1 + r.nextInt(n < 200 ? 12 : 120);
+            long base = r.nextInt(5) == 0 ? r.nextInt(Integer.MAX_VALUE) * 3L : 1 + r.nextInt(5000);
+            java.util.HashMap<Long, Double> weights = new java.util.HashMap<>();
+            List<Long> ids = new ArrayList<>();
+            List<String> put = new ArrayList<>();
+            double defaultWeight = 1.0d / size;
+            for (int i = 0; i < size; i++) {
+                long id = base + i * (1 + r.nextInt(3)) + (r.nextInt(10) == 0 ? (1L << 32) : 0);
+                double w;
+                switch (r.nextInt(4)) {
+                    case 0:
+                        w = defaultWeight;
+                        break;
+                    case 1:
+                        w = r.nextDouble();
+                        break;
+                    default:
+                        w = common[r.nextInt(common.length)];
+                }
+                ids.add(id);
+                put.add(Long.toHexString(Double.doubleToRawLongBits(w)));
+                weights.put(id, w);
+            }
+            List<Integer> order = new ArrayList<>();
+            for (Long id : weights.keySet()) order.add(ids.indexOf(id));
+            double sum = weights.values().stream().mapToDouble(d -> d).sum();
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("ids", ids);
+            c.put("weight_bits", put);
+            c.put("order", order);
+            c.put("sum_bits", Long.toHexString(Double.doubleToRawLongBits(sum)));
             cases.add(c);
         }
         root.put("cases", cases);

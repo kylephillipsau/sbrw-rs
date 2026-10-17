@@ -131,6 +131,55 @@
       }
     },
     {
+      "note": "A bronze pack whose first card gives nitrous twice and some cash. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE card_pack_item SET script = 'generator.multipleRewards([generator.rewardQuantityProduct(''nosshot'', 5), generator.rewardQuantityProduct(''nosshot'', 7), generator.cashReward(2500)])' WHERE ID = 351"
+      ]
+    },
+    {
+      "note": "Both nitrous items show the stack after the second: they are the same managed item.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-BRONZE</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "A bronze pack whose last card draws from a table that doesn't exist, and a silver pack whose last card's script is broken. Static data: restored in the last step.",
+      "sql": [
+        "UPDATE card_pack_item SET script = 'generator.weightedRandomTableItem(''cardpack_nosuchtable'')' WHERE ID = 355",
+        "UPDATE card_pack_item SET script = 'generator.cashReward(' WHERE ID = 360"
+      ]
+    },
+    {
+      "note": "The missing table fails in the DAO, which marks the transaction for rollback: the first four cards' rewards are undone too.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-BRONZE</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
+      "note": "The broken script is only an EngineException: the first four cards' rewards are kept, and the pack isn't paid for.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/personas/100/baskets",
+        "headers": {
+          "userId": "1",
+          "securityToken": "00000000-0000-4000-8000-000000000002"
+        },
+        "body": "<BasketTrans xmlns=\"http://schemas.datacontract.org/2004/07/Victory.TransferObjects.Commerce\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><Items><BasketItemTrans><ProductId>SRV-CARDPACK-SILVER</ProductId><Quantity>1</Quantity></BasketItemTrans></Items></BasketTrans>"
+      }
+    },
+    {
       "note": "The cars won.",
       "http": {
         "method": "GET",
@@ -170,7 +219,10 @@
       "note": "Restoring the static data.",
       "sql": [
         "UPDATE product SET enabled = 0 WHERE productId IN ('SRV-CARDPACK-CARPRIZE', 'SRV-CARDPACK-ACHIEVEMENTS-REWARDS')",
-        "UPDATE product SET enabled = 0, entitlementTag = 'cardpack_gold_engine' WHERE productId = 'SRV-CARDPACK-GOLD-ENGINE'"
+        "UPDATE product SET enabled = 0, entitlementTag = 'cardpack_gold_engine' WHERE productId = 'SRV-CARDPACK-GOLD-ENGINE'",
+        "UPDATE card_pack_item SET script = 'generator.weightedRandomTableItem(''cardpack_bronze_item1'')' WHERE ID = 351",
+        "UPDATE card_pack_item SET script = 'generator.weightedRandomTableItem(''cardpack_bronze_item2'')' WHERE ID = 355",
+        "UPDATE card_pack_item SET script = 'generator.weightedRandomTableItem(''cardpack_silver_item2'')' WHERE ID = 360"
       ]
     }
   ]

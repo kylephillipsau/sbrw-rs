@@ -79,6 +79,13 @@ pub fn find_by_inventory_id_and_entitlement_tag(
     .optional()
 }
 
+/// `InventoryItemDAO.find`.
+pub fn find(db: &Connection, id: i64) -> rusqlite::Result<Option<InventoryItemEntity>> {
+    db.prepare_cached("SELECT * FROM inventory_item WHERE id = ?1")?
+        .query_row([id], InventoryItemEntity::from_row)
+        .optional()
+}
+
 /// `InventoryEntity.inventoryItems`: a bag with no `@OrderBy`, which MySQL
 /// reads through the foreign key's index, so in id order.
 pub(crate) fn find_by_inventory_id(db: &Connection, inventory_id: i64) -> rusqlite::Result<Vec<InventoryItemEntity>> {

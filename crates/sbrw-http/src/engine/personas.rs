@@ -23,9 +23,8 @@ fn path_id(call: &Call, name: &str) -> Result<i64, Fault> {
 }
 
 // port: api/Personas#baskets(InputStream,Long)
-/// Buying the first item of a basket. Ported so far: everything but card
-/// packs. Every answer has one empty inventory item and the persona's
-/// wallets as they end up.
+/// Buying the first item of a basket. Every answer has one empty inventory
+/// item and the persona's wallets as they end up.
 pub(super) async fn baskets(state: &AppState, call: &Call) -> Result<Response, Fault> {
     let persona_id = path_id(call, "personaId")?;
     let session = call.session();
@@ -92,7 +91,18 @@ pub(super) async fn baskets(state: &AppState, call: &Call) -> Result<Response, F
                 commerce_result_trans = result;
                 commerce_result_trans.status = Some(status);
             }
-            "BUNDLE" => return Err(Fault::unported("bo/BasketBO#buyBundle(String,PersonaEntity,CommerceResultTrans)")),
+            "BUNDLE" => {
+                let (status, persona, result) = world
+                    .call(move |w| {
+                        let mut persona = persona_entity.ok_or_else(|| Fault::null_pointer("PersonaEntity"))?;
+                        let status = basket::buy_bundle(w, &product_id, &mut persona, &mut commerce_result_trans)?;
+                        Ok((status, persona, commerce_result_trans))
+                    })
+                    .await?;
+                persona_entity = Some(persona);
+                commerce_result_trans = result;
+                commerce_result_trans.status = Some(status);
+            }
             "AMPLIFIER" => {
                 let (status, persona) = buy_with(
                     |w, product_id, persona| basket::buy_amplifier(w, persona, product_id),

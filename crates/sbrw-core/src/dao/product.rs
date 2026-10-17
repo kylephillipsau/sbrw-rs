@@ -143,6 +143,25 @@ pub fn find_by_level_enabled(
     .collect()
 }
 
+// port: dao/ProductDAO#findByTraits(String,String,String,Integer)
+/// The products matching each trait given (category, type, sub-type,
+/// rarity); every product when none is. A criteria query with no order, which
+/// MySQL answers by scanning the table, so in key order.
+pub fn find_by_traits(
+    db: &Connection,
+    category: Option<&str>,
+    product_type: Option<&str>,
+    sub_type: Option<&str>,
+    rating: Option<i32>,
+) -> rusqlite::Result<Vec<ProductEntity>> {
+    db.prepare_cached(
+        "SELECT * FROM product WHERE (?1 IS NULL OR categoryName = ?1) AND (?2 IS NULL OR productType = ?2)
+         AND (?3 IS NULL OR subType = ?3) AND (?4 IS NULL OR rarity = ?4) ORDER BY id",
+    )?
+    .query_map(rusqlite::params![category, product_type, sub_type, rating], ProductEntity::from_row)?
+    .collect()
+}
+
 /// `ProductEntity.getBundleItems()`: the products whose parent this is. The
 /// set's order is Hibernate's; no product in the data has a parent.
 pub fn find_bundle_items(db: &Connection, parent_id: i64) -> rusqlite::Result<Vec<ProductEntity>> {

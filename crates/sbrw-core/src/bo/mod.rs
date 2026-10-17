@@ -15,6 +15,7 @@ pub mod driver_persona;
 pub mod get_server_information;
 pub mod hardware_info;
 pub mod inventory;
+pub mod item_reward;
 pub mod login_announcement;
 pub mod matchmaking;
 pub mod modding;

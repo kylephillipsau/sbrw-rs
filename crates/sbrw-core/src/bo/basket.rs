@@ -1,5 +1,4 @@
-//! `BasketBO`: buying from the shops and selling cars back. Ported so far:
-//! everything but card packs.
+//! `BasketBO`: buying from the shops and selling cars back.
 
 use sbrw_xml::dto::http::{ArrayOfOwnedCarTrans, CommerceResultStatus, CommerceResultTrans, OwnedCarTrans};
 use time::Duration;
@@ -8,15 +7,15 @@ use crate::bo::token_session::{self, TokenSession};
 use crate::bo::util::achievement_commerce_context::{AchievementCommerceContext, CommerceType};
 use crate::bo::util::owned_car_converter;
 use crate::bo::{
-    achievement, achievement_transaction::Binding, car_damage, car_slot, driver_persona, inventory, performance,
-    persona as persona_bo,
+    achievement, achievement_transaction::Binding, car_damage, car_slot, driver_persona, inventory, item_reward,
+    performance, persona as persona_bo,
 };
 use crate::dao::car::{self, CarEntity};
 use crate::dao::inventory as inventory_dao;
 use crate::dao::persona::{self, PersonaEntity};
 use crate::dao::product::{self, ProductEntity};
 use crate::dao::user::{self, UserEntity};
-use crate::dao::{amplifier, basket_definition, car_classes, inventory_item, treasure_hunt};
+use crate::dao::{amplifier, basket_definition, car_classes, card_pack, inventory_item, treasure_hunt};
 use crate::engine::{EngineException, EngineExceptionCode};
 use crate::{Fault, World, datetime};
 
@@ -76,6 +75,71 @@ pub fn buy_powerups(
     }
 
     Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS)
+}
+
+// port: bo/BasketBO#buyBundle(String,PersonaEntity,CommerceResultTrans)
+/// Buy a card pack: each card's reward script gives the persona its reward,
+/// which goes into `commerce_result_trans`, and then the pack is paid for.
+/// An `EngineException` on the way leaves the pack unpaid and whatever was
+/// given kept, unless the transaction was marked for rollback.
+pub fn buy_bundle(
+    w: &mut World,
+    product_id: &str,
+    persona_entity: &mut PersonaEntity,
+    commerce_result_trans: &mut CommerceResultTrans,
+) -> Result<CommerceResultStatus, Fault> {
+    // Throws for an unknown product, so upstream's null check after it never fires.
+    let bundle_product = product::find_by_product_id(w.db(), product_id)?;
+
+    if can_purchase_product(w, persona_entity, &bundle_product, -1.0)? {
+        return open_bundle(w, &bundle_product, persona_entity, commerce_result_trans).map_err(|fault| match fault {
+            Fault::Engine(e) => Fault::Engine(EngineException::with_message(
+                format!("Error occurred in bundle purchase (product ID: {product_id})"),
+                e.code,
+                true,
+            )),
+            other => other,
+        });
+    }
+
+    Ok(CommerceResultStatus::FAIL_INSUFFICIENT_FUNDS)
+}
+
+/// `buyBundle`'s `try` block.
+fn open_bundle(
+    w: &mut World,
+    bundle_product: &ProductEntity,
+    persona_entity: &mut PersonaEntity,
+    commerce_result_trans: &mut CommerceResultTrans,
+) -> Result<CommerceResultStatus, Fault> {
+    // `getSingleResult` throws when there's no pack, so upstream's null check
+    // after it never fires; that isn't an `EngineException`, so it isn't caught.
+    let card_pack_entity = w.ejb(|w| match bundle_product.entitlement_tag.as_deref() {
+        Some(tag) => card_pack::find_by_entitlement_tag(w.db(), tag),
+        None => Err(anyhow::anyhow!("NoResultException: No entity found for query").into()),
+    })?;
+
+    for card_pack_item_entity in &card_pack_entity.items {
+        let rewards = w.ejb(|w| item_reward::get_rewards(w, persona_entity, Some(&card_pack_item_entity.script)))?;
+        item_reward::convert_rewards(w, &rewards, commerce_result_trans)?;
+    }
+
+    perform_persona_transaction(w, persona_entity, bundle_product, -1.0)?;
+
+    let mut commerce_context = AchievementCommerceContext::new(CommerceType::BundlePurchase);
+    commerce_context.set_product_entity(bundle_product.clone());
+    let mut achievement_transaction = achievement::create_transaction(persona_entity.persona_id);
+    achievement_transaction.add(
+        "COMMERCE",
+        [
+            ("persona".to_owned(), Binding::Persona(persona_entity.clone())),
+            ("commerceCtx".to_owned(), Binding::CommerceCtx(Box::new(commerce_context))),
+        ]
+        .into(),
+    )?;
+    achievement::commit_transaction(w, persona_entity, &mut achievement_transaction)?;
+
+    Ok(CommerceResultStatus::SUCCESS)
 }
 
 // port: bo/BasketBO#reviveTreasureHunt(String,PersonaEntity)

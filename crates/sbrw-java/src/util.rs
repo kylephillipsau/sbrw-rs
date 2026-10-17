@@ -9,19 +9,52 @@ use crate::lang::string_hash_code;
 /// Exact while no bucket collects 8 keys, where the JDK would resize or build a
 /// tree instead of a list.
 pub fn hash_map_order<S: AsRef<str>>(keys: &[S]) -> Vec<usize> {
-    // The table starts at 16 buckets and doubles each time the size passes
-    // three quarters of it. Splitting a bucket keeps the relative order.
-    let mut capacity = 16usize;
-    while keys.len() > capacity / 4 * 3 {
+    let hashes: Vec<i32> = keys.iter().map(|k| string_hash_code(k.as_ref())).collect();
+    hash_order(&hashes, DEFAULT_TABLE)
+}
+
+/// A `new HashMap<>()`'s first table.
+pub const DEFAULT_TABLE: usize = 16;
+
+/// Guava's `ArrayListMultimap.create()`: a `HashMap` sized for 12 keys, so a
+/// table of 32 (`fixtures/vectors/java_multimap_order.json`).
+pub const MULTIMAP_TABLE: usize = 32;
+
+/// The order a `HashMap` whose first table has `table` buckets iterates
+/// distinct keys with these `hashCode()`s, put in this order and never
+/// removed. Returns indexes into `hashes`. The table doubles each time the
+/// size passes three quarters of it; splitting a bucket keeps the relative
+/// order. Exact while no bucket collects 8 keys.
+pub fn hash_order(hashes: &[i32], table: usize) -> Vec<usize> {
+    let mut capacity = table;
+    while hashes.len() > capacity / 4 * 3 {
         capacity *= 2;
     }
-    let bucket = |key: &str| {
-        let h = string_hash_code(key);
-        (h ^ ((h as u32) >> 16) as i32) as u32 as usize & (capacity - 1)
-    };
-    let mut order: Vec<usize> = (0..keys.len()).collect();
-    order.sort_by_key(|&i| bucket(keys[i].as_ref()));
+    let bucket = |h: i32| (h ^ ((h as u32) >> 16) as i32) as u32 as usize & (capacity - 1);
+    let mut order: Vec<usize> = (0..hashes.len()).collect();
+    order.sort_by_key(|&i| bucket(hashes[i]));
     order
+}
+
+/// `Long.hashCode(value)`.
+pub fn long_hash_code(value: i64) -> i32 {
+    (value ^ ((value as u64) >> 32) as i64) as i32
+}
+
+/// `DoubleStream.sum()` in JDK 11: Kahan summation in stream order, falling
+/// back to the plain sum when the compensated one is NaN and the plain one
+/// infinite.
+pub fn double_stream_sum(values: impl IntoIterator<Item = f64>) -> f64 {
+    let (mut sum, mut compensation, mut simple) = (0.0f64, 0.0f64, 0.0f64);
+    for value in values {
+        let tmp = value - compensation;
+        let velvel = sum + tmp;
+        compensation = (velvel - sum) - tmp;
+        sum = velvel;
+        simple += value;
+    }
+    let tmp = sum + compensation;
+    if tmp.is_nan() && simple.is_infinite() { simple } else { tmp }
 }
 
 #[cfg(test)]
@@ -45,6 +78,69 @@ mod tests {
         let letters = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"];
         assert_eq!(iterate(&letters), letters);
         assert_eq!(iterate(&["Aa", "BB", "C#", "é", "😀"]), ["Aa", "BB", "C#", "😀", "é"]);
+    }
+
+    fn vectors(name: &str) -> serde_json::Value {
+        let path = format!("{}/../../fixtures/vectors/{name}", env!("CARGO_MANIFEST_DIR"));
+        serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    fn distinct<T: PartialEq + Copy>(keys: &[T]) -> Vec<T> {
+        let mut out = Vec::new();
+        for &k in keys {
+            if !out.contains(&k) {
+                out.push(k);
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn orders_a_multimap_as_guava() {
+        let cases = vectors("java_multimap_order.json")["cases"].as_array().unwrap().clone();
+        assert_eq!(cases.len(), 300);
+        for case in cases {
+            let keys: Vec<i32> = serde_json::from_value(case["keys"].clone()).unwrap();
+            let expected: Vec<usize> = serde_json::from_value(case["order"].clone()).unwrap();
+            let unique = distinct(&keys);
+            let mut order = Vec::new();
+            for i in hash_order(&unique, MULTIMAP_TABLE) {
+                order.extend((0..keys.len()).filter(|&j| keys[j] == unique[i]));
+            }
+            assert_eq!(order, expected, "keys {keys:?}");
+        }
+    }
+
+    #[test]
+    fn sums_weights_as_item_reward_bo() {
+        let cases = vectors("java_weight_sum.json")["cases"].as_array().unwrap().clone();
+        assert_eq!(cases.len(), 400);
+        for case in cases {
+            let ids: Vec<i64> = serde_json::from_value(case["ids"].clone()).unwrap();
+            let bits: Vec<String> = serde_json::from_value(case["weight_bits"].clone()).unwrap();
+            let weights: Vec<f64> = bits.iter().map(|b| f64::from_bits(u64::from_str_radix(b, 16).unwrap())).collect();
+            let expected_order: Vec<usize> = serde_json::from_value(case["order"].clone()).unwrap();
+            let expected_sum = u64::from_str_radix(case["sum_bits"].as_str().unwrap(), 16).unwrap();
+            // `put` keeps a key's place and takes its last value.
+            let unique = distinct(&ids);
+            let hashes: Vec<i32> = unique.iter().map(|&id| long_hash_code(id)).collect();
+            let order: Vec<usize> = hash_order(&hashes, DEFAULT_TABLE)
+                .into_iter()
+                .map(|i| ids.iter().position(|&id| id == unique[i]).unwrap())
+                .collect();
+            assert_eq!(order, expected_order, "ids {ids:?}");
+            let value = |id: i64| weights[ids.iter().rposition(|&i| i == id).unwrap()];
+            let sum = double_stream_sum(order.iter().map(|&i| value(ids[i])));
+            assert_eq!(sum.to_bits(), expected_sum, "ids {ids:?}");
+        }
+    }
+
+    #[test]
+    fn sums_like_double_stream() {
+        assert_eq!(double_stream_sum([]), 0.0);
+        assert_eq!(double_stream_sum([0.1, 0.2, 0.3]), 0.6);
+        assert_eq!(0.1 + 0.2 + 0.3, 0.6000000000000001);
+        assert_eq!(double_stream_sum([f64::INFINITY, 1.0]), f64::INFINITY);
     }
 }
 

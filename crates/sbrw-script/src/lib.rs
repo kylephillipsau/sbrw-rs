@@ -133,6 +133,166 @@ pub fn eval(script: &str, bindings: &[(&str, JavaValue)]) -> Result<ScriptValue,
     })
 }
 
+/// The methods of upstream's `ItemRewardBO.RewardGenerator` a reward script
+/// may call on `generator`: its compatibility methods, which are all the data
+/// uses. The builders (`cash()`, `product()`, `random()`, `table()`) aren't
+/// offered; no script in the data calls them.
+pub const GENERATOR_METHODS: &[&str] = &[
+    "cashReward",
+    "findRandomRatedItem",
+    "findRandomRatedItemByProdType",
+    "findRandomItemByProdType",
+    "findWeightedRandomItemByProdType",
+    "generateSingleItem",
+    "getCardPack",
+    "multiItems",
+    "multipleRewards",
+    "randomDrop",
+    "randomSelection",
+    "randomTableItem",
+    "rewardQuantityProduct",
+    "weightedRandomTableItem",
+];
+
+/// A value a reward script handed `generator`, or returned, as JavaScript
+/// held it.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Arg {
+    Undefined,
+    Null,
+    Boolean(bool),
+    /// A number QuickJS holds as an integer.
+    Integer(i32),
+    Double(f64),
+    String(String),
+    Array(Vec<Arg>),
+    /// What a call on `generator` returned: its index in [`RewardRun::calls`].
+    Reward(usize),
+    /// Any other object, by its string form.
+    Object(String),
+}
+
+/// A call a reward script made on `generator`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GeneratorCall {
+    pub method: String,
+    pub args: Vec<Arg>,
+}
+
+/// What a reward script did. Nashorn ran `generator`'s methods as the script
+/// called them, each building its reward there and then. Here each call only
+/// records its arguments and returns a token standing for its reward; the
+/// caller builds the rewards afterwards, in `calls` order, which is the order
+/// Nashorn built them (arguments before the call they are passed to), with
+/// the same draws. That holds as long as a script never looks inside a
+/// reward, which none in the data does.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RewardRun {
+    pub calls: Vec<GeneratorCall>,
+    /// The script's value, or the error that stopped it after `calls`.
+    pub result: Result<Arg, ScriptException>,
+}
+
+const LOG: &str = "__sbrwGeneratorCalls";
+
+/// Evaluate a reward script with `generator` bound, as `ItemRewardBO` did.
+pub fn eval_reward(script: &str) -> RewardRun {
+    RUNTIME.with(|cell| {
+        let mut slot = cell.borrow_mut();
+        if slot.is_none() {
+            match new_runtime() {
+                Ok(runtime) => *slot = Some(runtime),
+                Err(e) => {
+                    return RewardRun {
+                        calls: Vec::new(),
+                        result: Err(ScriptException(format!("cannot start the script engine: {e}"))),
+                    };
+                }
+            }
+        }
+        let (runtime, deadline) = slot.as_ref().expect("set above");
+        deadline.set(Instant::now() + TIME_LIMIT);
+        let context = match Context::full(runtime) {
+            Ok(context) => context,
+            Err(e) => return RewardRun { calls: Vec::new(), result: Err(ScriptException(e.to_string())) },
+        };
+        context.with(|ctx| run_reward(&ctx, script))
+    })
+}
+
+fn run_reward(ctx: &Ctx<'_>, script: &str) -> RewardRun {
+    let setup = format!(
+        "(function (names) {{
+            var log = [];
+            var generator = {{}};
+            names.forEach(function (name) {{
+                generator[name] = function () {{
+                    log.push([name, Array.prototype.slice.call(arguments)]);
+                    return {{ __sbrwReward: log.length - 1 }};
+                }};
+            }});
+            globalThis.{LOG} = log;
+            globalThis.generator = generator;
+        }})"
+    );
+    let installed = ctx.eval::<Function, _>(setup).and_then(|f| f.call::<_, ()>((GENERATOR_METHODS.to_vec(),)));
+    if let Err(e) = installed.catch(ctx) {
+        return RewardRun { calls: Vec::new(), result: Err(exception(&e)) };
+    }
+    let result = ctx.eval::<Value, _>(script).catch(ctx).map_err(|e| exception(&e)).map(|v| arg(&v, 0));
+    let calls = ctx
+        .globals()
+        .get::<_, Value>(LOG)
+        .ok()
+        .and_then(|log| log.into_array())
+        .map(|log| {
+            log.iter::<Value>()
+                .flatten()
+                .filter_map(|entry| {
+                    let entry = entry.into_array()?;
+                    let method: String = entry.get(0).ok()?;
+                    let args = match arg(&entry.get(1).ok()?, 0) {
+                        Arg::Array(args) => args,
+                        _ => Vec::new(),
+                    };
+                    Some(GeneratorCall { method, args })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    RewardRun { calls, result }
+}
+
+/// A JavaScript value as an [`Arg`]; arrays nested past 32 levels (a cycle)
+/// become objects.
+fn arg(value: &Value<'_>, depth: usize) -> Arg {
+    match value.type_of() {
+        Type::Uninitialized | Type::Undefined => Arg::Undefined,
+        Type::Null => Arg::Null,
+        Type::Bool => Arg::Boolean(value.as_bool().unwrap_or_default()),
+        Type::Int => Arg::Integer(value.as_int().unwrap_or_default()),
+        Type::Float => Arg::Double(value.as_float().unwrap_or_default()),
+        Type::String => Arg::String(value.as_string().and_then(|s| s.to_string().ok()).unwrap_or_default()),
+        Type::Array if depth < 32 => Arg::Array(
+            value
+                .as_array()
+                .map(|a| a.iter::<Value>().map(|v| v.map_or(Arg::Undefined, |v| arg(&v, depth + 1))).collect())
+                .unwrap_or_default(),
+        ),
+        _ => {
+            if let Some(object) = value.as_object()
+                && let Ok(index) = object.get::<_, Value>("__sbrwReward")
+                && let Some(index) = index.as_int()
+                && let Ok(index) = usize::try_from(index)
+            {
+                return Arg::Reward(index);
+            }
+            let string = value.ctx().globals().get::<_, Function>("String").and_then(|f| f.call((value.clone(),)));
+            Arg::Object(string.unwrap_or_default())
+        }
+    }
+}
+
 fn new_runtime() -> rquickjs::Result<(Runtime, std::rc::Rc<std::cell::Cell<Instant>>)> {
     let runtime = Runtime::new()?;
     runtime.set_memory_limit(MEMORY_LIMIT);
@@ -240,6 +400,38 @@ mod tests {
     fn each_evaluation_has_fresh_globals() {
         assert_eq!(run("var leaked = 1; leaked"), Ok(ScriptValue::Integer(1)));
         assert!(run("leaked").is_err());
+    }
+
+    #[test]
+    fn reward_scripts_log_their_generator_calls() {
+        let run = eval_reward("generator.multipleRewards([generator.cashReward(5), generator.randomDrop(['a', 'b'])])");
+        assert_eq!(
+            run.calls,
+            [
+                GeneratorCall { method: "cashReward".into(), args: vec![Arg::Integer(5)] },
+                GeneratorCall {
+                    method: "randomDrop".into(),
+                    args: vec![Arg::Array(vec![Arg::String("a".into()), Arg::String("b".into())])],
+                },
+                GeneratorCall {
+                    method: "multipleRewards".into(),
+                    args: vec![Arg::Array(vec![Arg::Reward(0), Arg::Reward(1)])],
+                },
+            ]
+        );
+        assert_eq!(run.result, Ok(Arg::Reward(2)));
+    }
+
+    #[test]
+    fn reward_scripts_keep_the_calls_made_before_an_error() {
+        let run = eval_reward("generator.cashReward(1.5, null); nothing");
+        assert_eq!(run.calls, [GeneratorCall { method: "cashReward".into(), args: vec![Arg::Double(1.5), Arg::Null] }]);
+        assert!(run.result.is_err());
+        let run = eval_reward("generator.cashReward(1)generator.cashReward(2)");
+        assert!(run.calls.is_empty(), "a syntax error stops the script before it runs");
+        assert!(run.result.is_err());
+        assert!(eval_reward("generator.cash()").result.is_err(), "the builders aren't offered");
+        assert_eq!(eval_reward("1").result, Ok(Arg::Integer(1)));
     }
 
     #[test]

@@ -8,9 +8,9 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M4 done; M5 (single-player events, rewards and achievements) is
-next. Everything the launcher and the game do up to driving around the world
-with other players, and shopping, is in place:
+**Status:** M5 done; M6 (lobbies and the race relay) is next. Everything the
+launcher and the game do up to driving around the world with other players,
+shopping, and single-player events is in place:
 - Every HTTP call up to and including creating, selecting and deleting a
   driver, the starter car, the garage and the inventory is ported, and
   replays recordings of the original exactly.
@@ -25,6 +25,13 @@ with other players, and shopping, is in place:
   items, using powerups, and rentals and items expiring. Every reward script
   in the game data gives the same reward as the original for the same random
   seed, and every car model gets the same rating.
+- Single-player events replay recordings of the original exactly: the event
+  list, sprints, circuits, drags, pursuits and team escapes with their
+  rewards, level-ups, lucky draws, car damage and checks for races that
+  aren't legit; the achievements they progress, the achievement list and
+  redeeming rewards; the DNF countdown when two drivers share a session;
+  and the daily treasure hunt. The reward arithmetic and every achievement
+  script in the game data give what the original gives.
 
 Milestones are verified against recordings of the original and of these
 reference servers, not with the real game, so nothing here has been run
@@ -39,7 +46,7 @@ against the game itself yet. See
 | M2 Create a driver, XMPP, spawn in the world | done |
 | M3 Free-roam multiplayer | done |
 | M4 Garage and economy | done |
-| M5 Single-player events, rewards, achievements | |
+| M5 Single-player events, rewards, achievements | done |
 | M6 Lobbies and race relay | |
 | M7 Social and moderation | |
 | M8 Operations and real multiplayer | |
@@ -156,7 +163,7 @@ sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded f
 - **[`reference/`](reference/README.md)** runs the original Java core in Docker against MySQL. Randomness, time and tokens are made deterministic. Each scenario in `scenarios/` is recorded into `fixtures/recorded/`: every response, every XMPP push, and the database state at the end. sbrw-rs replays the same scenarios and has to produce the same output.
 - **`sbrw-testkit`** replays every scenario against sbrw-rs under the same seed, clock and token counter, and reports each difference by step and field. Run it with `cargo test -p sbrw-testkit --test replay` (add `-- <scenario>` to pick one, or `SBRW_REPLAY_REPORT=1` to see differences for pending scenarios). Scenarios not reproduced yet are listed in `port/replay-pending.toml`; the test fails when one starts passing, so the list only shrinks.
 - **`tools/gen.py`** generates code from upstream and from JVM recordings: the SQLite schema and static data, the route table, error codes, TLD lists, and the XML classes. CI checks that the generated files match their inputs.
-- **`fixtures/vectors/`** holds JVM outputs for the JDK behaviour the game logic depends on, such as `java.util.Random` and `HashMap` order; what the original's own code gives for every reward script in the data and every car model's rating; and the Go free-roam server's answers ([docs/protocol/freeroam.md](docs/protocol/freeroam.md)).
+- **`fixtures/vectors/`** holds JVM outputs for the JDK behaviour the game logic depends on, such as `java.util.Random` and `HashMap` order; what the original's own code gives for every reward script in the data, every car model's rating, event reward arithmetic and every achievement script; and the Go free-roam server's answers ([docs/protocol/freeroam.md](docs/protocol/freeroam.md)).
 - **`tools/port.py`** inventories every method and named query in the original (870 units) and tracks which are ported. Rust code marks the unit it ports with `// port: <unit id>`, and `port/decisions.toml` lists deliberate deviations. Progress is in [docs/port-status.md](docs/port-status.md).
 
 | Crate | What it does |

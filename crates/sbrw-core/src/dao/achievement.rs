@@ -52,6 +52,7 @@ impl AchievementRankEntity {
         })
     }
 
+    // port: jpa/AchievementRankEntity#isRare()
     /// `isRare()`: `getRarity() <= 0.05f`, so a null rarity throws.
     pub fn is_rare(&self) -> Option<bool> {
         self.rarity.map(|r| r <= 0.05)

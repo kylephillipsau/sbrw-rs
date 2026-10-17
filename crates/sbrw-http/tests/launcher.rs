@@ -215,3 +215,17 @@ async fn responses_are_gzipped_when_accepted() {
     let response = server.router.clone().oneshot(request).await.unwrap();
     assert_eq!(response.headers()[header::CONTENT_ENCODING], "gzip");
 }
+
+#[tokio::test]
+async fn the_freeroam_json_file_is_served_as_is() {
+    let file = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(file.path(), b"{\"spawns\": [1, 2]}\n").unwrap();
+    let path = file.path().to_str().unwrap().to_owned();
+    let server = server_with(|config| {
+        config.parameters.insert("FREEROAM_JSON_PATH".into(), path);
+    });
+    let reply = get(&server, "/Engine.svc/GetFreeroamJson").await;
+    assert_eq!(reply.status, StatusCode::OK);
+    assert_eq!(reply.headers[header::CONTENT_TYPE], "application/json");
+    assert_eq!(reply.body, b"{\"spawns\": [1, 2]}\n");
+}

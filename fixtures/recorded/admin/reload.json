@@ -269,6 +269,52 @@
       }
     },
     {
+      "note": "Nor does no token.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "x"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token"
+      }
+    },
+    {
+      "note": "Nor does it reload anything.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "query": null,
+        "headers": null,
+        "form": {
+          "message": "x"
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR! invalid admin token"
+      }
+    },
+    {
       "note": "Still only the first.",
       "request": {
         "method": "GET",

@@ -27,6 +27,7 @@ pub mod events;
 pub mod get_server_information;
 pub mod hardware_info;
 pub mod inventory;
+pub mod invite_ticket;
 pub mod item_reward;
 pub mod legit_race;
 pub mod lobby;

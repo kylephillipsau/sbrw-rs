@@ -130,6 +130,26 @@
       }
     },
     {
+      "note": "Nor does no token.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadLoginAnnouncements",
+        "form": {
+          "message": "x"
+        }
+      }
+    },
+    {
+      "note": "Nor does it reload anything.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/ReloadParameters",
+        "form": {
+          "message": "x"
+        }
+      }
+    },
+    {
       "note": "Still only the first.",
       "http": {
         "method": "GET",

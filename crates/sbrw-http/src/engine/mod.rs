@@ -18,12 +18,15 @@ mod achievements;
 mod badges;
 mod boot;
 mod catalog;
+mod create_ticket;
 mod driver_persona;
 mod event;
 mod events;
+mod freeroam_json;
 mod matchmaking;
 mod personas;
 mod powerups;
+mod reload;
 mod reporting;
 mod routes;
 mod send_announcement;
@@ -398,6 +401,12 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
         "api/SendAnnouncement#sendAnnouncement(String,String)" => {
             send_announcement::send_announcement(state, call).await
         }
+        "api/CreateTicket#createTicket(String,String)" => create_ticket::create_ticket(state, call).await,
+        "api/ReloadParameters#reloadParameters(String,String)" => reload::reload_parameters(state, call).await,
+        "api/ReloadLoginAnnouncements#reloadLoginAnnouncements(String,String)" => {
+            reload::reload_login_announcements(state, call).await
+        }
+        "api/GetFreeroamJson#getServerInformation()" => freeroam_json::get_freeroam_json(state, call).await,
         "api/AddFriendRequest#addFriendRequest(String,String)" => social::add_friend_request(state, call).await,
         "api/ResolveFriendsRequest#resolveFriendsRequest(Long,int)" => {
             social::resolve_friends_request(state, call).await

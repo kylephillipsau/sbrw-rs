@@ -23,6 +23,7 @@ impl Parameters {
     // port: bo/ParameterBO#init()
     // port: bo/ParameterBO#loadParameters()
     // port: dao/ParameterDAO#findAll()
+    // port: jpa/ParameterEntity@ParameterEntity.findAll
     pub fn load(db: &Connection) -> rusqlite::Result<Self> {
         let mut stmt = db.prepare("SELECT name, value FROM parameter")?;
         let map = stmt
@@ -36,6 +37,7 @@ impl Parameters {
         Ok(Self { map })
     }
 
+    // port: bo/ParameterBO#getParameter(String)
     fn get(&self, name: &str) -> Option<&str> {
         self.map.get(name).map(String::as_str)
     }

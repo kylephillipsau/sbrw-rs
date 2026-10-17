@@ -40,6 +40,19 @@ pub fn find_by_ticket(db: &Connection, ticket: Option<&str>) -> rusqlite::Result
         .optional()
 }
 
+// port: dao/InviteTicketDAO#findByDiscordName(String)
+// port: jpa/InviteTicketEntity@InviteTicketEntity.findByDiscordName
+/// The first ticket made for a name; names match without regard to case, as
+/// in MySQL's collation, and no ticket matches a null name.
+pub fn find_by_discord_name(
+    db: &Connection,
+    discord_name: Option<&str>,
+) -> rusqlite::Result<Option<InviteTicketEntity>> {
+    db.prepare_cached("SELECT * FROM invite_ticket WHERE DISCORD_NAME = ?1 ORDER BY ID LIMIT 1")?
+        .query_row([discord_name], InviteTicketEntity::from_row)
+        .optional()
+}
+
 /// `InviteTicketDAO.insert` (`persist`); sets the generated id.
 pub fn insert(db: &Connection, ticket: &mut InviteTicketEntity) -> rusqlite::Result<()> {
     db.prepare_cached("INSERT INTO invite_ticket (DISCORD_NAME, TICKET, USERID) VALUES (?1, ?2, ?3)")?

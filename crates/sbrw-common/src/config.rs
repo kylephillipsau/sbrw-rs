@@ -507,6 +507,7 @@ mod tests {
         assert_eq!(p["XMPP_IP"], "203.0.113.7");
         assert_eq!(p["UDP_FREEROAM_IP"], "203.0.113.7");
         assert_eq!(p["UDP_FREEROAM_PORT"], "9999");
+        assert_eq!(p["UDP_RACE_IP"], "203.0.113.7");
         assert_eq!(p["UDP_RACE_PORT"], "9998");
         assert_eq!(p["SERVER_ADDRESS"], "http://203.0.113.7:8680");
         // An explicit parameter wins over the typed config.

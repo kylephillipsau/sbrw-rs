@@ -31,9 +31,10 @@ impl RelayRegistry {
         sessions.insert(session.event_session_id, (session, now));
     }
 
-    /// The session, if it was launched and is still expected.
+    /// The session, if it was launched in the last hour and isn't finished.
     pub fn session(&self, event_session_id: i64) -> Option<RelaySession> {
-        self.0.lock().expect("relay registry lock").get(&event_session_id).map(|(s, _)| s.clone())
+        let sessions = self.0.lock().expect("relay registry lock");
+        sessions.get(&event_session_id).filter(|(_, at)| at.elapsed() < EXPECTED_FOR).map(|(s, _)| s.clone())
     }
 
     /// The relay is done with the session.

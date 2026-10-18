@@ -1,11 +1,10 @@
 # Local play: the game (e.g. under CrossOver) connects to 127.0.0.1.
 # For friends, set SBRW_PUBLIC_HOST to your public IP and publish the ports on
-# all interfaces instead of 127.0.0.1.
+# all interfaces instead of 127.0.0.1; docs/vps.md has a compose file for a VPS.
 services:
   sbrw:
     build: .
     image: sbrw-rs:dev
-    # XMPP and free-roam run for real; the race relay on 9998 comes with M6.
     command: ["serve"]
     environment:
       SBRW__SERVER__PUBLIC_HOST: ${SBRW_PUBLIC_HOST:-127.0.0.1}

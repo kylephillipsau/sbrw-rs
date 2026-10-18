@@ -270,3 +270,16 @@ async fn an_address_that_keeps_failing_to_log_in_is_turned_away() {
     }
     assert_eq!(get(&open, &login("5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8")).await.status, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn health_reports_from_the_world() {
+    let server = server();
+    let health = get(&server, "/health").await;
+    assert_eq!(health.status, StatusCode::OK);
+    assert_eq!((health.json()["status"].clone(), health.json()["registered"].clone()), ("ok".into(), 0.into()));
+    let register =
+        "/Engine.svc/User/createUser?email=p%40example.com&password=5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8";
+    assert_eq!(get(&server, register).await.status, StatusCode::OK);
+    let health = get(&server, "/health").await.json();
+    assert_eq!((health["registered"].clone(), health["online"].clone()), (1.into(), 0.into()));
+}

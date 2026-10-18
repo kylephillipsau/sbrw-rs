@@ -109,6 +109,31 @@ pub async fn serve(listener: TcpListener, state: AppState, shutdown: Cancellatio
         .await
 }
 
-async fn health() -> axum::Json<serde_json::Value> {
-    axum::Json(serde_json::json!({ "status": "ok", "version": env!("CARGO_PKG_VERSION") }))
+/// 200 once the world answers (within 5 seconds), with who is on; 503 when
+/// it doesn't, which fails `sbrw healthcheck` and so Docker's health check.
+async fn health(axum::extract::State(state): axum::extract::State<AppState>) -> axum::response::Response {
+    use axum::response::IntoResponse;
+    let counts = state.world.call(|w| {
+        let online = w.openfire.online_users.load(std::sync::atomic::Ordering::Relaxed);
+        Ok((online, sbrw_core::dao::user::count_users(w.db())?))
+    });
+    match tokio::time::timeout(std::time::Duration::from_secs(5), counts).await {
+        Ok(Ok((online, registered))) => axum::Json(serde_json::json!({
+            "status": "ok",
+            "version": env!("CARGO_PKG_VERSION"),
+            "online": online,
+            "registered": registered,
+        }))
+        .into_response(),
+        Ok(Err(fault)) => {
+            tracing::warn!("health check: {fault:#}");
+            (axum::http::StatusCode::SERVICE_UNAVAILABLE, axum::Json(serde_json::json!({ "status": "error" })))
+                .into_response()
+        }
+        Err(_) => (
+            axum::http::StatusCode::SERVICE_UNAVAILABLE,
+            axum::Json(serde_json::json!({ "status": "world not answering" })),
+        )
+            .into_response(),
+    }
 }

@@ -229,3 +229,19 @@ async fn the_freeroam_json_file_is_served_as_is() {
     assert_eq!(reply.headers[header::CONTENT_TYPE], "application/json");
     assert_eq!(reply.body, b"{\"spawns\": [1, 2]}\n");
 }
+
+#[tokio::test]
+async fn the_original_web_pages_are_served_with_their_parameter_escaped() {
+    let server = server();
+    let front = get(&server, "/").await;
+    assert_eq!(front.status, StatusCode::OK);
+    assert_eq!(front.headers[header::CONTENT_TYPE], "text/html;charset=UTF-8");
+    assert!(String::from_utf8(front.body).unwrap().contains("There is nothing to see here."));
+
+    let reset = String::from_utf8(get(&server, "/password.jsp?randomKey=k%22%3E%3Cb%3E").await.body).unwrap();
+    assert!(reset.contains(r#"action="Engine.svc/RecoveryPassword/resetPassword""#), "{reset}");
+    assert!(reset.contains(r#"name="randomKey" value="k&quot;&gt;&lt;b&gt;""#), "{reset}");
+    let ticket = String::from_utf8(get(&server, "/ticket.jsp").await.body).unwrap();
+    assert!(ticket.contains("value=\"null\""), "{ticket}");
+    assert_eq!(get(&server, "/nothing.jsp").await.status, StatusCode::NOT_FOUND);
+}

@@ -43,6 +43,7 @@ pub mod persona;
 pub mod powerup_tracking;
 pub mod presence;
 pub mod product;
+pub mod recovery_password;
 pub mod reward;
 pub mod reward_drag;
 pub mod reward_pursuit;

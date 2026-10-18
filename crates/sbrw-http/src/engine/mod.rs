@@ -26,6 +26,7 @@ mod freeroam_json;
 mod matchmaking;
 mod personas;
 mod powerups;
+mod recovery_password;
 mod reload;
 mod reporting;
 mod routes;
@@ -407,6 +408,10 @@ async fn invoke(state: &AppState, call: &Call) -> Option<Result<Response, Fault>
             reload::reload_login_announcements(state, call).await
         }
         "api/GetFreeroamJson#getServerInformation()" => freeroam_json::get_freeroam_json(state, call).await,
+        "api/RecoveryPassword#resetPassord(String,String,String)" => {
+            recovery_password::reset_password(state, call).await
+        }
+        "api/RecoveryPassword#forgotPassword(String)" => recovery_password::forgot_password(state, call).await,
         "api/AddFriendRequest#addFriendRequest(String,String)" => social::add_friend_request(state, call).await,
         "api/ResolveFriendsRequest#resolveFriendsRequest(Long,int)" => {
             social::resolve_friends_request(state, call).await

@@ -39,6 +39,7 @@ pub mod persona_achievement;
 pub mod persona_achievement_rank;
 pub mod persona_badge;
 pub mod product;
+pub mod recovery_password;
 pub mod report;
 pub mod reward_table;
 pub mod social_relationship;

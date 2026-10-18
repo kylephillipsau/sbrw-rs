@@ -87,6 +87,18 @@
       }
     },
     {
+      "note": "One empty value.",
+      "http": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": ""
+        }
+      }
+    },
+    {
       "note": "The passwords differ.",
       "http": {
         "method": "POST",
@@ -209,7 +221,14 @@
       }
     },
     {
-      "note": "Every key is closed or expired, so a new link is attempted.",
+      "note": "An open key expiring now, and a closed one expiring later.",
+      "sql": [
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 0, 'nowkey', 1)",
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 15:00:00', 1, 'usedkey', 1)"
+      ]
+    },
+    {
+      "note": "Neither counts as open, so a new link is attempted.",
       "http": {
         "method": "POST",
         "path": "/Engine.svc/RecoveryPassword/forgotPassword",

@@ -189,6 +189,31 @@
       }
     },
     {
+      "note": "One empty value.",
+      "request": {
+        "method": "POST",
+        "path": "/Engine.svc/RecoveryPassword/resetPassword",
+        "query": null,
+        "headers": null,
+        "form": {
+          "password": "a",
+          "passwordconf": "a",
+          "randomKey": ""
+        },
+        "body": null,
+        "content_type": null,
+        "remote_addr": null
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Connection": "close",
+          "Content-Type": "text/html;charset=UTF-8"
+        },
+        "body": "ERROR: empty values!"
+      }
+    },
+    {
       "note": "The passwords differ.",
       "request": {
         "method": "POST",
@@ -426,7 +451,14 @@
       }
     },
     {
-      "note": "Every key is closed or expired, so a new link is attempted.",
+      "note": "An open key expiring now, and a closed one expiring later.",
+      "sql": [
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 13:00:00', 0, 'nowkey', 1)",
+        "INSERT INTO recovery_password (expirationDate, isClose, randomKey, userId) VALUES ('2026-01-01 15:00:00', 1, 'usedkey', 1)"
+      ]
+    },
+    {
+      "note": "Neither counts as open, so a new link is attempted.",
       "request": {
         "method": "POST",
         "path": "/Engine.svc/RecoveryPassword/forgotPassword",
@@ -492,6 +524,20 @@
         "expirationDate": "2026-01-01 13:00:00",
         "isClose": true,
         "randomKey": "edgekey",
+        "userId": 1
+      },
+      {
+        "id": 5,
+        "expirationDate": "2026-01-01 13:00:00",
+        "isClose": false,
+        "randomKey": "nowkey",
+        "userId": 1
+      },
+      {
+        "id": 6,
+        "expirationDate": "2026-01-01 15:00:00",
+        "isClose": true,
+        "randomKey": "usedkey",
         "userId": 1
       }
     ],

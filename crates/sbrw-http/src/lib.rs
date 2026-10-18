@@ -8,7 +8,9 @@
 mod capture;
 mod engine;
 mod launcher;
+mod mail;
 mod mods;
+mod pages;
 
 use std::io;
 use std::sync::Arc;
@@ -31,20 +33,26 @@ use tower_http::trace::{DefaultOnFailure, TraceLayer};
 pub struct AppState {
     capture: CaptureSink,
     mods: Arc<mods::ModsDir>,
+    mailer: Option<Arc<mail::Mailer>>,
     world: WorldHandle,
 }
 
 impl AppState {
     /// The launcher and game read the server's settings from the world's
     /// parameters (see `Config::upstream_parameters`); the config here only
-    /// says where the mods are.
+    /// says where the mods are and how to send mail.
     pub fn new(config: Arc<Config>, capture: CaptureSink, world: WorldHandle) -> Self {
         let mods = Arc::new(mods::ModsDir::new(config.mods_dir()));
-        Self { capture, mods, world }
+        let mailer = mail::Mailer::from_url(config.mail.smtp_url.as_deref()).map(Arc::new);
+        Self { capture, mods, mailer, world }
     }
 
     pub fn world(&self) -> &WorldHandle {
         &self.world
+    }
+
+    fn mailer(&self) -> Option<&mail::Mailer> {
+        self.mailer.as_deref()
     }
 }
 
@@ -55,6 +63,8 @@ pub fn router(state: AppState) -> Router {
         .route("/Engine.svc/{*path}", any(engine::dispatch))
         .route("/mods/{name}", get(mods::file))
         .route("/health", get(health))
+        .route("/", get(pages::index))
+        .route("/{page}", get(pages::page))
         // Innermost, so captured bodies are the uncompressed ones.
         .layer(middleware::from_fn_with_state(state.clone(), capture::record))
         .layer(CompressionLayer::new())

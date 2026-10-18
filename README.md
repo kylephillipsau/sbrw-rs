@@ -133,11 +133,15 @@ owners = "..."
 enabled = true                # false makes the launcher skip ModNet
 server_id = "my-server"
 
+[mail]                        # for password recovery links; unset, none are sent
+smtp_url = "smtps://me%40gmail.com:app-password@smtp.gmail.com"
+
 # The original server's settings, by its names; defaults are its Data.sql values.
 [parameters]
 SESSION_LENGTH_MINUTES = "1440"
 TICKET_TOKEN = "secret"       # registration then needs an invite ticket
 ANNOUNCEMENT_AUTH = "secret"  # lets POST /Engine.svc/SendAnnouncement message everyone
+EMAIL_FROM = "me@gmail.com"   # the sender of recovery mails
 ```
 
 The `[server]`, `[xmpp]`, `[udp]`, `[launcher]` and `[modding]` settings
@@ -148,6 +152,13 @@ original did. An entry in `[parameters]` wins over all of them. The game
 data's `ADMIN_AUTH` and `ANNOUNCEMENT_AUTH` are the setup guide's
 placeholders, so unless set here each is a fresh secret at every start, and
 what they guard stays shut.
+
+The original's web pages are served too: `/forgotPasswd.jsp` asks for a
+recovery link, which leads to `/password.jsp`; `/ticket.jsp?ticketAuth=...`,
+`/reload-parameters.jsp?adminAuth=...`,
+`/reload-login-announcements.jsp?adminAuth=...` and
+`/send-announcement.jsp?announcementAuth=...` are forms for the endpoints of
+the same names.
 
 Accounts and game state live in `<data dir>/world.db` (SQLite).
 

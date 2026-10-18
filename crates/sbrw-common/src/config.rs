@@ -48,6 +48,7 @@ pub struct Config {
     pub udp: UdpConfig,
     pub launcher: LauncherConfig,
     pub modding: ModdingConfig,
+    pub mail: MailConfig,
     pub capture: CaptureConfig,
 }
 
@@ -264,6 +265,19 @@ impl Default for ModdingConfig {
     }
 }
 
+/// Mail for password recovery links, which upstream sent through the
+/// application server's `java:jboss/mail/Gmail` session.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct MailConfig {
+    /// The SMTP server, as `smtps://user:password@smtp.example.com` (TLS),
+    /// `smtp://...?tls=required` (STARTTLS) or `smtp://host:port` (plain).
+    /// Unset, no mail goes out and asking for a recovery link fails with
+    /// upstream's "Can't send email!". The sender is the `EMAIL_FROM`
+    /// parameter.
+    pub smtp_url: Option<String>,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct CaptureConfig {
@@ -340,6 +354,9 @@ impl Config {
         set("MODDING_SERVER_ID", self.modding.server_id.clone());
         set("MODDING_BASE_PATH", self.mods_base_url());
         set("MODDING_FEATURES", self.modding.features.join(";"));
+        // Recovery links point at the reset page, which sbrw-rs serves at the
+        // root rather than under upstream's /soapbox-race-core context.
+        set("SERVER_PASSWORD_RESET_PATH", "/password.jsp".to_owned());
 
         // The game data ships the setup guide's placeholders for these, which
         // anyone could send. Until set under [parameters], they're a fresh

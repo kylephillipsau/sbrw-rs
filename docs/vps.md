@@ -1,7 +1,7 @@
 # Running sbrw-rs on a VPS
 
 How to run the server for friends on another network: a small Linux VPS,
-the published image, and four open ports. None of this has been tried
+the image built from this repository, and four open ports. None of this has been tried
 with a real game client yet (the roadmap's M8 check, racing a friend on
 another network, is still to do).
 
@@ -34,22 +34,29 @@ another network, is still to do).
 
 ## Start it
 
-The image is published to `ghcr.io/kylephillipsau/sbrw-rs:main` for both
-architectures. The package is private while the repository is, so log in
-first with a GitHub token that has `read:packages`:
+There is no published image yet, so build it on the VPS from the
+repository. The compiler peaks at about 650 MB, so on a 1 GB VPS add swap
+first; the build takes about 5 minutes on one fast core, longer on a VPS.
 
 ```sh
-echo "$GITHUB_TOKEN" | docker login ghcr.io -u kylephillipsau --password-stdin
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
 ```
 
-(Or build it on the VPS: clone the repository and `docker compose build`.)
+Then:
 
-Put this in `compose.yaml` on the VPS, with your server's public IP:
+```sh
+mkdir ~/sbrw && cd ~/sbrw
+git clone https://github.com/kylephillipsau/sbrw-rs.git
+```
+
+Put this in `~/sbrw/compose.yaml`, with your server's public IP:
 
 ```yaml
 services:
   sbrw:
-    image: ghcr.io/kylephillipsau/sbrw-rs:main
+    build: ./sbrw-rs
+    image: sbrw-rs:local
     container_name: sbrw
     environment:
       SBRW__SERVER__PUBLIC_HOST: 203.0.113.7    # your public IP
@@ -68,7 +75,7 @@ volumes:
 ```
 
 ```sh
-docker compose up -d
+docker compose up -d --build
 docker compose logs -f      # "HTTP listening", "XMPP listening", ...
 curl http://203.0.113.7:8680/health
 ```
@@ -140,7 +147,7 @@ docker compose start
 ## Updating
 
 ```sh
-docker compose pull && docker compose up -d
+git -C sbrw-rs pull && docker compose up -d --build
 ```
 
 The new version migrates the database if it needs to, after backing it up.

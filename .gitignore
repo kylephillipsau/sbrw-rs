@@ -4,3 +4,4 @@
 .DS_Store
 /reference/build
 /assets/mirrors/modnet/files
+__pycache__/

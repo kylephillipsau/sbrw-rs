@@ -71,7 +71,7 @@ against the game itself yet. See
 | M5 Single-player events, rewards, achievements | done |
 | M6 Lobbies and race relay | done |
 | M7 Social and moderation | done |
-| M8 Operations and real multiplayer | done, apart from playing on a VPS with a friend |
+| M8 Operations and real multiplayer | done, apart from publishing the image and playing on a VPS with a friend |
 | M9 Unpatched client (optional) | |
 
 ## Running it

@@ -7,9 +7,10 @@
 #   tools/mirror-modnet.sh            fetch the files modules.json lists
 #   tools/mirror-modnet.sh --update   fetch the CDN's current modules.json first
 #
-# The files aren't committed: their licences aren't settled here. Keep the
-# folder somewhere safe; if the CDN goes, these are the patches to copy into
-# the game's folder by hand (docs/vps.md, "If the ModNet CDN goes away").
+# The files aren't committed; assets/mirrors/modnet/README.md says why and
+# lists their licences. Keep the folder somewhere safe; if the CDN goes, these
+# are the patches to copy into the game's folder by hand (docs/vps.md, "If
+# the ModNet CDN goes away").
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

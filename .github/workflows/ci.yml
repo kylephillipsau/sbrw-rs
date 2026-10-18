@@ -46,8 +46,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, ubuntu-24.04-arm]
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -62,10 +69,75 @@ jobs:
         run: |
           docker run -d --name sbrw -p 8680:8680 sbrw-rs:ci
           for _ in $(seq 30); do
-            curl -fsS http://127.0.0.1:8680/Engine.svc/GetServerInformation && break
+            curl -fsS http://127.0.0.1:8680/health && break
             sleep 1
           done
           echo
+          curl -fsS http://127.0.0.1:8680/Engine.svc/GetServerInformation
+          echo
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8680/Engine.svc/anything)" = 200
           docker exec sbrw /usr/local/bin/sbrw healthcheck
+          # The operator CLI reaches the server inside the container, and
+          # nothing outside it reaches the operator API.
+          docker exec sbrw /usr/local/bin/sbrw admin tokens | grep -q '^ADMIN_AUTH = [0-9a-f]\{32\}$'
+          docker exec sbrw /usr/local/bin/sbrw admin backup | grep -q '^Backed up to /data/backups/'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8680/admin/tokens)" = 404
           docker logs sbrw
+      # Pushes to main publish each platform's image by digest; `publish`
+      # below joins them under one tag.
+      - name: Log in to the GitHub container registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push by digest
+        id: push
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.runner }}
+      - name: Keep the digest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p digests
+          touch "digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          name: digest-${{ matrix.runner }}
+          path: digests/*
+          retention-days: 1
+
+  publish:
+    needs: [test, deny, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digest-*
+          path: digests
+          merge-multiple: true
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag both platforms as one image
+        working-directory: digests
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker buildx imagetools create -t "$image:main" -t "$image:sha-${GITHUB_SHA::7}" \
+            $(printf "$image@sha256:%s " *)
+          docker buildx imagetools inspect "$image:main"

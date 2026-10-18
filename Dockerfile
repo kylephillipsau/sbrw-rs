@@ -2,6 +2,9 @@
 
 FROM rust:1.97-bookworm AS build
 WORKDIR /src
+# CI passes the commit, which the log and the game's SystemInfo report.
+ARG SBRW_GIT_COMMIT
+ARG SBRW_GIT_COMMIT_LONG
 COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \

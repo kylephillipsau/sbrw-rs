@@ -158,6 +158,13 @@ listed in `/mods/index.json` with SHA-1 checksums. Optional `cars.json` and
 `events.json` in the same directory override the names the launcher shows
 in Discord presence.
 
+### Logs
+
+`serve` logs to stdout and to `<data dir>/logs/sbrw.<date>.log`, a file a
+day kept for 14 days, so the log outlives a recreated container. Panics are
+logged with where they happened, and the first line names the build's
+commit. `RUST_LOG` sets the level (`info` by default).
+
 ### Protocol capture
 
 `SBRW_CAPTURE=http,xmpp,udp-freeroam,udp-race` records traffic into

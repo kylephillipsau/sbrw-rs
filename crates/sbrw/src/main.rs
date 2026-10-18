@@ -14,7 +14,10 @@ use sbrw_core::openfire::Outbound;
 use tokio::net::{TcpListener, UdpSocket};
 use tokio::task::JoinSet;
 use tokio_util::sync::CancellationToken;
+use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::EnvFilter;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 #[derive(Parser)]
 #[command(version, about = "A single-binary Need for Speed World server compatible with the SBRW launcher")]
@@ -55,7 +58,6 @@ struct ServeArgs {
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    init_tracing();
     let config = match Config::load(cli.config.as_deref()) {
         Ok(config) => config,
         Err(err) => {
@@ -63,8 +65,23 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
+    // Only the server keeps a log file; the healthcheck and admin commands
+    // run beside it and print to the terminal.
+    let log_dir = match &cli.command {
+        Command::Serve(_) => match prepare_data_dir(&config.server.data_dir) {
+            Ok(()) => Some(config.server.data_dir.join("logs")),
+            Err(err) => {
+                init_tracing(None);
+                tracing::error!("{err:#}");
+                return ExitCode::FAILURE;
+            }
+        },
+        _ => None,
+    };
+    init_tracing(log_dir.as_deref());
     match cli.command {
         Command::Serve(args) => {
+            log_panics();
             let runtime = tokio::runtime::Runtime::new().expect("failed to start the tokio runtime");
             match runtime.block_on(serve(config, args)) {
                 Ok(()) => ExitCode::SUCCESS,
@@ -87,6 +104,11 @@ fn main() -> ExitCode {
             }
         },
     }
+}
+
+fn prepare_data_dir(dir: &Path) -> anyhow::Result<()> {
+    std::fs::create_dir_all(dir).with_context(|| format!("creating data directory {}", dir.display()))?;
+    check_writable(dir)
 }
 
 /// Fail at once, and say why, when the data directory can't be written to:
@@ -122,18 +144,51 @@ fn owner(_: &Path) -> String {
     String::new()
 }
 
-fn init_tracing() {
+/// Days of log files `serve` keeps.
+const LOG_DAYS: usize = 14;
+
+/// Log to stdout and, given a directory, to a file a day there, so the log
+/// outlives the container (Docker drops its own copy when it recreates one).
+fn init_tracing(log_dir: Option<&Path>) {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
-    tracing_subscriber::fmt().with_env_filter(filter).with_ansi(std::io::stdout().is_terminal()).init();
+    let stdout = tracing_subscriber::fmt::layer().with_ansi(std::io::stdout().is_terminal());
+    let (file, failed) = match log_dir.map(log_file) {
+        Some(Ok(appender)) => (Some(tracing_subscriber::fmt::layer().with_ansi(false).with_writer(appender)), None),
+        Some(Err(err)) => (None, Some(err)),
+        None => (None, None),
+    };
+    tracing_subscriber::registry().with(filter).with(stdout).with(file).init();
+    if let Some(err) = failed {
+        tracing::warn!("logging to stdout only: {err:#}");
+    }
+}
+
+fn log_file(dir: &Path) -> anyhow::Result<RollingFileAppender> {
+    std::fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))?;
+    RollingFileAppender::builder()
+        .rotation(Rotation::DAILY)
+        .filename_prefix("sbrw")
+        .filename_suffix("log")
+        .max_log_files(LOG_DAYS)
+        .build(dir)
+        .with_context(|| format!("opening a log file in {}", dir.display()))
+}
+
+/// Put panics in the log, with where they happened, as well as on stderr.
+fn log_panics() {
+    let default = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        tracing::error!("{info}");
+        default(info);
+    }));
 }
 
 async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
+    let build = sbrw_core::BuildInfo::of_this_build();
+    tracing::info!(commit = build.commit_id(), "{} starting", build.version());
     for warning in config.warnings() {
         tracing::warn!("{warning}");
     }
-    std::fs::create_dir_all(&config.server.data_dir)
-        .with_context(|| format!("creating data directory {}", config.server.data_dir.display()))?;
-    check_writable(&config.server.data_dir)?;
     let capture = CaptureSink::start(&config.capture_dir(), &config.capture.streams)
         .with_context(|| format!("starting capture in {}", config.capture_dir().display()))?;
     if let Some(dir) = capture.run_dir() {
@@ -156,7 +211,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         env: sbrw_common::Env::system(),
         effects: sbrw_common::EffectLog::disabled(),
         openfire,
-        build_info: sbrw_core::BuildInfo::of_this_build(),
+        build_info: build,
         relay: relay.clone(),
     })
     .context("starting the world")?;

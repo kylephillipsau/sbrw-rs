@@ -54,7 +54,9 @@ docker exec sbrw-rs sbrw admin announce Restarting in 5 minutes
 `/mnt/user/appdata/sbrw-rs/backups` and settings go in
 `/mnt/user/appdata/sbrw-rs/sbrw.toml`. To record a session, set Capture
 (under Show more settings) to `http,xmpp,udp-freeroam,udp-race`; the
-captures land in `/mnt/user/appdata/sbrw-rs/captures`.
+captures land in `/mnt/user/appdata/sbrw-rs/captures`. The server's log is
+in `/mnt/user/appdata/sbrw-rs/logs`, a file a day kept for 14 days, as well
+as behind the container's log icon in the Docker tab.
 
 To update, edit the container and Apply without changes: Unraid pulls the
 image again and recreates the container.

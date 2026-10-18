@@ -165,6 +165,15 @@ roadmap's M9 (the unpatched client) is the way out.
 
 ## When something's wrong
 
+The server's log is in `/data/logs/` as well as `docker compose logs`, and
+it survives the container being recreated. To send it to someone, with any
+captures:
+
+```sh
+docker cp sbrw:/data/logs ./sbrw-logs
+docker cp sbrw:/data/captures ./sbrw-captures
+```
+
 - **The launcher shows the server offline.** Check
   `curl http://<ip>:8680/Engine.svc/GetServerInformation` from another
   machine, then the firewalls.

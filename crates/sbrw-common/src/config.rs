@@ -96,11 +96,22 @@ impl Listener {
 pub struct HttpConfig {
     pub bind: SocketAddr,
     pub public_port: Option<u16>,
+    /// Failed logins, registrations and password recovery attempts one
+    /// address may make in `auth_window_secs` before it is turned away until
+    /// the oldest ages out. Friends behind one router share an address, and
+    /// only failures count. 0 is no limit; the original had none.
+    pub auth_failures: u32,
+    pub auth_window_secs: u64,
 }
 
 impl Default for HttpConfig {
     fn default() -> Self {
-        Self { bind: SocketAddr::new(IpAddr::from([0, 0, 0, 0]), 8680), public_port: None }
+        Self {
+            bind: SocketAddr::new(IpAddr::from([0, 0, 0, 0]), 8680),
+            public_port: None,
+            auth_failures: 10,
+            auth_window_secs: 300,
+        }
     }
 }
 
@@ -150,6 +161,12 @@ pub struct UdpConfig {
     /// Free-roam: every player sees every other, however far
     /// (`DisableRadiusSync`).
     pub disable_radius_sync: bool,
+    /// Free-roam: clients at once; hellos from new addresses past this are
+    /// ignored. 0 is no cap. The Go server had none.
+    pub max_clients: usize,
+    /// Free-roam: packets a second one address may send (with bursts of
+    /// twice that); the rest are dropped. 0 is no limit. The Go server had none.
+    pub max_packets_per_sec: u32,
     /// The race relay's limits (`docs/protocol/race.md`, "sbrw-rs differs").
     pub race_relay: RaceRelayConfig,
 }
@@ -183,6 +200,8 @@ impl Default for UdpConfig {
             max_visible_players: 14,
             player_spawn_delay_ms: 200,
             disable_radius_sync: false,
+            max_clients: 100,
+            max_packets_per_sec: 100,
             race_relay: RaceRelayConfig::default(),
         }
     }

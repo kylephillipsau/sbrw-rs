@@ -16,8 +16,14 @@ async fn a_watcher_sees_the_ghost_appear_and_move() {
     let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
     let server = socket.local_addr().unwrap();
     let shutdown = CancellationToken::new();
-    let task =
-        tokio::spawn(sbrw_udp::run_freeroam(socket, Settings::default(), CaptureSink::disabled(), shutdown.clone()));
+    let task = tokio::spawn(sbrw_udp::run_freeroam(
+        socket,
+        Settings::default(),
+        // The default limits, which real traffic must pass.
+        sbrw_udp::guard::Limits::from_config(&sbrw_common::config::UdpConfig::default()),
+        CaptureSink::disabled(),
+        shutdown.clone(),
+    ));
 
     let track = Track::ghost();
     let mut watcher_player = track.player.clone();

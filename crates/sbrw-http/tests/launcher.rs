@@ -245,3 +245,28 @@ async fn the_original_web_pages_are_served_with_their_parameter_escaped() {
     assert!(ticket.contains("value=\"null\""), "{ticket}");
     assert_eq!(get(&server, "/nothing.jsp").await.status, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn an_address_that_keeps_failing_to_log_in_is_turned_away() {
+    let server = server_with(|config| config.http.auth_failures = 3);
+    let register =
+        "/Engine.svc/User/createUser?email=p%40example.com&password=5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8";
+    assert_eq!(get(&server, register).await.status, StatusCode::OK);
+    let login = |password: &str| format!("/Engine.svc/User/authenticateUser?email=p%40example.com&password={password}");
+    for _ in 0..3 {
+        let reply = get(&server, &login("wrong")).await;
+        assert!(String::from_utf8(reply.body).unwrap().contains("LOGIN ERROR"));
+    }
+    let refused = get(&server, &login("5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8")).await;
+    assert_eq!(refused.status, StatusCode::INTERNAL_SERVER_ERROR);
+    let body = String::from_utf8(refused.body).unwrap();
+    assert!(body.contains("Too many failed attempts from your address. Try again in 5 minutes."), "{body}");
+    assert_eq!(get(&server, register.replace("p%40", "q%40").as_str()).await.status, StatusCode::INTERNAL_SERVER_ERROR);
+
+    let open = server_with(|config| config.http.auth_failures = 0);
+    assert_eq!(get(&open, register).await.status, StatusCode::OK);
+    for _ in 0..20 {
+        get(&open, &login("wrong")).await;
+    }
+    assert_eq!(get(&open, &login("5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8")).await.status, StatusCode::OK);
+}

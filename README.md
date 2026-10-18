@@ -133,11 +133,15 @@ data_dir = "data"             # /data in the container
 [http]
 bind = "0.0.0.0:8680"
 # public_port = 80            # if a proxy or NAT changes the port players see
+auth_failures = 10            # failed logins, registrations and recovery attempts an
+auth_window_secs = 300        #   address may make in this window; 0 is no limit
 
 [udp]                         # free-roam, as the Go server's [UDP] settings
 visibility_radius = 300.0     # how far apart players see each other
 max_visible_players = 14
 player_spawn_delay_ms = 200   # one more player comes into view this often
+max_clients = 100             # free-roam players at once; 0 is no cap
+max_packets_per_sec = 100     # per address, with bursts of twice that; 0 is no limit
 
 [udp.race_relay]              # see docs/protocol/race.md, "sbrw-rs differs"
 wait_for_all_secs = 60        # then a race starts with the racers there; 0 waits forever

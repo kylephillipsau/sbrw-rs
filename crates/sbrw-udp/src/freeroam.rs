@@ -285,7 +285,7 @@ impl Client {
                     self.car = Some(inner);
                     self.pos_recv_td = self.time_diff(now);
                 }
-                _ => {}
+                kind => tracing::debug!(kind, len, "free-roam: a subpacket the server doesn't read"),
             }
         }
         Some(())
@@ -457,6 +457,11 @@ impl Freeroam {
 
     pub fn len(&self) -> usize {
         self.clients.len()
+    }
+
+    /// Whether `from` has said hello and not gone quiet since.
+    pub fn contains(&self, from: SocketAddr) -> bool {
+        self.by_addr.contains_key(&from)
     }
 
     pub fn is_empty(&self) -> bool {

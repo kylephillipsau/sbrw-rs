@@ -4,26 +4,50 @@
 use axum::http::StatusCode;
 use axum::response::Response;
 use sbrw_core::bo::{matchmaking, online_users, presence, token_session, user};
+use sbrw_core::vo::LoginStatus;
 use sbrw_core::{EngineExceptionCode, Fault};
 use sbrw_xml::ToXml;
 
 use super::{Call, entity};
 use crate::AppState;
 
+/// A login or registration refused because the address has failed too often
+/// lately: a failure as the launcher shows any other.
+fn too_many_failures(state: &AppState, call: &Call) -> Option<Response> {
+    let now = std::time::Instant::now();
+    if !state.auth_limiter.blocked(call.remote_addr, now) {
+        return None;
+    }
+    let mut status = LoginStatus::new(0, "", false);
+    let minutes = state.auth_limiter.wait().as_secs().div_ceil(60);
+    status.vo.description =
+        Some(format!("Too many failed attempts from your address. Try again in {minutes} minutes."));
+    Some(entity(call, StatusCode::INTERNAL_SERVER_ERROR, status.vo.to_xml()))
+}
+
 // port: api/User#authenticateUser(String,String)
 pub(super) async fn authenticate_user(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    if let Some(refused) = too_many_failures(state, call) {
+        return Ok(refused);
+    }
     let (email, password) = (call.query("email"), call.query("password"));
     let remote_host = call.remote_addr.to_string();
     let status = state
         .world()
         .call(move |w| token_session::login(w, email.as_deref(), password.as_deref(), &remote_host))
         .await?;
+    if !status.login_ok {
+        state.auth_limiter.failed(call.remote_addr, std::time::Instant::now());
+    }
     let code = if status.login_ok { StatusCode::OK } else { StatusCode::INTERNAL_SERVER_ERROR };
     Ok(entity(call, code, status.vo.to_xml()))
 }
 
 // port: api/User#createUser(String,String,String)
 pub(super) async fn create_user(state: &AppState, call: &Call) -> Result<Response, Fault> {
+    if let Some(refused) = too_many_failures(state, call) {
+        return Ok(refused);
+    }
     let (email, password, ticket) = (call.query("email"), call.query("password"), call.query("inviteTicket"));
     let ip = call.remote_addr.to_string();
     let world = state.world();
@@ -40,6 +64,7 @@ pub(super) async fn create_user(state: &AppState, call: &Call) -> Result<Respons
         let status = world.call(move |w| token_session::login(w, email.as_deref(), password.as_deref(), &ip)).await?;
         return Ok(entity(call, StatusCode::OK, status.vo.to_xml()));
     }
+    state.auth_limiter.failed(call.remote_addr, std::time::Instant::now());
     Ok(entity(call, StatusCode::INTERNAL_SERVER_ERROR, status.vo.to_xml()))
 }
 

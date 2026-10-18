@@ -8,6 +8,7 @@
 
 pub mod carstate;
 pub mod freeroam;
+pub mod guard;
 pub mod race;
 
 use std::collections::HashSet;
@@ -29,11 +30,13 @@ fn server_tick() -> u16 {
 pub async fn run_freeroam(
     socket: UdpSocket,
     settings: freeroam::Settings,
+    limits: guard::Limits,
     capture: CaptureSink,
     shutdown: CancellationToken,
 ) -> io::Result<()> {
     let local = socket.local_addr()?;
     let mut server = freeroam::Freeroam::new(settings);
+    let mut guard = guard::Guard::new(limits);
     let mut sweep = tokio::time::interval(std::time::Duration::from_secs(1));
     // The Go server's receive buffer: a longer datagram is cut to this.
     let mut buf = vec![0u8; 1024];
@@ -41,7 +44,9 @@ pub async fn run_freeroam(
         let received = tokio::select! {
             () = shutdown.cancelled() => return Ok(()),
             _ = sweep.tick() => {
-                server.sweep(std::time::Instant::now());
+                let now = std::time::Instant::now();
+                server.sweep(now);
+                guard.sweep(now, freeroam::TIMEOUT);
                 continue;
             }
             received = socket.recv_from(&mut buf) => received,
@@ -54,11 +59,16 @@ pub async fn run_freeroam(
             }
         };
         capture.udp(CaptureStream::UdpFreeroam, Direction::In, peer, local, &buf[..n]);
-        if freeroam::hello_tick(&buf[..n]).is_some() {
+        let hello = freeroam::hello_tick(&buf[..n]).is_some();
+        let now = std::time::Instant::now();
+        if guard.check(peer, hello && !server.contains(peer), server.len(), now).is_err() {
+            continue;
+        }
+        if hello {
             tracing::info!(%peer, "free-roam: new client");
         }
         let named = server.name(peer).is_some();
-        let reply = server.handle(peer, &buf[..n], server_tick(), std::time::Instant::now());
+        let reply = server.handle(peer, &buf[..n], server_tick(), now);
         if let Some(name) = server.name(peer).filter(|_| !named) {
             tracing::info!(%peer, name, "free-roam: player info");
         }
@@ -154,6 +164,7 @@ mod tests {
         let server = tokio::spawn(run_freeroam(
             socket,
             freeroam::Settings::default(),
+            guard::Limits::from_config(&sbrw_common::config::UdpConfig::default()),
             CaptureSink::disabled(),
             shutdown.clone(),
         ));
@@ -176,6 +187,37 @@ mod tests {
         let (n, _) = tokio::time::timeout(Duration::from_secs(2), client.recv_from(&mut buf)).await.unwrap().unwrap();
         assert_eq!(n, 12 + 2 * freeroam::SLOTS + 4);
         assert_eq!(&buf[..3], [0, 1, 2]);
+
+        shutdown.cancel();
+        server.await.unwrap().unwrap();
+    }
+
+    #[tokio::test]
+    async fn freeroam_turns_away_clients_past_the_cap() {
+        let socket = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        let addr = socket.local_addr().unwrap();
+        let shutdown = CancellationToken::new();
+        let limits = guard::Limits { max_clients: 1, max_packets_per_sec: 0 };
+        let server = tokio::spawn(run_freeroam(
+            socket,
+            freeroam::Settings::default(),
+            limits,
+            CaptureSink::disabled(),
+            shutdown.clone(),
+        ));
+        let mut hello = [0u8; 58];
+        hello[2] = 0x06;
+        let mut buf = [0u8; 256];
+        let first = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        first.send_to(&hello, addr).await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), first.recv_from(&mut buf)).await.unwrap().unwrap();
+        let second = UdpSocket::bind("127.0.0.1:0").await.unwrap();
+        second.send_to(&hello, addr).await.unwrap();
+        let answered = tokio::time::timeout(Duration::from_millis(300), second.recv_from(&mut buf)).await;
+        assert!(answered.is_err(), "the server is full");
+        first.send_to(&hello, addr).await.unwrap();
+        let again = tokio::time::timeout(Duration::from_secs(2), first.recv_from(&mut buf)).await;
+        assert!(again.is_ok(), "a client in may say hello again");
 
         shutdown.cancel();
         server.await.unwrap().unwrap();

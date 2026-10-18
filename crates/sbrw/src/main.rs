@@ -216,7 +216,8 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         let socket = UdpSocket::bind(bind).await.with_context(|| format!("binding free-roam to {bind}"))?;
         tracing::info!(%bind, "free-roam listening");
         let settings = sbrw_udp::freeroam::Settings::from_config(&config.udp);
-        tasks.spawn(sbrw_udp::run_freeroam(socket, settings, capture.clone(), shutdown.clone()));
+        let limits = sbrw_udp::guard::Limits::from_config(&config.udp);
+        tasks.spawn(sbrw_udp::run_freeroam(socket, settings, limits, capture.clone(), shutdown.clone()));
 
         let bind = config.udp.race.bind;
         let socket = UdpSocket::bind(bind).await.with_context(|| format!("binding the race relay to {bind}"))?;

@@ -9,6 +9,7 @@ mod admin;
 mod capture;
 mod engine;
 mod launcher;
+mod limits;
 mod mail;
 mod mods;
 mod pages;
@@ -39,6 +40,7 @@ pub struct AppState {
     admin_token: Option<Arc<str>>,
     /// The database file `sbrw admin backup` copies.
     world_db: Option<Arc<std::path::Path>>,
+    auth_limiter: Arc<limits::AuthLimiter>,
     world: WorldHandle,
 }
 
@@ -49,7 +51,11 @@ impl AppState {
     pub fn new(config: Arc<Config>, capture: CaptureSink, world: WorldHandle) -> Self {
         let mods = Arc::new(mods::ModsDir::new(config.mods_dir()));
         let mailer = mail::Mailer::from_url(config.mail.smtp_url.as_deref()).map(Arc::new);
-        Self { capture, mods, mailer, admin_token: None, world_db: None, world }
+        let auth_limiter = Arc::new(limits::AuthLimiter::new(
+            config.http.auth_failures,
+            std::time::Duration::from_secs(config.http.auth_window_secs),
+        ));
+        Self { capture, mods, mailer, admin_token: None, world_db: None, auth_limiter, world }
     }
 
     /// Let `sbrw admin backup` copy the database file at `world_db`.

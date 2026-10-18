@@ -1427,6 +1427,7 @@ dependencies = [
  "sbrw-http",
  "sbrw-udp",
  "sbrw-xmpp",
+ "serde_json",
  "time",
  "tokio",
  "tokio-util",

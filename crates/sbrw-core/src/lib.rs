@@ -17,6 +17,7 @@ pub mod datetime;
 pub mod engine;
 pub mod jobs;
 pub mod openfire;
+pub mod ops;
 pub mod params;
 pub mod password;
 pub mod redis;

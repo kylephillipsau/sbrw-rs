@@ -1,3 +1,5 @@
+mod admin;
+
 use std::io::{IsTerminal, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
 use std::path::PathBuf;
@@ -32,6 +34,11 @@ enum Command {
     Healthcheck,
     /// Print the effective configuration as TOML
     Config,
+    /// Run an operator command on the server running on this machine
+    Admin {
+        #[command(subcommand)]
+        command: admin::AdminCommand,
+    },
 }
 
 #[derive(Args)]
@@ -68,6 +75,7 @@ fn main() -> ExitCode {
             }
         }
         Command::Healthcheck => healthcheck(&config),
+        Command::Admin { command } => admin::run(&config, command),
         Command::Config => match toml::to_string_pretty(&config) {
             Ok(text) => {
                 print!("{text}");
@@ -134,7 +142,11 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
     );
     tasks.spawn(run_jobs(world.clone(), shutdown.clone()));
     tasks.spawn(run_timers(world.clone(), shutdown.clone()));
-    let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world);
+    // A fresh token each start for `sbrw admin`, which reads it from here.
+    let admin_token = uuid::Uuid::new_v4().simple().to_string();
+    let token_path = admin::token_path(&config);
+    admin::write_token(&token_path, &admin_token).with_context(|| format!("writing {}", token_path.display()))?;
+    let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world).with_admin_token(&admin_token);
     tasks.spawn(sbrw_http::serve(http, state, shutdown.clone()));
 
     if args.probe_xmpp {

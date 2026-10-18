@@ -5,6 +5,7 @@
 //! [`engine::dispatch`], which routes like upstream's RESTEasy did; mod files
 //! and the health check live outside it.
 
+mod admin;
 mod capture;
 mod engine;
 mod launcher;
@@ -34,6 +35,8 @@ pub struct AppState {
     capture: CaptureSink,
     mods: Arc<mods::ModsDir>,
     mailer: Option<Arc<mail::Mailer>>,
+    /// The operator API's token; without one the API is off.
+    admin_token: Option<Arc<str>>,
     world: WorldHandle,
 }
 
@@ -44,7 +47,13 @@ impl AppState {
     pub fn new(config: Arc<Config>, capture: CaptureSink, world: WorldHandle) -> Self {
         let mods = Arc::new(mods::ModsDir::new(config.mods_dir()));
         let mailer = mail::Mailer::from_url(config.mail.smtp_url.as_deref()).map(Arc::new);
-        Self { capture, mods, mailer, world }
+        Self { capture, mods, mailer, admin_token: None, world }
+    }
+
+    /// Turn on the operator API (`sbrw admin`) for loopback clients with this token.
+    pub fn with_admin_token(mut self, token: &str) -> Self {
+        self.admin_token = Some(token.into());
+        self
     }
 
     pub fn world(&self) -> &WorldHandle {
@@ -63,6 +72,7 @@ pub fn router(state: AppState) -> Router {
         .route("/Engine.svc/{*path}", any(engine::dispatch))
         .route("/mods/{name}", get(mods::file))
         .route("/health", get(health))
+        .route("/admin/{command}", any(admin::handle))
         .route("/", get(pages::index))
         .route("/{page}", get(pages::page))
         // Innermost, so captured bodies are the uncompressed ones.

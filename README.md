@@ -96,6 +96,28 @@ they can reach (see below).
 race relay on 9998. `--probe-xmpp` and `--probe-udp` replace them with
 probes that record what the game sends without ever answering.
 
+## Administration
+
+`sbrw admin` runs commands on the server running on the same machine (in
+Docker, `docker exec <container> sbrw admin …`):
+
+```sh
+sbrw admin ban DRIVER --for 3d --reason "wall riding"   # a driver's name or an account's email
+sbrw admin unban player@example.com
+sbrw admin kick DRIVER
+sbrw admin announce Server restarts in 5 minutes
+sbrw admin ticket alice                # an invite ticket, when TICKET_TOKEN is set
+sbrw admin set-admin player@example.com            # in-game /kick, /ban, /unban
+echo 'new password' | sbrw admin set-password player@example.com
+sbrw admin tokens                      # ADMIN_AUTH and the rest, as this run has them
+```
+
+Bans last as long as the in-game `/ban` reads (`1d`, `2h30m`, `45m`), or for
+good without `--for`, and kick the player as it does. The commands go to an
+API under `/admin/` on the HTTP port, which only answers connections from the
+same machine that present the token `serve` writes to `<data dir>/admin.token`
+(readable only by its user) each time it starts.
+
 ## Configuration
 
 Settings come from compiled defaults, then `<data dir>/sbrw.toml` (or the file

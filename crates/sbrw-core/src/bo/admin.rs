@@ -126,7 +126,7 @@ fn send_ban(
 // port: bo/AdminBO#sendKick(Long,Long)
 /// A push the game can't read, which makes it leave, and the end of the
 /// user's session.
-fn send_kick(w: &mut World, user_id: i64, persona_id: i64) -> Result<(), Fault> {
+pub(crate) fn send_kick(w: &mut World, user_id: i64, persona_id: i64) -> Result<(), Fault> {
     w.openfire.send_string("<NewsArticleTrans><ExpiryTime><", persona_id, &w.effects);
     token_session::delete_by_user_id(w, user_id)
 }

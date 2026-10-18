@@ -15,6 +15,7 @@ sbrw-core.workspace = true
 sbrw-http.workspace = true
 sbrw-udp.workspace = true
 sbrw-xmpp.workspace = true
+serde_json.workspace = true
 time.workspace = true
 tokio.workspace = true
 tokio-util.workspace = true

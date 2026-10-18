@@ -2,7 +2,7 @@ mod admin;
 
 use std::io::{IsTerminal, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::time::Duration;
@@ -89,6 +89,39 @@ fn main() -> ExitCode {
     }
 }
 
+/// Fail at once, and say why, when the data directory can't be written to:
+/// SQLite's own error ("unable to open database file") doesn't.
+fn check_writable(dir: &Path) -> anyhow::Result<()> {
+    let probe = dir.join(".sbrw-write-check");
+    match std::fs::File::create(&probe) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            Ok(())
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::PermissionDenied => anyhow::bail!(
+            "the data directory {}{} isn't writable by the user this server runs as, which in the \
+             image is uid 65532 unless --user sets another; on Unraid, chown the folder to 99:100 \
+             and run the container with --user 99:100",
+            dir.display(),
+            owner(dir)
+        ),
+        Err(err) => Err(err).with_context(|| format!("writing to the data directory {}", dir.display())),
+    }
+}
+
+#[cfg(unix)]
+fn owner(dir: &Path) -> String {
+    use std::os::unix::fs::MetadataExt;
+    std::fs::metadata(dir)
+        .map(|m| format!(" (owned by {}:{}, mode {:o})", m.uid(), m.gid(), m.mode() & 0o7777))
+        .unwrap_or_default()
+}
+
+#[cfg(not(unix))]
+fn owner(_: &Path) -> String {
+    String::new()
+}
+
 fn init_tracing() {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
     tracing_subscriber::fmt().with_env_filter(filter).with_ansi(std::io::stdout().is_terminal()).init();
@@ -100,6 +133,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
     }
     std::fs::create_dir_all(&config.server.data_dir)
         .with_context(|| format!("creating data directory {}", config.server.data_dir.display()))?;
+    check_writable(&config.server.data_dir)?;
     let capture = CaptureSink::start(&config.capture_dir(), &config.capture.streams)
         .with_context(|| format!("starting capture in {}", config.capture_dir().display()))?;
     if let Some(dir) = capture.run_dir() {
@@ -381,6 +415,32 @@ fn healthcheck(config: &Config) -> ExitCode {
         Err(err) => {
             eprintln!("sbrw: healthcheck against {addr} failed: {err}");
             ExitCode::FAILURE
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn an_unwritable_data_directory_says_so() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = std::env::temp_dir().join(format!("sbrw-unwritable-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        check_writable(&dir).unwrap();
+        assert!(!dir.join(".sbrw-write-check").exists(), "the probe file is cleaned up");
+
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
+        // Root writes anywhere, so the check has nothing to catch.
+        let as_root = std::fs::File::create(dir.join("root")).is_ok();
+        let result = check_writable(&dir);
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
+        if !as_root {
+            let err = result.unwrap_err().to_string();
+            assert!(err.contains("isn't writable") && err.contains("mode 555"), "{err}");
         }
     }
 }

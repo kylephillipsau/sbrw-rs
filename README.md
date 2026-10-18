@@ -38,7 +38,8 @@ since nothing rewrites UDP source addresses. Then add
 
 Players on other machines need `server.public_host` set to an address they
 can reach. [docs/vps.md](docs/vps.md) covers hosting on a VPS with the
-published image, `ghcr.io/kylephillipsau/sbrw-rs:main` (amd64 and arm64).
+published image, `ghcr.io/kylephillipsau/sbrw-rs:main` (amd64 and arm64),
+and [docs/unraid.md](docs/unraid.md) on Unraid, with a template.
 
 | Port | Protocol | Used for |
 |---|---|---|

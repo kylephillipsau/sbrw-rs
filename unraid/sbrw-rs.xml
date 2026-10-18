@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>sbrw-rs</Name>
+  <Repository>ghcr.io/kylephillipsau/sbrw-rs:main</Repository>
+  <Registry>https://github.com/kylephillipsau/sbrw-rs/pkgs/container/sbrw-rs</Registry>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/kylephillipsau/sbrw-rs/issues</Support>
+  <Project>https://github.com/kylephillipsau/sbrw-rs</Project>
+  <Overview>A Need for Speed World server for the SBRW launcher in one container: the game API, XMPP chat, free-roam and the race relay. Set Public IP to the address players reach this server on and forward the four ports on your router. Setup: https://github.com/kylephillipsau/sbrw-rs/blob/main/docs/unraid.md</Overview>
+  <Requires>Before the first start, create the data folder owned by nobody:users: mkdir -p /mnt/user/appdata/sbrw-rs &amp;&amp; chown 99:100 /mnt/user/appdata/sbrw-rs</Requires>
+  <Category>GameServers:</Category>
+  <TemplateURL>https://raw.githubusercontent.com/kylephillipsau/sbrw-rs/main/unraid/sbrw-rs.xml</TemplateURL>
+  <ExtraParams>--user 99:100</ExtraParams>
+  <Config Name="Public IP" Target="SBRW__SERVER__PUBLIC_HOST" Default="" Mode="" Description="The IP address players connect to: your public IP for friends on other networks. An IP, not a host name." Type="Variable" Display="always" Required="true" Mask="false"/>
+  <Config Name="Server name" Target="SBRW__LAUNCHER__SERVER_NAME" Default="My Server" Mode="" Description="The name the launcher shows." Type="Variable" Display="always" Required="false" Mask="false">My Server</Config>
+  <Config Name="Game API" Target="8680" Default="8680" Mode="tcp" Description="TCP: the launcher and game API. Keep the host port the same as the container's." Type="Port" Display="always" Required="true" Mask="false">8680</Config>
+  <Config Name="XMPP" Target="5222" Default="5222" Mode="tcp" Description="TCP: chat and server pushes. Keep the host port the same as the container's." Type="Port" Display="always" Required="true" Mask="false">5222</Config>
+  <Config Name="Free-roam" Target="9999" Default="9999" Mode="udp" Description="UDP: free-roam. Keep the host port the same as the container's." Type="Port" Display="always" Required="true" Mask="false">9999</Config>
+  <Config Name="Race relay" Target="9998" Default="9998" Mode="udp" Description="UDP: races. Keep the host port the same as the container's." Type="Port" Display="always" Required="true" Mask="false">9998</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/sbrw-rs" Mode="rw" Description="The database, backups, captures and sbrw.toml. Must be owned by 99:100 (nobody:users)." Type="Path" Display="advanced" Required="true" Mask="false">/mnt/user/appdata/sbrw-rs</Config>
+  <Config Name="Capture" Target="SBRW_CAPTURE" Default="" Mode="" Description="Record traffic into the data folder's captures/, e.g. http,xmpp,udp-freeroam,udp-race. Captures hold session tokens." Type="Variable" Display="advanced" Required="false" Mask="false"/>
+</Container>

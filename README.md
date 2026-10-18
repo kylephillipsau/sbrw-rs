@@ -16,9 +16,10 @@ and every recorded scenario replays the original's responses, XMPP pushes
 and database state exactly. XMPP matches recordings of Openfire, and
 free-roam matches the Go server.
 
-Nothing has been run against the game itself yet. Testing with the game
-starts with racing a friend on another network; [docs/ROADMAP.md](docs/ROADMAP.md)
-has the plan.
+The first session with the real game, on 2026-10-18, went cleanly: a
+player on an Unraid server registered, created a driver and finished a race,
+and the server logged nothing above info. Several players at once is next;
+[docs/ROADMAP.md](docs/ROADMAP.md) has the plan.
 
 It covers:
 - accounts, drivers, cars, the garage, the shops and the inventory

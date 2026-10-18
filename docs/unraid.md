@@ -2,8 +2,9 @@
 
 Unraid runs Docker Engine on Linux, so the server behaves as it does on a
 VPS ([vps.md](vps.md)). This page covers what differs: the template, the
-data folder's owner, and hosting from home. Like the VPS guide, it hasn't
-been tried with the real game yet.
+data folder's owner, and hosting from home. One player has played on it
+with the real game from the server's own network; players from outside it
+haven't been tried yet.
 
 ## Install
 
@@ -37,7 +38,10 @@ as a server in the SBRW launcher.
   for a public IP, or use a VPS.
 - The server gives every player the same address, so players on your home
   network connect through the public IP too. That needs your router to
-  support NAT loopback (hairpinning), which most do.
+  support NAT loopback (hairpinning). Without it, the launcher stops with
+  "Unable to connect to the remote server" for the public IP.
+- If everyone plays from the server's own network, set Public IP to the
+  server's LAN address instead and skip the port forwarding.
 
 ## Running it
 

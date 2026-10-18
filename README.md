@@ -1,97 +1,43 @@
 # sbrw-rs
 
-A Need for Speed World server in one Rust binary and one Docker container. It
-replaces the four-part Soapbox Race World (SBRW) stack: the Java core, the
-forked Openfire XMPP server, the Go free-roam server and the race relay. It
-works with the standard SBRW launcher.
+A Need for Speed World server in one Rust binary and one Docker container.
+It replaces the four programs a Soapbox Race World (SBRW) server needs: the
+Java core, a forked Openfire XMPP server, the Go free-roam server and the
+race relay. Players connect with the standard SBRW launcher.
 
-It's built for playing with friends: SQLite instead of MySQL, no Redis, one
-`/data` volume.
+It is meant for playing with friends, so it keeps everything in SQLite and
+one `/data` volume, with no MySQL or Redis to run.
 
-**Status:** the port is complete: every one of the original core's 870
-units is ported or recorded as a decision ([port/decisions.toml](port/decisions.toml)),
-and M8's operations are in. What's left is trying it with the real game,
-starting with racing a friend on another network. Everything the launcher
-and the game do is in place:
-- Every HTTP call up to and including creating, selecting and deleting a
-  driver, the starter car, the garage and the inventory is ported, and
-  replays recordings of the original exactly.
-- XMPP on port 5222 (TLS, login, rooms, chat and pushes) matches recordings
-  of an Openfire reference.
-- Free-roam on UDP 9999 (car states, who sees whom, the spawn queue, acks)
-  matches the Go free-roam server, and a test "ghost" driving a real
-  player's captured car states is seen moving by a fake player.
-- The shops replay recordings of the original exactly: the catalogue,
-  powerups, repairs, amplifiers, card packs, customising cars (paint,
-  vinyls, parts and their effect on the car's rating), selling cars and
-  items, using powerups, and rentals and items expiring. Every reward script
-  in the game data gives the same reward as the original for the same random
-  seed, and every car model gets the same rating.
-- Single-player events replay recordings of the original exactly: the event
-  list, sprints, circuits, drags, pursuits and team escapes with their
-  rewards, level-ups, lucky draws, car damage and checks for races that
-  aren't legit; the achievements they progress, the achievement list and
-  redeeming rewards; the DNF countdown when two drivers share a session;
-  and the daily treasure hunt. The reward arithmetic and every achievement
-  script in the game data give what the original gives.
-- Lobbies replay recordings of the original exactly: race now and its
-  queue, joining an event's lobby, invitations, accepting, declining and
-  leaving, private lobbies for a chat group, the countdown's launch with
-  each racer's relay ticket, and Race Again after a race.
-- The race relay on UDP 9998 is written from protocol notes
-  ([docs/protocol/race.md](docs/protocol/race.md)) and checks each racer's
-  ticket against the lobby that launched. Two fake racers race through it
-  with the tickets from a real launch and both appear in the results.
-- Friends and moderation replay recordings of the original exactly: friend
-  requests and their answers, the friends list with presence, presence
-  pushes to friends, blocking, badges, reports, and an admin's /kick, /ban
-  and /unban sent as reports, with bans ending on time. Announcements go to
-  every logged-in player through the XMPP server.
-- The rest of the original replays its recordings exactly too: invite
-  tickets, password recovery by email, reloading parameters and login
-  announcements, and the original's web pages.
-- For running it: `sbrw admin` (bans, kicks, announcements, tickets,
-  accounts, backups), nightly backups, limits on failed logins and on
-  free-roam's clients and packet rate, a health check that asks the
-  world, and a runbook for a VPS ([docs/vps.md](docs/vps.md)).
+## Status
 
-Milestones are verified against recordings of the original and of these
-reference servers, not with the real game, so nothing here has been run
-against the game itself yet. See
-[docs/ROADMAP.md](docs/ROADMAP.md) for the design and milestones, and
-[docs/port-status.md](docs/port-status.md) for how much of the original is ported.
+The core is a 1:1 port of soapbox-race-core. All 870 of its units are
+ported or have a recorded decision ([port/decisions.toml](port/decisions.toml)),
+and every recorded scenario replays the original's responses, XMPP pushes
+and database state exactly. XMPP matches recordings of Openfire, and
+free-roam matches the Go server.
 
-| Milestone | Status |
-|---|---|
-| M0 Foundations: launcher sees the server, ModNet, protocol capture, probes | done |
-| M1 Register, log in, game boots | done |
-| M2 Create a driver, XMPP, spawn in the world | done |
-| M3 Free-roam multiplayer | done |
-| M4 Garage and economy | done |
-| M5 Single-player events, rewards, achievements | done |
-| M6 Lobbies and race relay | done |
-| M7 Social and moderation | done |
-| M8 Operations and real multiplayer | done, apart from publishing the image and playing on a VPS with a friend |
-| M9 Unpatched client (optional) | |
+Nothing has been run against the game itself yet. Testing with the game
+starts with racing a friend on another network; [docs/ROADMAP.md](docs/ROADMAP.md)
+has the plan.
+
+It covers:
+- accounts, drivers, cars, the garage, the shops and the inventory
+- single-player events with their rewards, achievements and the daily treasure hunt
+- lobbies, invitations, private lobbies and the race relay
+- free-roam, chat, friends, presence, badges and reports
+- the in-game /kick, /ban and /unban, and announcements
+- invite tickets, password recovery by email and the original's web pages
+- for operators, `sbrw admin`, nightly backups, rate limits and a health check
 
 ## Running it
 
-Natively, which is the easiest way to develop because nothing rewrites UDP
-source addresses:
+Run it natively with `cargo run -- serve`, or in Docker with
+`docker compose up --build`. Running natively is easier for development,
+since nothing rewrites UDP source addresses. Then add
+`http://127.0.0.1:8680/Engine.svc` as a server in the SBRW launcher.
 
-```sh
-cargo run -- serve
-```
-
-With Docker:
-
-```sh
-docker compose up --build
-```
-
-Either way, add `http://127.0.0.1:8680/Engine.svc` as a server in the SBRW
-launcher. Players on other machines need `server.public_host` set to an address
-they can reach (see below).
+Players on other machines need `server.public_host` set to an address they
+can reach. [docs/vps.md](docs/vps.md) covers hosting on a VPS.
 
 | Port | Protocol | Used for |
 |---|---|---|
@@ -100,14 +46,10 @@ they can reach (see below).
 | 9999 | UDP | Free-roam |
 | 9998 | UDP | Race relay |
 
-`serve` runs the XMPP server on 5222, the free-roam server on 9999 and the
-race relay on 9998. `--probe-xmpp` and `--probe-udp` replace them with
-probes that record what the game sends without ever answering.
+`--probe-xmpp` and `--probe-udp` replace the XMPP and UDP servers with
+probes that record what the game sends and never answer.
 
 ## Administration
-
-`sbrw admin` runs commands on the server running on the same machine (in
-Docker, `docker exec <container> sbrw admin …`):
 
 ```sh
 sbrw admin ban DRIVER --for 3d --reason "wall riding"   # a driver's name or an account's email
@@ -121,17 +63,19 @@ sbrw admin tokens                      # ADMIN_AUTH and the rest, as this run ha
 sbrw admin backup                      # a copy of world.db in <data dir>/backups now
 ```
 
-Bans last as long as the in-game `/ban` reads (`1d`, `2h30m`, `45m`), or for
-good without `--for`, and kick the player as it does. The commands go to an
-API under `/admin/` on the HTTP port, which only answers connections from the
-same machine that present the token `serve` writes to `<data dir>/admin.token`
-(readable only by its user) each time it starts.
+Ban lengths read as the in-game `/ban` reads them (`1d`, `2h30m`, `45m`),
+and a ban without `--for` is permanent. A ban also kicks the player.
+
+The commands go to `/admin/` on the HTTP port, which only answers
+connections from the same machine that carry the token `serve` writes to
+`<data dir>/admin.token` (readable only by its user) at each start. In Docker, run them with
+`docker exec <container> sbrw admin …`.
 
 ## Configuration
 
-Settings come from compiled defaults, then `<data dir>/sbrw.toml` (or the file
-named by `--config` / `SBRW_CONFIG`), then environment variables of the form
-`SBRW__SECTION__KEY`. `sbrw config` prints the effective configuration.
+Settings come from compiled defaults, then `<data dir>/sbrw.toml` (or the
+file named by `--config` or `SBRW_CONFIG`), then environment variables such
+as `SBRW__SERVER__PUBLIC_HOST`. `sbrw config` prints the result.
 
 ```toml
 [server]
@@ -183,46 +127,41 @@ ANNOUNCEMENT_AUTH = "secret"  # lets POST /Engine.svc/SendAnnouncement message e
 EMAIL_FROM = "me@gmail.com"   # the sender of recovery mails
 ```
 
-The `[server]`, `[xmpp]`, `[udp]`, `[launcher]` and `[modding]` settings
-(apart from the free-roam ones, which the original didn't have) are written
-into the original's parameters at startup (`public_host` becomes
-`XMPP_IP`, `UDP_FREEROAM_IP` and so on), so the ported code reads them as the
-original did. An entry in `[parameters]` wins over all of them. The game
-data's `ADMIN_AUTH` and `ANNOUNCEMENT_AUTH` are the setup guide's
-placeholders, so unless set here each is a fresh secret at every start, and
-what they guard stays shut.
+Parameters keep their names as environment variables:
+`SBRW_PARAMETER_TICKET_TOKEN=secret`. The `[server]`, `[xmpp]`, `[udp]`,
+`[launcher]` and `[modding]` settings, apart from free-roam's, are written
+into the parameters at startup (`public_host` becomes `XMPP_IP`,
+`UDP_FREEROAM_IP` and so on), so the ported code reads them as the original
+did. An entry in `[parameters]` overrides them.
 
-The original's web pages are served too: `/forgotPasswd.jsp` asks for a
-recovery link, which leads to `/password.jsp`; `/ticket.jsp?ticketAuth=...`,
-`/reload-parameters.jsp?adminAuth=...`,
-`/reload-login-announcements.jsp?adminAuth=...` and
-`/send-announcement.jsp?announcementAuth=...` are forms for the endpoints of
+The game data's `ADMIN_AUTH` and `ANNOUNCEMENT_AUTH` are placeholders, so
+unless they are set here, each is a fresh random secret at every start.
+`sbrw admin tokens` prints them.
+
+The original's web pages are served too. `/forgotPasswd.jsp` asks for a
+recovery link, which leads to `/password.jsp`. `/ticket.jsp?ticketAuth=…`,
+`/reload-parameters.jsp?adminAuth=…`,
+`/reload-login-announcements.jsp?adminAuth=…` and
+`/send-announcement.jsp?announcementAuth=…` are forms for the endpoints of
 the same names.
 
 Accounts and game state live in `<data dir>/world.db` (SQLite). A backup is
-a complete database: stop the server and copy one over `world.db` to restore
-it.
-
-The same values as environment variables are `SBRW__SERVER__PUBLIC_HOST`,
-`SBRW__LAUNCHER__SERVER_NAME`, and so on; parameters keep their names:
-`SBRW_PARAMETER_TICKET_TOKEN=secret`.
+a complete copy: to restore one, stop the server and copy it over
+`world.db`.
 
 ### Server mods
 
-Files in `<data dir>/mods/` are offered to the launcher through ModNet. The
-index the launcher reads (`/mods/index.json`) is generated from the directory,
-with SHA-1 checksums. Optional `cars.json` and `events.json` there override the
-launcher's Discord presence names.
+Files in `<data dir>/mods/` are offered to the launcher through ModNet,
+listed in `/mods/index.json` with SHA-1 checksums. Optional `cars.json` and
+`events.json` in the same directory override the names the launcher shows
+in Discord presence.
 
 ### Protocol capture
 
 `SBRW_CAPTURE=http,xmpp,udp-freeroam,udp-race` records traffic into
-`<data dir>/captures/<timestamp>/`:
-- `http.jsonl`
-- `xmpp.log`
-- a `.pcap` (opens in Wireshark) and `.hexlog` for each UDP server
-
-Captures include session tokens, so don't share them unredacted.
+`<data dir>/captures/<timestamp>/`: `http.jsonl`, `xmpp.log`, and a `.pcap`
+(for Wireshark) and `.hexlog` for each UDP server. Captures hold session
+tokens, so redact them before sharing.
 
 ## Development
 
@@ -232,39 +171,58 @@ cargo clippy --workspace --all-targets -- -D warnings
 ./tools/fetch-upstream.sh   # upstream sources at pinned commits, into ./upstream
 ```
 
-### How the port works
+### How it's tested
 
-sbrw-rs is a 1:1 port of soapbox-race-core. Its expected behaviour is recorded from the original code:
+The expected behaviour is recorded from the original code.
+[`reference/`](reference/README.md) runs the original Java core in Docker
+against MySQL, with randomness, time and tokens made deterministic, and
+records each scenario in `scenarios/` into `fixtures/recorded/`: every
+response, every XMPP push and the database state at the end. `sbrw-testkit`
+replays the same scenarios against sbrw-rs under the same seed, clock and
+token counter, and reports each difference by step and field. Run it with
+`cargo test -p sbrw-testkit --test replay`, adding `-- <scenario>` to run
+one.
 
-- **[`reference/`](reference/README.md)** runs the original Java core in Docker against MySQL. Randomness, time and tokens are made deterministic. Each scenario in `scenarios/` is recorded into `fixtures/recorded/`: every response, every XMPP push, and the database state at the end. sbrw-rs replays the same scenarios and has to produce the same output.
-- **`sbrw-testkit`** replays every scenario against sbrw-rs under the same seed, clock and token counter, and reports each difference by step and field. Run it with `cargo test -p sbrw-testkit --test replay` (add `-- <scenario>` to pick one, or `SBRW_REPLAY_REPORT=1` to see differences for pending scenarios). Scenarios not reproduced yet are listed in `port/replay-pending.toml`; the test fails when one starts passing, so the list only shrinks.
-- **`tools/gen.py`** generates code from upstream and from JVM recordings: the SQLite schema and static data, the route table, error codes, TLD lists, and the XML classes. CI checks that the generated files match their inputs.
-- **`fixtures/vectors/`** holds JVM outputs for the JDK behaviour the game logic depends on, such as `java.util.Random` and `HashMap` order; what the original's own code gives for every reward script in the data, every car model's rating, event reward arithmetic and every achievement script; and the Go free-roam server's answers ([docs/protocol/freeroam.md](docs/protocol/freeroam.md)).
-- **`tools/port.py`** inventories every method and named query in the original (870 units) and tracks which are ported. Rust code marks the unit it ports with `// port: <unit id>`, and `port/decisions.toml` lists deliberate deviations. Progress is in [docs/port-status.md](docs/port-status.md).
+`fixtures/vectors/` holds outputs recorded from the JVM and the Go
+free-roam server: JDK behaviour the game logic depends on, such as
+`java.util.Random` and `HashMap` order; the original's results for every
+reward and achievement script in the game data, every car model's rating
+and the event reward arithmetic; and free-roam's answers
+([docs/protocol/freeroam.md](docs/protocol/freeroam.md)).
+
+`tools/port.py` lists the original's 870 units, its methods and named
+queries. Rust code marks the unit it ports with `// port: <unit id>`, and
+`port/decisions.toml` records each deliberate difference
+([docs/port-status.md](docs/port-status.md)). `tools/gen.py` generates the
+SQLite schema and static data, the route table, error codes, TLD lists and
+the XML classes from upstream, and CI checks that they match their inputs.
 
 | Crate | What it does |
 |---|---|
 | `sbrw` | The binary and CLI |
 | `sbrw-common` | Configuration, protocol capture, and the clock, randomness, ids and effect log the game logic uses |
-| `sbrw-java` | Bit-exact versions of JDK and Java-library behaviour the port relies on (`java.util.Random`, commons-validator's email check) |
-| `sbrw-script` | Runs the JavaScript in the game data (achievement and reward scripts) on QuickJS, with the bindings shown to scripts as Nashorn showed them Java objects |
-| `sbrw-testkit` | Replays reference recordings against sbrw-rs and reports the differences; a fake free-roam client and the ghost |
+| `sbrw-java` | Bit-exact JDK and Java-library behaviour the port relies on (`java.util.Random`, commons-validator's email check) |
+| `sbrw-script` | Runs the game data's JavaScript (achievement and reward scripts) on QuickJS, with the bindings Nashorn gave them |
+| `sbrw-testkit` | Replays the recordings against sbrw-rs and reports the differences; a fake free-roam client, and a ghost that replays a real player's captured car states |
 | `sbrw-core` | The game logic: upstream's business objects, DAOs and entities, ported 1:1 |
 | `sbrw-http` | The launcher and game HTTP API, routed as upstream's RESTEasy did |
-| `sbrw-xml` | Upstream's 177 XML classes, generated from JAXB's own model; written byte for byte as JAXB writes them and read as leniently as JAXB reads |
+| `sbrw-xml` | Upstream's 177 XML classes, generated from JAXB's model, written byte for byte as JAXB writes them and read as leniently as it reads |
 | `sbrw-xmpp` | XMPP: STARTTLS, login, rooms, chat and pushes |
-| `sbrw-udp` | Free-roam (ported from the Go server) and race UDP |
+| `sbrw-udp` | Free-roam, ported from the Go server, and the race relay |
 
 ## Credits and license
 
-GPL-3.0-or-later. sbrw-rs is a reimplementation informed by:
-- [soapbox-race-core](https://github.com/SoapboxRaceWorld/soapbox-race-core) (GPL-3.0)
+sbrw-rs is licensed GPL-3.0-or-later ([LICENSE](LICENSE)). It builds on:
+- [soapbox-race-core](https://github.com/SoapboxRaceWorld/soapbox-race-core) (GPL-3.0), the core it ports
+- [freeroam](https://github.com/WorldUnitedNFS/freeroam) (MPL-2.0); the files ported from it keep their MPL-2.0 notice
 - [GameLauncher_NFSW](https://github.com/SoapboxRaceWorld/GameLauncher_NFSW) (GPL-3.0)
-- [freeroam](https://github.com/WorldUnitedNFS/freeroam) (MPL-2.0; ported files keep their MPL-2.0 notice)
 - [NFS-World-Offline](https://github.com/Lawin0129/NFS-World-Offline) (GPL-3.0)
-- [setting-up-sbrw](https://github.com/berkayylmao/setting-up-sbrw) (GPL-3.0)
+- [setting-up-sbrw](https://github.com/berkayylmao/setting-up-sbrw) (GPL-3.0), the source of the static game data in `assets/static.sql`
 
-The race relay is implemented from written protocol notes, not from
-[sbrw-mp-sync-2018](https://github.com/VladManyanov/sbrw-mp-sync-2018), which has
-no license. Need for Speed World is a trademark of Electronic Arts; this project
-is not affiliated with EA.
+The race relay is written from protocol notes
+([docs/protocol/race.md](docs/protocol/race.md)). The original relay,
+[sbrw-mp-sync-2018](https://github.com/VladManyanov/sbrw-mp-sync-2018), has
+no license, so none of its code is used.
+
+This repository contains none of the game's files. Need for Speed World is a
+trademark of Electronic Arts; this project is not affiliated with EA.

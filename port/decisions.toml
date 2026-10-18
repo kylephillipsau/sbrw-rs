@@ -148,3 +148,438 @@ reason = "Writes a news article's filters, and upstream never writes news articl
 ["jpa/convert/NewsArticleTypeConverter#convertToDatabaseColumn(NewsArticleType)"]
 status = "dropped"
 reason = "Writes a news article's type, and upstream never writes news articles. Reading it is ported."
+
+# M8: the rest of upstream. Unused code, the error model's plumbing, and the
+# Openfire client, which the XMPP hub replaces.
+
+["jpa/AchievementEntity@AchievementEntity.findByName"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/AchievementEntity@AchievementEntity.findAllByCategory"]
+status = "dropped"
+reason = "Only AchievementDAO.findAllByCategory runs it, and nothing calls that."
+
+["dao/AchievementDAO#findAllByCategory(String)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/CarEntity@CarEntity.deleteByPersona"]
+status = "dropped"
+reason = "Only CarDAO.deleteByPersona runs it, and nothing calls that."
+
+["dao/CarDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's cars go through ON DELETE CASCADE, in upstream's schema as here."
+
+["dao/CarDAO#findByPersonaIdEager(Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. PersonaBO calls only the (Long,int) overload, which is ported."
+
+["jpa/EventDataEntity@EventDataEntity.findByPersona"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/EventDataEntity@EventDataEntity.findByPersonaAndType"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/EventEntity@EventEntity.findAll"]
+status = "dropped"
+reason = "Only EventDAO.findAll runs it, and nothing calls that."
+
+["jpa/EventEntity@EventEntity.findAllRotatable"]
+status = "dropped"
+reason = "Only EventDAO.findAllRotatable runs it, and nothing calls that."
+
+["dao/EventDAO#findAll()"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. The event list comes from findByLevel, which is ported."
+
+["dao/EventDAO#findAllRotatable()"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/InventoryItemEntity@InventoryItemEntity.findAllByPersonaId"]
+status = "dropped"
+reason = "Only InventoryItemDAO.findAllByPersonaId runs it, for InventoryItemDAO.deleteByPersona, which nothing calls."
+
+["jpa/InventoryItemEntity@InventoryItemEntity.findAllByPersonaIdAndHash"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/InventoryItemEntity@InventoryItemEntity.findAllByInventoryAndHash"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/InventoryItemEntity@InventoryItemEntity.findAllByInventoryAndType"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["dao/InventoryItemDAO#findAllByPersonaId(Long)"]
+status = "dropped"
+reason = "Only InventoryItemDAO.deleteByPersona calls it, and nothing calls that."
+
+["dao/InventoryItemDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's items go with its inventory through ON DELETE CASCADE."
+
+["dao/InventoryDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's inventory goes through ON DELETE CASCADE."
+
+["jpa/InviteTicketEntity@InviteTicketEntity.findAll"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/LevelRepEntity@LevelRepEntity.findMaxLevel"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["dao/LevelRepDAO#findByLevel(Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/LoginAnnouncementEntity@LoginAnnouncementEntity.findAll"]
+status = "dropped"
+reason = "Only LoginAnnouncementDAO.findAll runs it, and nothing calls that."
+
+["dao/LoginAnnouncementDAO#find(Integer)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. Announcements are read by language, which is ported."
+
+["dao/LoginAnnouncementDAO#findAll()"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. Announcements are read by language, which is ported."
+
+["jpa/OnlineUsersEntity@OnlineUsersEntity.findByTime"]
+status = "dropped"
+reason = "Only OnlineUsersDAO.findByTime runs it, and nothing calls that."
+
+["dao/OnlineUsersDAO#findByTime(Date)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/PaintEntity@PaintEntity.deleteByCar"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it. A deleted car's parts go through ON DELETE CASCADE, in upstream's schema as here."
+
+["jpa/PerformancePartEntity@PerformancePartEntity.deleteByCar"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it. A deleted car's parts go through ON DELETE CASCADE, in upstream's schema as here."
+
+["jpa/SkillModPartEntity@SkillModPartEntity.deleteByCar"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it. A deleted car's parts go through ON DELETE CASCADE, in upstream's schema as here."
+
+["jpa/VinylEntity@VinylEntity.deleteByCar"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it. A deleted car's parts go through ON DELETE CASCADE, in upstream's schema as here."
+
+["jpa/VisualPartEntity@VisualPartEntity.deleteByCar"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it. A deleted car's parts go through ON DELETE CASCADE, in upstream's schema as here."
+
+["jpa/PersonaAchievementEntity@PersonaAchievementEntity.findByPersonaIdAndAchievementId"]
+status = "dropped"
+reason = "Only PersonaAchievementDAO.findByPersonaIdAndAchievementId runs it, and nothing calls that."
+
+["dao/PersonaAchievementDAO#findByPersonaIdAndAchievementId(Long,Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["dao/PersonaAchievementDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's achievements go through ON DELETE CASCADE."
+
+["jpa/PersonaAchievementRankEntity@PersonaAchievementRankEntity.findAllByPersonaId"]
+status = "dropped"
+reason = "Only PersonaAchievementRankDAO.findAllByPersonaId runs it, and nothing calls that."
+
+["dao/PersonaAchievementRankDAO#findAllByPersonaId(Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["dao/PersonaAchievementRankDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's achievement ranks go with its achievements through ON DELETE CASCADE."
+
+["jpa/PersonaEntity#getDaysSinceFirstLogin()"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. No script in the game data reads it either."
+
+["jpa/PersonaEntity@PersonaEntity.addPointsToScore"]
+status = "dropped"
+reason = "Only PersonaDAO.addPointsToScore runs it, and nothing calls that."
+
+["dao/PersonaDAO#addPointsToScore(Long,Integer)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/ProductEntity@ProductEntity.findForEndRace"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/ProductEntity@ProductEntity.findByType"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/ProductEntity@ProductEntity.findDropsBySubTypeAndRarity"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/ProductEntity@ProductEntity.findDropsByProdTypeAndRarity"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/RecoveryPasswordEntity@RecoveryPasswordEntity.findByUserId"]
+status = "dropped"
+reason = "Only RecoveryPasswordDAO.findByUserId runs it, and nothing calls that."
+
+["dao/RecoveryPasswordDAO#findByUserId(Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it."
+
+["jpa/RewardTableEntity@RewardTableEntity.findAll"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/TreasureHuntEntity@TreasureHuntEntity.deleteByPersona"]
+status = "dropped"
+reason = "Only TreasureHuntDAO.deleteByPersona runs it, and nothing calls that."
+
+["dao/TreasureHuntDAO#deleteByPersona(PersonaEntity)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. A deleted driver's treasure hunt goes through ON DELETE CASCADE."
+
+["jpa/UserEntity#ownsPersona(Long)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. No script in the game data calls it either."
+
+["jpa/UserEntity@UserEntity.findByIpAddress"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["jpa/VinylProductEntity@VinylProductEntity.findByProductId"]
+status = "dropped"
+reason = "Unused upstream: nothing runs it."
+
+["bo/util/TimeConverter#getTicks()"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. News uses the LocalDateTime overload, which is ported."
+
+["bo/util/MiniProfilingTimer#<init>(String)"]
+status = "dropped"
+reason = "Unused upstream: nothing creates a MiniProfilingTimer."
+
+["bo/util/MiniProfilingTimer#begin(String)"]
+status = "dropped"
+reason = "Unused upstream: nothing creates a MiniProfilingTimer."
+
+["bo/util/MiniProfilingTimer#end()"]
+status = "dropped"
+reason = "Unused upstream: nothing creates a MiniProfilingTimer."
+
+["engine/EngineException#<init>(String,Throwable,boolean,boolean,EngineExceptionCode,boolean)"]
+status = "dropped"
+reason = "Unused upstream: nothing calls it. It is Throwable's full constructor; the others are ported."
+
+["engine/EngineExceptionTrans#getDescription()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#setDescription(String)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#getErrorCode()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#setErrorCode(int)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#getMessage()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#setMessage(String)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#getStackTrace()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#setStackTrace(String)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#getInnerException()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineExceptionTrans#setInnerException(EngineInnerExceptionTrans)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineExceptionTrans is sbrw_xml::dto::engine::EngineExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#getDescription()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#setDescription(String)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#getErrorCode()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#setErrorCode(int)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#getMessage()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#setMessage(String)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#getStackTrace()"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["engine/EngineInnerExceptionTrans#setStackTrace(String)"]
+status = "replaced"
+reason = "A JAXB bean's accessor. EngineInnerExceptionTrans is sbrw_xml::dto::engine::EngineInnerExceptionTrans, generated and pinned against upstream's marshalling like the other DTOs; its properties are fields."
+
+["bo/ErrorReportingBO#init()"]
+status = "dropped"
+reason = "Creates a Sentry client when ENABLE_SENTRY_REPORTING is set, which the game data doesn't. sbrw-rs has no Sentry client."
+
+["bo/ErrorReportingBO#sendException(Exception)"]
+status = "dropped"
+reason = "EngineExceptionHandler hands fatal EngineExceptions to Sentry here. sbrw-rs logs internal faults instead (sbrw_http's fault_response)."
+
+["bo/util/LoggerProducer#produceLogger(InjectionPoint)"]
+status = "replaced"
+reason = "CDI's producer of SLF4J loggers. sbrw-rs logs through tracing."
+
+["api/util/MarshallerInterceptor#isWriteable(Class,Type,Annotation[],MediaType)"]
+status = "replaced"
+reason = "RESTEasy's writer for XML responses. Claims every type for XML. Handlers here write sbrw_xml's to_xml(), byte for byte JAXBUtility's output (pinned by goldens)."
+
+["api/util/MarshallerInterceptor#writeTo(Object,Class,Type,Annotation[],MediaType,MultivaluedMap,OutputStream)"]
+status = "replaced"
+reason = "RESTEasy's writer for XML responses. Writes an entity with JAXBUtility.marshal. Handlers here write sbrw_xml's to_xml(), byte for byte JAXBUtility's output (pinned by goldens)."
+
+["api/util/MarshallerInterceptor#getSize(Object,Class,Type,Annotation[],MediaType)"]
+status = "replaced"
+reason = "RESTEasy's writer for XML responses. Reports no size up front. Handlers here write sbrw_xml's to_xml(), byte for byte JAXBUtility's output (pinned by goldens)."
+
+["xmpp/OccupantEntities#<init>()"]
+status = "replaced"
+reason = "Openfire REST API's list of a room's occupants, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntities#<init>(List)"]
+status = "replaced"
+reason = "Openfire REST API's list of a room's occupants, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntities#getOccupants()"]
+status = "replaced"
+reason = "Openfire REST API's list of a room's occupants, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntities#setOccupants(List)"]
+status = "replaced"
+reason = "Openfire REST API's list of a room's occupants, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#<init>()"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#getJid()"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#setJid(String)"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#getRole()"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#setRole(String)"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#getAffiliation()"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/OccupantEntity#setAffiliation(String)"]
+status = "replaced"
+reason = "An occupant in Openfire REST API's list, for getAllOccupantsInRoom. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares group rooms' members (Openfire::get_all_persona_by_group)."
+
+["xmpp/SessionsCount#getClusterSessions()"]
+status = "replaced"
+reason = "Openfire REST API's session count, for getTotalOnlineUsers. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares its count of logged-in sessions (Openfire::online_users)."
+
+["xmpp/SessionsCount#setClusterSessions(int)"]
+status = "replaced"
+reason = "Openfire REST API's session count, for getTotalOnlineUsers. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares its count of logged-in sessions (Openfire::online_users)."
+
+["xmpp/SessionsCount#getLocalSessions()"]
+status = "replaced"
+reason = "Openfire REST API's session count, for getTotalOnlineUsers. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares its count of logged-in sessions (Openfire::online_users)."
+
+["xmpp/SessionsCount#setLocalSessions(int)"]
+status = "replaced"
+reason = "Openfire REST API's session count, for getTotalOnlineUsers. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. The hub shares its count of logged-in sessions (Openfire::online_users)."
+
+["xmpp/OpenFireConnector#init()"]
+status = "replaced"
+reason = "Reads the Openfire address and engine password for the core's own XMPP client. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireConnector#connect()"]
+status = "replaced"
+reason = "Logs the core in to Openfire as sbrw.engine.engine to send pushes. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. Pushes go to the hub over a channel (Openfire::outbound)."
+
+["xmpp/OpenFireConnector#send(String,Long)"]
+status = "replaced"
+reason = "Sends a push as a message from the engine's XMPP session. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. OpenFireSoapBoxCli.send's port hands it to the hub."
+
+["xmpp/OpenFireConnector#getX509TrustManager()"]
+status = "replaced"
+reason = "Trusts any certificate on the core's connection to Openfire. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireConnector#getConnectionConfiguration()"]
+status = "replaced"
+reason = "Builds the core's Smack connection to Openfire. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireSoapBoxCli#init()"]
+status = "replaced"
+reason = "Connects the core's XMPP client at startup. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireRestApiCli#getBuilder(String)"]
+status = "replaced"
+reason = "A request to Openfire's REST API. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireRestApiCli#getBuilder(String,Map)"]
+status = "replaced"
+reason = "A request to Openfire's REST API. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireRestApiCli#createUpdatePersona(String,String)"]
+status = "replaced"
+reason = "Creates or updates an Openfire account; init uses it for the engine's own. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. Players' accounts are ported (createUpdatePersona(Long,String)); the engine needs none."
+
+["xmpp/OpenFireRestApiCli#getAllRooms()"]
+status = "replaced"
+reason = "Unused upstream: nothing calls it. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network."
+
+["xmpp/OpenFireRestApiCli#createGeneralChatRoom(String,Integer)"]
+status = "replaced"
+reason = "Creates a public chat room channel.<language>__<n> in Openfire, for each chat_room row at startup. sbrw-rs runs its own XMPP server, so the core talks to its hub in process instead of to Openfire over the network. sbrw serve creates them in the hub from the same rows (Hub::create_public_room)."

@@ -310,7 +310,7 @@ def engine_codes() -> None:
     out.append("/// Error codes the game client understands, as upstream's `EngineExceptionCode`.\n")
     out.append("#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\npub enum EngineExceptionCode {\n")
     out += [f"    {name},\n" for name, _ in codes]
-    out.append("}\n\nimpl EngineExceptionCode {\n    pub fn error_code(self) -> i32 {\n        match self {\n")
+    out.append("}\n\nimpl EngineExceptionCode {\n    // port: engine/EngineExceptionCode#getErrorCode()\n    pub fn error_code(self) -> i32 {\n        match self {\n")
     out += [f"            Self::{name} => {code},\n" for name, code in codes]
     out.append("        }\n    }\n}\n")
     path = ROOT / "crates/sbrw-core/src/engine/codes.rs"

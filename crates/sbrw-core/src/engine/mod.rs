@@ -4,6 +4,8 @@ mod codes;
 
 pub use codes::EngineExceptionCode;
 
+// port: engine/EngineException#getCode()
+// port: engine/EngineException#isFatal()
 /// `com.soapboxrace.core.engine.EngineException`. An application exception:
 /// work done before it is thrown still commits, and the client gets a 503 with
 /// the code.
@@ -15,11 +17,17 @@ pub struct EngineException {
 }
 
 impl EngineException {
+    // port: engine/EngineException#<init>(EngineExceptionCode,boolean)
+    // port: engine/EngineException#<init>(Throwable,EngineExceptionCode,boolean)
+    /// Also `new EngineException(cause, code, fatal)`: the cause shows only
+    /// in upstream's stack trace.
     pub fn new(code: EngineExceptionCode, fatal: bool) -> Self {
         Self { code, fatal, message: None }
     }
 
-    /// `new EngineException(message, code, fatal)`.
+    // port: engine/EngineException#<init>(String,EngineExceptionCode,boolean)
+    // port: engine/EngineException#<init>(String,Throwable,EngineExceptionCode,boolean)
+    /// `new EngineException(message, code, fatal)`, with or without a cause.
     pub fn with_message(message: impl Into<String>, code: EngineExceptionCode, fatal: bool) -> Self {
         Self { code, fatal, message: Some(message.into()) }
     }

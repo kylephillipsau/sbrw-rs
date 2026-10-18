@@ -198,6 +198,7 @@ pub enum EngineExceptionCode {
 }
 
 impl EngineExceptionCode {
+    // port: engine/EngineExceptionCode#getErrorCode()
     pub fn error_code(self) -> i32 {
         match self {
             Self::ArgumentNullOrEmpty => 4,

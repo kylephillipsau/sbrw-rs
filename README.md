@@ -224,5 +224,5 @@ The race relay is written from protocol notes
 [sbrw-mp-sync-2018](https://github.com/VladManyanov/sbrw-mp-sync-2018), has
 no license, so none of its code is used.
 
-This repository contains none of the game's files. Need for Speed World is a
+This repository contains none of the game client's files. Need for Speed World is a
 trademark of Electronic Arts; this project is not affiliated with EA.

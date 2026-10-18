@@ -1,7 +1,7 @@
 # Running sbrw-rs on a VPS
 
 How to run the server for friends on another network: a small Linux VPS,
-the image built from this repository, and four open ports. None of this has been tried
+the published image, and four open ports. None of this has been tried
 with a real game client yet (the roadmap's M8 check, racing a friend on
 another network, is still to do).
 
@@ -34,29 +34,14 @@ another network, is still to do).
 
 ## Start it
 
-There is no published image yet, so build it on the VPS from the
-repository. The compiler peaks at about 650 MB, so on a 1 GB VPS add swap
-first; the build takes about 5 minutes on one fast core, longer on a VPS.
-
-```sh
-sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
-sudo mkswap /swapfile && sudo swapon /swapfile
-```
-
-Then:
-
-```sh
-mkdir ~/sbrw && cd ~/sbrw
-git clone https://github.com/kylephillipsau/sbrw-rs.git
-```
-
-Put this in `~/sbrw/compose.yaml`, with your server's public IP:
+The image is published to `ghcr.io/kylephillipsau/sbrw-rs:main` for amd64
+and arm64. Make a directory for it (`mkdir ~/sbrw`) and put this in
+`~/sbrw/compose.yaml`, with your server's public IP:
 
 ```yaml
 services:
   sbrw:
-    build: ./sbrw-rs
-    image: sbrw-rs:local
+    image: ghcr.io/kylephillipsau/sbrw-rs:main
     container_name: sbrw
     environment:
       SBRW__SERVER__PUBLIC_HOST: 203.0.113.7    # your public IP
@@ -75,9 +60,20 @@ volumes:
 ```
 
 ```sh
-docker compose up -d --build
+cd ~/sbrw
+docker compose up -d
 docker compose logs -f      # "HTTP listening", "XMPP listening", ...
 curl http://203.0.113.7:8680/health
+```
+
+To build the image yourself instead, clone the repository into `~/sbrw`
+and replace the `image:` line with `build: ./sbrw-rs`, then
+`docker compose up -d --build`. The build peaks at about 650 MB of memory,
+so on a 1 GB VPS add swap first:
+
+```sh
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
 ```
 
 `docker ps` shows the container as `healthy` once `/health` answers. Then
@@ -147,8 +143,10 @@ docker compose start
 ## Updating
 
 ```sh
-git -C sbrw-rs pull && docker compose up -d --build
+docker compose pull && docker compose up -d
 ```
+
+If you build it yourself: `git -C sbrw-rs pull && docker compose up -d --build`.
 
 The new version migrates the database if it needs to, after backing it up.
 

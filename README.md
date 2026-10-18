@@ -37,7 +37,8 @@ since nothing rewrites UDP source addresses. Then add
 `http://127.0.0.1:8680/Engine.svc` as a server in the SBRW launcher.
 
 Players on other machines need `server.public_host` set to an address they
-can reach. [docs/vps.md](docs/vps.md) covers hosting on a VPS.
+can reach. [docs/vps.md](docs/vps.md) covers hosting on a VPS with the
+published image, `ghcr.io/kylephillipsau/sbrw-rs:main` (amd64 and arm64).
 
 | Port | Protocol | Used for |
 |---|---|---|

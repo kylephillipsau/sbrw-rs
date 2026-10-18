@@ -103,6 +103,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
     let mut openfire = sbrw_core::openfire::Openfire::default();
     let xmpp_accounts = openfire.accounts();
     let group_members = openfire.group_members.clone();
+    let online_users = openfire.online_users.clone();
     let relay = sbrw_common::RelayRegistry::default();
     if !args.probe_xmpp {
         openfire.outbound = Some(pushes);
@@ -153,6 +154,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
             Box::new(time::OffsetDateTime::now_utc),
         );
         hub.share_groups(group_members);
+        hub.share_online_count(online_users);
         // As OpenFireRestApiCli.init creates them.
         for room in rooms {
             if let (Some(short_name), Some(amount)) = (room.short_name, room.amount) {

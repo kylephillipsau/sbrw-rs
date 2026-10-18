@@ -8,6 +8,7 @@
 //! recorder captured the calls.
 
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Arc, RwLock};
 
 use sbrw_common::EffectLog;
@@ -20,6 +21,10 @@ pub type Accounts = Arc<RwLock<HashMap<String, String>>>;
 /// Persona id -> the personas in the group chat room (`group.channel.*`) it's
 /// in, as sbrw-xmpp's hub keeps it (a test scenario sets it instead).
 pub type GroupMembers = Arc<RwLock<HashMap<i64, Vec<i64>>>>;
+
+/// How many players are logged in to XMPP, which sbrw-xmpp's hub keeps up to
+/// date (and a test scenario sets).
+pub type OnlineCount = Arc<AtomicI32>;
 
 /// What the core hands sbrw-xmpp's hub.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,9 +52,7 @@ pub struct Openfire {
     /// Where pushes and announcements go to be delivered: sbrw-xmpp's hub,
     /// when it runs.
     pub outbound: Option<tokio::sync::mpsc::UnboundedSender<Outbound>>,
-    /// Players connected to XMPP: a test scenario's simulated count until
-    /// sbrw-xmpp serves clients and reports its own.
-    pub online_users: i32,
+    pub online_users: OnlineCount,
     pub group_members: GroupMembers,
 }
 
@@ -62,9 +65,11 @@ impl Openfire {
     }
 
     // port: xmpp/OpenFireRestApiCli#getTotalOnlineUsers()
+    /// Upstream asked Openfire for its client sessions and left out the
+    /// engine's own; the hub has only players'.
     pub fn get_total_online_users(&self, effects: &EffectLog) -> i32 {
         effects.openfire("getTotalOnlineUsers", Vec::new());
-        self.online_users
+        self.online_users.load(Ordering::Relaxed)
     }
 
     // port: xmpp/OpenFireRestApiCli#createUpdatePersona(Long,String)

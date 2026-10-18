@@ -5,6 +5,7 @@
 //! added after the attributes already there.
 
 use std::collections::{HashMap, VecDeque};
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Arc, RwLock};
 
 use time::OffsetDateTime;
@@ -63,6 +64,7 @@ pub struct Hub {
     offline: HashMap<String, Vec<(Element, OffsetDateTime)>>,
     rooms: HashMap<String, Room>,
     groups: Option<GroupMembers>,
+    online: Option<Arc<AtomicI32>>,
     new_id: Box<dyn FnMut() -> String + Send>,
     now: Box<dyn FnMut() -> OffsetDateTime + Send>,
 }
@@ -82,6 +84,7 @@ impl Hub {
             offline: HashMap::new(),
             rooms: HashMap::new(),
             groups: None,
+            online: None,
             new_id,
             now,
         }
@@ -99,6 +102,19 @@ impl Hub {
     pub fn share_groups(&mut self, groups: GroupMembers) {
         self.groups = Some(groups);
         self.update_groups();
+    }
+
+    /// Keep `online` at the number of logged-in sessions, which the core
+    /// reads as Openfire's session count.
+    pub fn share_online_count(&mut self, online: Arc<AtomicI32>) {
+        self.online = Some(online);
+        self.update_online();
+    }
+
+    fn update_online(&self) {
+        if let Some(online) = &self.online {
+            online.store(i32::try_from(self.sessions.len()).unwrap_or(i32::MAX), Ordering::Relaxed);
+        }
     }
 
     /// Each persona in a `group.channel.*` room, with that room's personas in
@@ -133,12 +149,14 @@ impl Hub {
             return (true, self.leave_all(jid));
         }
         self.sessions.push(jid.clone());
+        self.update_online();
         (false, Vec::new())
     }
 
     /// A client's stream has ended.
     pub fn disconnect(&mut self, jid: &FullJid) -> Vec<Delivery> {
         self.sessions.retain(|s| s != jid);
+        self.update_online();
         self.available.retain(|s| s != jid);
         self.leave_all(jid)
     }
@@ -650,5 +668,24 @@ mod tests {
         );
         hub.disconnect(&jid(100));
         assert_eq!(hub.announce("x").len(), 1, "nothing kept for those not logged in");
+    }
+
+    #[test]
+    fn the_online_count_follows_logins() {
+        let mut hub = Hub::new("127.0.0.1", Box::new(|| "id".to_owned()), Box::new(OffsetDateTime::now_utc));
+        let jid = |persona: i64| FullJid {
+            node: format!("sbrw.{persona}"),
+            domain: "127.0.0.1".to_owned(),
+            resource: "EA-Chat".to_owned(),
+        };
+        hub.connect(&jid(100));
+        let online = Arc::new(AtomicI32::new(-1));
+        hub.share_online_count(online.clone());
+        assert_eq!(online.load(Ordering::Relaxed), 1);
+        hub.connect(&jid(101));
+        hub.connect(&jid(101));
+        assert_eq!(online.load(Ordering::Relaxed), 2, "a replaced session is still one");
+        hub.disconnect(&jid(100));
+        assert_eq!(online.load(Ordering::Relaxed), 1);
     }
 }

@@ -44,8 +44,10 @@ impl SbrwServer {
         let env = Env::deterministic(scenario.seed, scenario.clock);
         let effects = EffectLog::recording();
         let relay = RelayRegistry::default();
-        let mut openfire = Openfire::default();
-        openfire.online_users = scenario.openfire.as_ref().map_or(0, |o| o.online_users);
+        let openfire = Openfire::default();
+        openfire
+            .online_users
+            .store(scenario.openfire.as_ref().map_or(0, |o| o.online_users), std::sync::atomic::Ordering::Relaxed);
         if let Some(state) = &scenario.openfire {
             let mut groups = openfire.group_members.write().expect("groups lock");
             for (persona, members) in &state.groups {

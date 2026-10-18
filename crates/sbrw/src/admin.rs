@@ -52,6 +52,8 @@ pub enum AdminCommand {
     SetPassword { email: String },
     /// Print the tokens the original's endpoints and web pages take, as this run has them
     Tokens,
+    /// Copy the database into <data dir>/backups now
+    Backup,
 }
 
 /// Where `sbrw serve` keeps the operator API's token.
@@ -100,6 +102,7 @@ pub fn run(config: &Config, command: AdminCommand) -> ExitCode {
             ("set-password", json!({ "email": email, "password": password }))
         }
         AdminCommand::Tokens => ("tokens", json!({})),
+        AdminCommand::Backup => ("backup", json!({})),
     };
     match send(config, name, &body) {
         Ok(reply) => {

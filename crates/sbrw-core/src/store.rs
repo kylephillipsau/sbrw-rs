@@ -7,11 +7,11 @@
 //! SQLite resolves them in `main` first, then `static`.
 
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
 use anyhow::Context;
-use rusqlite::{Connection, MAIN_DB, params};
+use rusqlite::{Connection, MAIN_DB, OpenFlags, params};
 
 const STATIC_SQL: &str = include_str!("../../../assets/static.sql");
 
@@ -34,6 +34,13 @@ pub fn open(path: Option<&Path>, parameters: &BTreeMap<String, String>) -> anyho
         Some(path) => {
             let conn = Connection::open(path).with_context(|| format!("opening {}", path.display()))?;
             conn.execute_batch("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")?;
+            let applied: i64 = conn.query_row("PRAGMA main.user_version", [], |r| r.get(0))?;
+            if applied > 0 && (applied as usize) < MIGRATIONS.len() {
+                let dir = backups_dir(path);
+                let label = format!("before-migration-{}", applied + 1);
+                let copy = backup(&conn, &dir, &label).context("backing up before migrating")?;
+                tracing::info!(path = %copy.display(), "backed up the database before migrating it");
+            }
             conn
         }
         None => Connection::open_in_memory()?,
@@ -62,6 +69,76 @@ pub fn open(path: Option<&Path>, parameters: &BTreeMap<String, String>) -> anyho
     Ok(conn)
 }
 
+/// Where backups of the database at `db` go: `backups/` beside it.
+pub fn backups_dir(db: &Path) -> PathBuf {
+    db.parent().unwrap_or(Path::new(".")).join("backups")
+}
+
+/// Copy `main` into a new file in `dir`, named for the time and `label`
+/// (`world-20261018T040000Z-nightly.db`): `VACUUM INTO`, which writes a
+/// consistent, compacted database without the static data.
+pub fn backup(conn: &Connection, dir: &Path, label: &str) -> anyhow::Result<PathBuf> {
+    std::fs::create_dir_all(dir).with_context(|| format!("creating {}", dir.display()))?;
+    let now = time::OffsetDateTime::now_utc();
+    let stamp = format!(
+        "{:04}{:02}{:02}T{:02}{:02}{:02}Z",
+        now.year(),
+        u8::from(now.month()),
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second()
+    );
+    let mut path = dir.join(format!("world-{stamp}-{label}.db"));
+    let mut n = 1;
+    while path.exists() {
+        n += 1;
+        path = dir.join(format!("world-{stamp}-{label}-{n}.db"));
+    }
+    let target = path.to_str().context("a backup path that isn't UTF-8")?;
+    conn.execute("VACUUM main INTO ?1", [target]).with_context(|| format!("writing {}", path.display()))?;
+    Ok(path)
+}
+
+/// Back up the database file at `db` through a read-only connection of its
+/// own, so the world carries on meanwhile (WAL gives the copy a snapshot).
+pub fn backup_file(db: &Path, label: &str) -> anyhow::Result<PathBuf> {
+    let conn = Connection::open_with_flags(db, OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX)
+        .with_context(|| format!("opening {}", db.display()))?;
+    backup(&conn, &backups_dir(db), label)
+}
+
+/// Delete all but the newest `keep` backups with this label; returns what
+/// it deleted.
+pub fn prune_backups(dir: &Path, label: &str, keep: usize) -> anyhow::Result<Vec<PathBuf>> {
+    let mut found: Vec<PathBuf> = std::fs::read_dir(dir)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
+                n.starts_with("world-") && (n.ends_with(&format!("-{label}.db")) || n.contains(&format!("-{label}-")))
+            })
+        })
+        .collect();
+    // Oldest first: by the time in the name, then by the number a second
+    // backup in the same second gets.
+    found.sort_by_key(|p| {
+        let name = p.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_owned();
+        let stamp = name.trim_start_matches("world-").split('-').next().unwrap_or_default().to_owned();
+        let n: u32 = name
+            .trim_end_matches(".db")
+            .strip_prefix(&format!("world-{stamp}-{label}-"))
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(1);
+        (stamp, n)
+    });
+    let excess = found.len().saturating_sub(keep);
+    let old: Vec<PathBuf> = found.into_iter().take(excess).collect();
+    for path in &old {
+        std::fs::remove_file(path).with_context(|| format!("deleting {}", path.display()))?;
+    }
+    Ok(old)
+}
+
 fn migrate(conn: &mut Connection) -> anyhow::Result<()> {
     let applied: i64 = conn.query_row("PRAGMA main.user_version", [], |r| r.get(0))?;
     for (i, sql) in MIGRATIONS.iter().enumerate().skip(applied as usize) {
@@ -77,6 +154,63 @@ fn migrate(conn: &mut Connection) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn backups_copy_the_world_without_the_static_data() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("world.db");
+        let conn = open(Some(&db), &BTreeMap::new()).unwrap();
+        conn.execute("INSERT INTO user (EMAIL) VALUES ('p@example.com')", []).unwrap();
+        let copy = backup_file(&db, "nightly").unwrap();
+        assert_eq!(copy.parent().unwrap(), dir.path().join("backups"));
+        let restored = Connection::open(&copy).unwrap();
+        let email: String = restored.query_row("SELECT EMAIL FROM user", [], |r| r.get(0)).unwrap();
+        assert_eq!(email, "p@example.com");
+        let statics: i64 =
+            restored.query_row("SELECT COUNT(*) FROM sqlite_master WHERE name = 'product'", [], |r| r.get(0)).unwrap();
+        assert_eq!(statics, 0);
+        // Same second, same label: a second name, not a failure.
+        assert_ne!(backup_file(&db, "nightly").unwrap(), copy);
+    }
+
+    #[test]
+    fn a_database_is_backed_up_before_it_migrates() {
+        let dir = tempfile::tempdir().unwrap();
+        let db = dir.path().join("world.db");
+        {
+            let conn = Connection::open(&db).unwrap();
+            conn.execute_batch(MIGRATIONS[0]).unwrap();
+            conn.execute_batch("PRAGMA user_version = 1").unwrap();
+        }
+        open(Some(&db), &BTreeMap::new()).unwrap();
+        let names: Vec<String> = std::fs::read_dir(dir.path().join("backups"))
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        assert_eq!(names.len(), 1);
+        assert!(names[0].ends_with("-before-migration-2.db"), "{names:?}");
+        // Up to date now, so opening again backs nothing up.
+        open(Some(&db), &BTreeMap::new()).unwrap();
+        assert_eq!(std::fs::read_dir(dir.path().join("backups")).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn pruning_keeps_the_newest_of_a_label() {
+        let dir = tempfile::tempdir().unwrap();
+        for name in [
+            "world-20261016T040000Z-nightly.db",
+            "world-20261017T040000Z-nightly.db",
+            "world-20261017T040000Z-nightly-2.db",
+            "world-20261018T040000Z-nightly.db",
+            "world-20261001T000000Z-before-migration-3.db",
+        ] {
+            std::fs::write(dir.path().join(name), b"").unwrap();
+        }
+        let deleted = prune_backups(dir.path(), "nightly", 2).unwrap();
+        let names: Vec<_> = deleted.iter().map(|p| p.file_name().unwrap().to_str().unwrap().to_owned()).collect();
+        assert_eq!(names, ["world-20261016T040000Z-nightly.db", "world-20261017T040000Z-nightly.db"]);
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 3);
+    }
 
     fn count(conn: &Connection, table: &str) -> i64 {
         conn.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r.get(0)).unwrap()

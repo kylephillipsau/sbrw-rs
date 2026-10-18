@@ -110,6 +110,7 @@ sbrw admin ticket alice                # an invite ticket, when TICKET_TOKEN is 
 sbrw admin set-admin player@example.com            # in-game /kick, /ban, /unban
 echo 'new password' | sbrw admin set-password player@example.com
 sbrw admin tokens                      # ADMIN_AUTH and the rest, as this run has them
+sbrw admin backup                      # a copy of world.db in <data dir>/backups now
 ```
 
 Bans last as long as the in-game `/ban` reads (`1d`, `2h30m`, `45m`), or for
@@ -155,6 +156,10 @@ owners = "..."
 enabled = true                # false makes the launcher skip ModNet
 server_id = "my-server"
 
+[backup]                      # copies of world.db in <data dir>/backups
+nightly_at = "04:00"          # UTC; "" turns nightly backups off
+keep = 7                      # nightly copies kept; one before each migration is kept too
+
 [mail]                        # for password recovery links; unset, none are sent
 smtp_url = "smtps://me%40gmail.com:app-password@smtp.gmail.com"
 
@@ -182,7 +187,9 @@ recovery link, which leads to `/password.jsp`; `/ticket.jsp?ticketAuth=...`,
 `/send-announcement.jsp?announcementAuth=...` are forms for the endpoints of
 the same names.
 
-Accounts and game state live in `<data dir>/world.db` (SQLite).
+Accounts and game state live in `<data dir>/world.db` (SQLite). A backup is
+a complete database: stop the server and copy one over `world.db` to restore
+it.
 
 The same values as environment variables are `SBRW__SERVER__PUBLIC_HOST`,
 `SBRW__LAUNCHER__SERVER_NAME`, and so on; parameters keep their names:

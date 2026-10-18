@@ -49,6 +49,7 @@ pub struct Config {
     pub launcher: LauncherConfig,
     pub modding: ModdingConfig,
     pub mail: MailConfig,
+    pub backup: BackupConfig,
     pub capture: CaptureConfig,
 }
 
@@ -278,6 +279,32 @@ pub struct MailConfig {
     pub smtp_url: Option<String>,
 }
 
+/// Copies of `world.db` in `<data dir>/backups/`. One is also made before
+/// every schema migration, and kept.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct BackupConfig {
+    /// When the nightly backup runs, as `HH:MM` in UTC; empty turns it off.
+    pub nightly_at: String,
+    /// How many nightly backups to keep.
+    pub keep: usize,
+}
+
+impl Default for BackupConfig {
+    fn default() -> Self {
+        Self { nightly_at: "04:00".into(), keep: 7 }
+    }
+}
+
+impl BackupConfig {
+    /// `nightly_at` as hour and minute; `None` when off or unreadable.
+    pub fn nightly_time(&self) -> Option<(u8, u8)> {
+        let (h, m) = self.nightly_at.split_once(':')?;
+        let (h, m) = (h.parse::<u8>().ok()?, m.parse::<u8>().ok()?);
+        (h < 24 && m < 60).then_some((h, m))
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct CaptureConfig {
@@ -379,6 +406,11 @@ impl Config {
         format!("{}/mods", self.public_http_url())
     }
 
+    /// The players' database.
+    pub fn world_db(&self) -> PathBuf {
+        self.server.data_dir.join("world.db")
+    }
+
     pub fn mods_dir(&self) -> PathBuf {
         self.server.data_dir.join("mods")
     }
@@ -398,6 +430,12 @@ impl Config {
         }
         if self.server.public_host.parse::<IpAddr>().is_ok_and(|ip| ip.is_unspecified()) {
             warnings.push("server.public_host is 0.0.0.0; clients cannot connect to that".into());
+        }
+        if !self.backup.nightly_at.is_empty() && self.backup.nightly_time().is_none() {
+            warnings.push(format!(
+                "backup.nightly_at {:?} isn't a time like \"04:00\", so there are no nightly backups",
+                self.backup.nightly_at
+            ));
         }
         warnings
     }

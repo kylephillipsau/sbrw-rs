@@ -37,6 +37,8 @@ pub struct AppState {
     mailer: Option<Arc<mail::Mailer>>,
     /// The operator API's token; without one the API is off.
     admin_token: Option<Arc<str>>,
+    /// The database file `sbrw admin backup` copies.
+    world_db: Option<Arc<std::path::Path>>,
     world: WorldHandle,
 }
 
@@ -47,7 +49,13 @@ impl AppState {
     pub fn new(config: Arc<Config>, capture: CaptureSink, world: WorldHandle) -> Self {
         let mods = Arc::new(mods::ModsDir::new(config.mods_dir()));
         let mailer = mail::Mailer::from_url(config.mail.smtp_url.as_deref()).map(Arc::new);
-        Self { capture, mods, mailer, admin_token: None, world }
+        Self { capture, mods, mailer, admin_token: None, world_db: None, world }
+    }
+
+    /// Let `sbrw admin backup` copy the database file at `world_db`.
+    pub fn with_backups(mut self, world_db: std::path::PathBuf) -> Self {
+        self.world_db = Some(world_db.into());
+        self
     }
 
     /// Turn on the operator API (`sbrw admin`) for loopback clients with this token.

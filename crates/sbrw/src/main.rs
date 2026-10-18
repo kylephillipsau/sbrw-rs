@@ -117,7 +117,7 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         openfire.outbound = Some(pushes);
     }
     let world = sbrw_core::World::boot(sbrw_core::WorldOptions {
-        db_path: Some(config.server.data_dir.join("world.db")),
+        db_path: Some(config.world_db()),
         parameters: config.upstream_parameters(),
         env: sbrw_common::Env::system(),
         effects: sbrw_common::EffectLog::disabled(),
@@ -141,12 +141,17 @@ async fn serve(config: Config, args: ServeArgs) -> anyhow::Result<()> {
         "HTTP listening; add launcher_url as a server in the SBRW launcher"
     );
     tasks.spawn(run_jobs(world.clone(), shutdown.clone()));
+    if let Some(at) = config.backup.nightly_time() {
+        tasks.spawn(run_nightly_backups(config.world_db(), at, config.backup.keep, shutdown.clone()));
+    }
     tasks.spawn(run_timers(world.clone(), shutdown.clone()));
     // A fresh token each start for `sbrw admin`, which reads it from here.
     let admin_token = uuid::Uuid::new_v4().simple().to_string();
     let token_path = admin::token_path(&config);
     admin::write_token(&token_path, &admin_token).with_context(|| format!("writing {}", token_path.display()))?;
-    let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world).with_admin_token(&admin_token);
+    let state = sbrw_http::AppState::new(config.clone(), capture.clone(), world)
+        .with_admin_token(&admin_token)
+        .with_backups(config.world_db());
     tasks.spawn(sbrw_http::serve(http, state, shutdown.clone()));
 
     if args.probe_xmpp {
@@ -268,6 +273,42 @@ async fn run_timers(world: sbrw_core::WorldHandle, shutdown: CancellationToken) 
                     }
                 }
             },
+        }
+    }
+}
+
+/// The nightly copy of the database, at `at` (UTC), keeping the newest `keep`.
+async fn run_nightly_backups(
+    db: PathBuf,
+    at: (u8, u8),
+    keep: usize,
+    shutdown: CancellationToken,
+) -> std::io::Result<()> {
+    let mut minutes = tokio::time::interval(Duration::from_secs(60));
+    minutes.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    let mut last_day = None;
+    loop {
+        tokio::select! {
+            () = shutdown.cancelled() => return Ok(()),
+            _ = minutes.tick() => {
+                let now = time::OffsetDateTime::now_utc();
+                if (now.hour(), now.minute()) != at || last_day == Some(now.date()) {
+                    continue;
+                }
+                last_day = Some(now.date());
+                let db = db.clone();
+                let result = tokio::task::spawn_blocking(move || -> anyhow::Result<_> {
+                    let copy = sbrw_core::store::backup_file(&db, "nightly")?;
+                    let pruned = sbrw_core::store::prune_backups(&sbrw_core::store::backups_dir(&db), "nightly", keep)?;
+                    Ok((copy, pruned.len()))
+                })
+                .await;
+                match result {
+                    Ok(Ok((copy, pruned))) => tracing::info!(path = %copy.display(), pruned, "nightly backup"),
+                    Ok(Err(err)) => tracing::error!("nightly backup failed: {err:#}"),
+                    Err(err) => tracing::error!("nightly backup failed: {err}"),
+                }
+            }
         }
     }
 }

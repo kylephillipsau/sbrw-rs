@@ -117,6 +117,14 @@ async fn run(state: &AppState, command: &str, args: AdminRequest) -> Result<Valu
             let tokens = world.call(|w| Ok(ops::tokens(w))).await.map_err(|fault| format!("{fault:#}"))?;
             Ok(Value::Object(tokens.into_iter().map(|(name, value)| (name.to_owned(), json!(value))).collect()))
         }
+        "backup" => {
+            let db = state.world_db.clone().ok_or("this server has no database file to back up")?;
+            let copy = tokio::task::spawn_blocking(move || sbrw_core::store::backup_file(&db, "manual"))
+                .await
+                .map_err(|err| err.to_string())?
+                .map_err(|err| format!("{err:#}"))?;
+            Ok(json!({ "message": format!("Backed up to {}", copy.display()) }))
+        }
         _ => Err(format!("unknown command {command}")),
     }
 }

@@ -66,13 +66,13 @@ one process `sbrw serve`
 - **Sessions are in memory, as upstream.** A container restart logs everyone out, and in-progress lobbies and races are lost. That's an accepted trade-off for a friends server; player data in SQLite is unaffected.
 - **Pushes** are queued during a transaction and sent after commit through a channel to the XMPP hub.
 - **The XMPP hub** answers `is_online` and `group_room_members` for the world through a `PresenceView` trait.
-- **Timers:** upstream's single-action EJB timers (the DNF countdown and the lobby countdown) are kept in the world and fired, earliest first and each in its own transaction, by a task that checks every second. Periodic jobs run at the start of each minute: every minute (expired items, expired rentals, online stats, expired bans) and on the hour and half hour (achievement rarity). The nightly backup comes with M8.
+- **Timers:** upstream's single-action EJB timers (the DNF countdown and the lobby countdown) are kept in the world and fired, earliest first and each in its own transaction, by a task that checks every second. Periodic jobs run at the start of each minute: every minute (expired items, expired rentals, online stats, expired bans) and on the hour and half hour (achievement rarity). The nightly backup runs on its own task, outside the world, at `backup.nightly_at`.
 
 **Workspace** (edition 2024, Rust 1.97):
 
 | Crate | Responsibility |
 |---|---|
-| `sbrw` | Binary; clap CLI (`serve`, `healthcheck`, `gen-cert`, `user …`, `admin …`, `config check`, `capture redact`) |
+| `sbrw` | Binary; clap CLI (`serve`, `healthcheck`, `config`, `admin …`) |
 | `sbrw-common` | Config (figment: defaults → `/data/sbrw.toml` → `SBRW__*` env), legacy parameter-key table, `EngineExceptionCode`, capture sink, `RelayRegistry`, `Clock` |
 | `sbrw-xml` | `XmlWrite`/`XmlRead`/`XmlRoot` traits on the quick-xml event API (not serde), lenient namespace-stripping reader, JAXB scalar formatting, generated `http.rs`/`xmpp.rs` (committed) |
 | `sbrw-script` | rquickjs runtime; prelude with a bean shim (`x.foo` and `x.getFoo()` both work); `generator.*` returns *descriptors* that Rust resolves with a seeded RNG against `StaticData` |
@@ -102,7 +102,7 @@ one process `sbrw serve`
   - At boot it's loaded into an in-memory SQLite, then `/data/static-overrides.sql` if present, then copied into a typed `Arc<StaticData>` with indexes and pre-parsed basket DTOs.
   - Player data lives in `/data/world.db`: about 31 runtime tables hand-ported, timestamps in unix milliseconds, persona ids starting at 100.
   - One table is sbrw-rs's own: `achievement_rank_rarity` keeps the rarity job's results, which upstream wrote into the static `achievement_rank` rows MySQL kept; they're copied back over the static data at startup.
-  - Before every migration and nightly, `VACUUM INTO /data/backups/`.
+  - Before every migration, nightly and on `sbrw admin backup`, `VACUUM INTO /data/backups/` (the nightly ones through a read-only connection of their own, so the world carries on).
   - Tests assert static row counts.
 - **Config:**
   - Typed sections: server, http, xmpp, udp, session, economy, pursuit, treasure_hunt, launcher (the `SERVER_INFO_*` keys), modding, admin, capture.
@@ -118,7 +118,7 @@ one process `sbrw serve`
   - The protocol, with a source for each fact, is in `docs/protocol/xmpp.md`.
 - **UDP:**
   - Each server has one socket and one task that owns its state. The `PacketCodec` seam handles whole datagrams.
-  - **Free-roam:** a faithful port of the Go constants and slot logic (M3, `docs/protocol/freeroam.md`). A rate limit, a client cap and logging of unknown TLVs come with M8.
+  - **Free-roam:** a faithful port of the Go constants and slot logic (M3, `docs/protocol/freeroam.md`). A guard in front of it (M8) caps the clients and each address's packet rate, so what reaches the port is untouched; unknown TLVs are logged at debug.
   - **Race:**
     - Implemented from `docs/protocol/race.md`, written before the code.
     - Each hello's ticket is checked against the in-process `RelayRegistry` (live session, matching grid slot and persona). That replaces the old keys and 0x99 mechanism and stops forged sessions.
@@ -149,7 +149,7 @@ Each milestone has automated tests and is verified against a reference implement
 | **M5** SP events | Event list and launch; arbitration (route, drag, pursuit, team escape); legit-race checks; reward math (int truncation at every step, transcribed line by line from `RewardBO`); level-up; item rewards and random drops (`DropBO`, `ProductBO.getRandomDrop`); DNF; durability (`CarDamageBO.induceCarDamage`, deferred from M4 because it needs an event's arbitration packet); achievements push, the achievement list and reward redemption, and the 30-minute rarity job; treasure hunt. | Sprint, circuit, drag and pursuit each pay out; level up; achievement toast; collect treasure-hunt gems. | Recorded scenarios for each kind of event, rewards and level-ups, lucky draws, damage, legit checks, the DNF countdown, achievements and the treasure hunt; `RewardBO`'s arithmetic on every `event_reward` row and random configurations (4,050 cases); every achievement's trigger and value (120 scripts) against generated contexts (4,092 cases) |
 | **M6** Lobbies and race | Race-now queue, lobbies, invites, private lobbies (via group rooms, whose members the XMPP hub shares with the core), countdown → 48-byte tickets → `RelayRegistry` → `LobbyLaunched`, race relay, Race Again's next lobby (`EventResultBO.prepareRaceAgain`). Results pushes to the other racers and the DNF countdown already work for any shared session (M5). | The real client plus one FakeRacer fill a lobby, race, and both appear on the results screen. | Seven recorded lobby scenarios (the queue and its window, invitations, full lobbies, leaving and declining, private lobbies, the launch's tickets, Race Again); the relay's replies byte for byte against `docs/protocol/race.md`, with the wait-for-all timeout, ticket rejection, rebinding and idle racers; two FakeRacers racing in-process with the tickets from a real launch |
 | **M7** Social and moderation | Friends, block, presence pushes, parties, whispers, reports, motto, badges, news, admin broadcast, kick. Bans came with the admin commands (`AdminBO`), with their expiry job. Parties and whispers are the XMPP server's group rooms and one-to-one chat (M2, M6); the motto (M5) and reading news (M1) were already ported, and nothing upstream writes news. | Friend request and presence with a fake client; party invite; broadcast; kick. | Six recorded scenarios: friends and presence pushes, blocks, badges, reports with an admin's kick, ban and unban and the expiry job, and announcements; the XMPP server's group membership and broadcast |
-| **M8** Ops and real MP | Admin CLI (`docker exec … sbrw admin`, via a localhost-only token API) for bans and announcements, backups, `/health`, auth rate limits, free-roam rate limit and client cap, invite tickets, multi-arch image, VPS runbook. Mirror the ModNet modules with sha256s into `assets/mirrors/modnet`. | Run on a VPS from the published image; race a friend on another network. | Docker smoke test in CI |
+| **M8** Ops and real MP | The rest of the port, to 870 of 870 units: invite tickets (`CreateTicket`), password recovery with mail (`[mail] smtp_url`), `ReloadParameters`, `ReloadLoginAnnouncements`, `GetFreeroamJson` and the original's web pages; decisions for the unused code, the error model's plumbing and the Openfire client. The online count from the XMPP hub's sessions. Admin CLI (`docker exec … sbrw admin`, through a loopback-only API with a token `serve` writes) for bans, kicks, announcements, tickets, accounts and backups; backups nightly, before migrations and on demand; `/health` from the world; limits on failed logins per address and on free-roam's clients and packet rate; the multi-arch image published from CI; the VPS runbook (`docs/vps.md`). The ModNet manifest with its sha256s in `assets/mirrors/modnet`, and a script that mirrors and checks the files (not committed). | Run on a VPS from the published image; race a friend on another network. | Six recorded scenarios (tickets with a token, without one and with "null", the reloads, `GetFreeroamJson`, password recovery); a fake SMTP server for the mail; the admin API's guards and commands; backups and pruning; the limits; the Docker smoke test, with `sbrw admin` inside the container |
 | **M9** (optional) Stock client | `GetModInfo` → 404; try plaintext first (nfswo replays plaintext free-roam to the stock client); then wire up `NfswCrypto` (ported `session_key.go`, tested against `crypto_test.go` vectors). | An unpatched client spawns and races. | Crypto vectors |
 
 Milestone status is tracked in the README.
@@ -170,7 +170,7 @@ Milestone status is tracked in the README.
 2. **XML fidelity drift.** Codegen from the Java, byte-exact JAXB goldens, capture fixtures, and the launcher's Discord XPath shapes as an extra check.
 3. **Game-math drift** (int truncation, Nashorn semantics). Line-by-line ports linked to the Java source; table tests; seeded RNG.
 4. **Race relay unknowns and licensing.** The written spec is the clean-room barrier, filled in from captures, with config toggles (`legacy_ack_byte`, what happens when the wait-for-all step times out).
-5. **ModNet CDN disappears.** Mirror the modules (M8); M9 is the fallback.
+5. **ModNet CDN disappears.** Keep a mirror of the modules (`tools/mirror-modnet.sh`) to install by hand with ModNet off (`docs/vps.md`); M9 is the fallback.
 6. **Scope** (95 endpoints, ~43k lines of Java). Build in capture order; the catch-all keeps everything else harmless; `docs/endpoints.md` tracks real/partial/stub status.
 
 ## Upstream references (pinned in `tools/fetch-upstream.sh`, cloned into a gitignored `upstream/`)

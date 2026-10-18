@@ -8,10 +8,11 @@ works with the standard SBRW launcher.
 It's built for playing with friends: SQLite instead of MySQL, no Redis, one
 `/data` volume.
 
-**Status:** M7 done; M8 (operations and real multiplayer) is next.
-Everything the launcher and the game do up to driving around the world with
-other players, shopping, single-player events, racing other players, friends
-and moderation is in place:
+**Status:** the port is complete: every one of the original core's 870
+units is ported or recorded as a decision ([port/decisions.toml](port/decisions.toml)),
+and M8's operations are in. What's left is trying it with the real game,
+starting with racing a friend on another network. Everything the launcher
+and the game do is in place:
 - Every HTTP call up to and including creating, selecting and deleting a
   driver, the starter car, the garage and the inventory is ported, and
   replays recordings of the original exactly.
@@ -46,6 +47,13 @@ and moderation is in place:
   pushes to friends, blocking, badges, reports, and an admin's /kick, /ban
   and /unban sent as reports, with bans ending on time. Announcements go to
   every logged-in player through the XMPP server.
+- The rest of the original replays its recordings exactly too: invite
+  tickets, password recovery by email, reloading parameters and login
+  announcements, and the original's web pages.
+- For running it: `sbrw admin` (bans, kicks, announcements, tickets,
+  accounts, backups), nightly backups, limits on failed logins and on
+  free-roam's clients and packet rate, a health check that asks the
+  world, and a runbook for a VPS ([docs/vps.md](docs/vps.md)).
 
 Milestones are verified against recordings of the original and of these
 reference servers, not with the real game, so nothing here has been run
@@ -63,7 +71,7 @@ against the game itself yet. See
 | M5 Single-player events, rewards, achievements | done |
 | M6 Lobbies and race relay | done |
 | M7 Social and moderation | done |
-| M8 Operations and real multiplayer | |
+| M8 Operations and real multiplayer | done, apart from playing on a VPS with a friend |
 | M9 Unpatched client (optional) | |
 
 ## Running it
